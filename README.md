@@ -87,8 +87,8 @@ MCP_SERVER_URL=https://kshitijthakkar-tracemind-mcp-server.hf.space/gradio_api/m
 # Dataset Configuration
 LEADERBOARD_REPO=kshitijthakkar/smoltrace-leaderboard
 
-# Development Mode (optional)
-DEV_MODE=true
+# Development Mode (optional - disables OAuth for local testing)
+DISABLE_OAUTH=true
 ```
 
 ## Data Sources
@@ -177,8 +177,8 @@ insights = mcp_client.analyze_leaderboard(
 # Install dependencies
 pip install -r requirements.txt
 
-# Set development mode
-export DEV_MODE=true
+# Set development mode (optional - disables OAuth)
+export DISABLE_OAUTH=true
 
 # Run the app
 python app.py

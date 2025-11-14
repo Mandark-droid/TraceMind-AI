@@ -15,7 +15,6 @@ load_dotenv()
 from utils.auth import is_authenticated, get_user_info, create_login_button, create_user_info_display, DEV_MODE
 from utils.navigation import Navigator, Screen
 from data_loader import create_data_loader_from_env
-from styles.tracemind_theme import get_tracemind_css
 from mcp_client.sync_wrapper import get_sync_mcp_client
 
 # Initialize
@@ -87,7 +86,7 @@ def estimate_evaluation_cost(model, agent_type, num_tests):
 def build_ui():
     """Build the Gradio UI"""
 
-    with gr.Blocks(css=get_tracemind_css(), title="TraceMind-AI") as demo:
+    with gr.Blocks(title="TraceMind-AI") as demo:
         # Header
         gr.Markdown("""
         # 🔍 TraceMind-AI
