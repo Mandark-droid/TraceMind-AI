@@ -157,7 +157,8 @@ def build_ui():
                     mcp_url_display = gr.Textbox(
                         label="MCP Server URL",
                         value=os.getenv('MCP_SERVER_URL', 'https://kshitijthakkar-tracemind-mcp-server.hf.space/gradio_api/mcp/'),
-                        interactive=False
+                        interactive=True,
+                        placeholder="Enter MCP server URL"
                     )
 
                     test_mcp_btn = gr.Button("🧪 Test MCP Connection", variant="secondary")
