@@ -1,0 +1,20 @@
+# Gradio for UI
+gradio>=6.0.0
+
+# MCP Client for connecting to TraceMind-mcp-server
+mcp>=1.21.0
+
+# HuggingFace for dataset loading
+datasets>=2.14.0
+huggingface-hub>=0.20.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Utilities
+python-dotenv>=1.0.0
+aiohttp>=3.9.0
+
+# Optional: For enhanced visualizations
+plotly>=5.18.0
