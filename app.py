@@ -187,15 +187,21 @@ def build_ui():
             outputs=[cost_output]
         )
 
-        def test_mcp_connection():
+        def test_mcp_connection(mcp_url):
             try:
-                mcp_client.initialize()
-                return "✅ **Connected Successfully!**\n\nMCP server is online and ready"
+                from mcp_client.sync_wrapper import SyncMCPClient
+
+                # Create a new client with the provided URL
+                test_client = SyncMCPClient(server_url=mcp_url)
+                test_client.initialize()
+
+                return f"✅ **Connected Successfully!**\n\nMCP server at `{mcp_url}` is online and ready"
             except Exception as e:
-                return f"❌ **Connection Failed**\n\nError: {str(e)}"
+                return f"❌ **Connection Failed**\n\nError: {str(e)}\n\nURL: `{mcp_url}`"
 
         test_mcp_btn.click(
             fn=test_mcp_connection,
+            inputs=[mcp_url_display],
             outputs=[mcp_status]
         )
 
