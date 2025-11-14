@@ -4,7 +4,7 @@ emoji: 🔍
 colorFrom: indigo
 colorTo: purple
 sdk: gradio
-sdk_version: "6.0.0"
+sdk_version: 5.49.1
 app_file: app.py
 pinned: false
 tags:
@@ -163,8 +163,8 @@ insights = mcp_client.analyze_leaderboard(
 
 ## Technology Stack
 
-- **UI Framework**: Gradio 6.0
-- **MCP Protocol**: MCP Python SDK 1.21.0+
+- **UI Framework**: Gradio 5.49.1
+- **MCP Protocol**: MCP integration via Gradio
 - **Data**: HuggingFace Datasets API
 - **Authentication**: HuggingFace OAuth
 - **AI**: Google Gemini 2.5 Flash (via MCP server)

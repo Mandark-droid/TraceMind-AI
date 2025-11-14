@@ -1,8 +1,5 @@
 # Gradio for UI
-gradio>=6.0.0
-
-# MCP Client for connecting to TraceMind-mcp-server
-mcp>=1.21.0
+gradio[mcp]==5.49.1
 
 # HuggingFace for dataset loading
 datasets>=2.14.0
