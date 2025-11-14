@@ -26,10 +26,11 @@ mcp_client = get_sync_mcp_client()
 current_selected_run = None
 
 
-def load_leaderboard_view(token, profile):
+def load_leaderboard_view():
     """Load and display the leaderboard with MCP-powered insights"""
-    if not is_authenticated(token, profile):
-        return "Please log in to view the leaderboard", ""
+    # OAuth disabled for now
+    # if not is_authenticated(token, profile):
+    #     return "Please log in to view the leaderboard", ""
 
     try:
         # Load real data from HuggingFace
@@ -98,15 +99,15 @@ def build_ui():
         - 🧠 Google Gemini 2.5 Flash for analysis
         """)
 
-        # Authentication
-        with gr.Row():
-            with gr.Column(scale=2):
-                user_display = gr.HTML(create_user_info_display(None))
-            with gr.Column(scale=1):
-                login_btn = create_login_button()
+        # # OAuth Authentication (disabled for now)
+        # with gr.Row():
+        #     with gr.Column(scale=2):
+        #         user_display = gr.HTML(create_user_info_display(None))
+        #     with gr.Column(scale=1):
+        #         login_btn = create_login_button()
 
-        # Main content (shown when authenticated)
-        with gr.Column(visible=DEV_MODE) as main_content:
+        # Main content (always visible - OAuth disabled)
+        with gr.Column(visible=True) as main_content:
             with gr.Tabs() as tabs:
                 # Tab 1: Leaderboard
                 with gr.Tab("📊 Leaderboard"):
@@ -162,20 +163,20 @@ def build_ui():
                     test_mcp_btn = gr.Button("🧪 Test MCP Connection", variant="secondary")
                     mcp_status = gr.Markdown("**Status:** Not tested yet")
 
-        # Event handlers
-        def handle_login(token, profile):
-            user = get_user_info(token, profile)
-            return create_user_info_display(user), gr.update(visible=True)
-
-        login_btn.click(
-            fn=handle_login,
-            inputs=[login_btn, login_btn],  # Gradio provides token/profile automatically
-            outputs=[user_display, main_content]
-        )
+        # Event handlers (OAuth disabled)
+        # def handle_login(token, profile):
+        #     user = get_user_info(token, profile)
+        #     return create_user_info_display(user), gr.update(visible=True)
+        #
+        # login_btn.click(
+        #     fn=handle_login,
+        #     inputs=[login_btn, login_btn],  # Gradio provides token/profile automatically
+        #     outputs=[user_display, main_content]
+        # )
 
         load_leaderboard_btn.click(
             fn=load_leaderboard_view,
-            inputs=[login_btn, login_btn],
+            inputs=[],
             outputs=[leaderboard_table, leaderboard_insights]
         )
 
