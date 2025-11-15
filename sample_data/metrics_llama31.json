@@ -1,0 +1,1106 @@
+{
+  "run_id": "run_002_llama31",
+  "resourceMetrics": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.37.0"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "smoltrace-eval"
+            }
+          },
+          {
+            "key": "run.id",
+            "value": {
+              "stringValue": "run_002_llama31"
+            }
+          }
+        ]
+      },
+      "scopeMetrics": [
+        {
+          "scope": {
+            "name": "genai.gpu",
+            "version": null
+          },
+          "metrics": [
+            {
+              "name": "gen_ai.gpu.utilization",
+              "description": "GPU utilization percentage",
+              "unit": "%",
+              "gauge": {
+                "dataPoints": [
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242554199441920",
+                    "asInt": "45"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242564199441920",
+                    "asInt": "60"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242574199441920",
+                    "asInt": "65"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242584199441920",
+                    "asInt": "80"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242594199441920",
+                    "asInt": "85"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242604199441920",
+                    "asInt": "50"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242614199441920",
+                    "asInt": "55"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242624199441920",
+                    "asInt": "70"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242634199441920",
+                    "asInt": "75"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242644199441920",
+                    "asInt": "90"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242654199441920",
+                    "asInt": "45"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242664199441920",
+                    "asInt": "60"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "gen_ai.gpu.memory.used",
+              "description": "GPU memory used in MiB",
+              "unit": "MiB",
+              "gauge": {
+                "dataPoints": [
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242554199441920",
+                    "asDouble": 4096.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242564199441920",
+                    "asDouble": 4196.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242574199441920",
+                    "asDouble": 4296.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242584199441920",
+                    "asDouble": 4396.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242594199441920",
+                    "asDouble": 4496.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242604199441920",
+                    "asDouble": 4596.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242614199441920",
+                    "asDouble": 4696.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242624199441920",
+                    "asDouble": 4796.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242634199441920",
+                    "asDouble": 4896.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242644199441920",
+                    "asDouble": 4996.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242654199441920",
+                    "asDouble": 5096.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242664199441920",
+                    "asDouble": 5196.0
+                  }
+                ]
+              }
+            },
+            {
+              "name": "gen_ai.gpu.temperature",
+              "description": "GPU temperature in Celsius",
+              "unit": "Cel",
+              "gauge": {
+                "dataPoints": [
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242554199441920",
+                    "asInt": "70"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242564199441920",
+                    "asInt": "72"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242574199441920",
+                    "asInt": "74"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242584199441920",
+                    "asInt": "76"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242594199441920",
+                    "asInt": "78"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242604199441920",
+                    "asInt": "80"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242614199441920",
+                    "asInt": "70"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242624199441920",
+                    "asInt": "72"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242634199441920",
+                    "asInt": "74"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242644199441920",
+                    "asInt": "76"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242654199441920",
+                    "asInt": "78"
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242664199441920",
+                    "asInt": "80"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "gen_ai.gpu.power",
+              "description": "GPU power consumption in Watts",
+              "unit": "W",
+              "gauge": {
+                "dataPoints": [
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242554199441920",
+                    "asDouble": 250.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242564199441920",
+                    "asDouble": 280.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242574199441920",
+                    "asDouble": 310.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242584199441920",
+                    "asDouble": 340.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242594199441920",
+                    "asDouble": 370.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242604199441920",
+                    "asDouble": 400.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242614199441920",
+                    "asDouble": 430.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242624199441920",
+                    "asDouble": 250.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242634199441920",
+                    "asDouble": 280.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242644199441920",
+                    "asDouble": 310.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242654199441920",
+                    "asDouble": 340.0
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      },
+                      {
+                        "key": "gpu_name",
+                        "value": {
+                          "stringValue": "NVIDIA H200"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242664199441920",
+                    "asDouble": 370.0
+                  }
+                ]
+              }
+            },
+            {
+              "name": "gen_ai.co2.emissions",
+              "description": "Cumulative CO2 equivalent emissions in grams",
+              "unit": "gCO2e",
+              "sum": {
+                "dataPoints": [
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242554199441920",
+                    "asDouble": 0.2777777777777778
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242564199441920",
+                    "asDouble": 0.5888888888888889
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242574199441920",
+                    "asDouble": 0.9333333333333333
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242584199441920",
+                    "asDouble": 1.3111111111111111
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242594199441920",
+                    "asDouble": 1.7222222222222223
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242604199441920",
+                    "asDouble": 2.166666666666667
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242614199441920",
+                    "asDouble": 2.644444444444445
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242624199441920",
+                    "asDouble": 2.9222222222222225
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242634199441920",
+                    "asDouble": 3.2333333333333334
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242644199441920",
+                    "asDouble": 3.577777777777778
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242654199441920",
+                    "asDouble": 3.9555555555555557
+                  },
+                  {
+                    "attributes": [
+                      {
+                        "key": "gpu_id",
+                        "value": {
+                          "stringValue": "0"
+                        }
+                      }
+                    ],
+                    "timeUnixNano": "1761242664199441920",
+                    "asDouble": 4.366666666666667
+                  }
+                ],
+                "aggregationTemporality": 2,
+                "isMonotonic": true
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

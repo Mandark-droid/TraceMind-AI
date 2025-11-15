@@ -1,0 +1,143 @@
+[
+  {
+    "trace_id": "trace_abc123",
+    "run_id": "run_001_gpt4",
+    "traceId": "trace_abc123",
+    "spans": [
+      {
+        "spanId": "span_001",
+        "parentSpanId": null,
+        "name": "Agent Execution",
+        "kind": "INTERNAL",
+        "startTime": 1760947217774556600,
+        "endTime": 1760947220224556600,
+        "attributes": {
+          "agent.type": "both",
+          "agent.name": "ToolCallingAgent",
+          "gen_ai.system": "openai",
+          "gen_ai.request.model": "gpt-4"
+        },
+        "status": {"code": "OK"}
+      },
+      {
+        "spanId": "span_002",
+        "parentSpanId": "span_001",
+        "name": "LLM Call - Reasoning",
+        "kind": "CLIENT",
+        "startTime": 1760947217774556600,
+        "endTime": 1760947218974556600,
+        "attributes": {
+          "gen_ai.system": "openai",
+          "gen_ai.request.model": "gpt-4",
+          "gen_ai.operation.name": "chat",
+          "gen_ai.usage.prompt_tokens": 78,
+          "gen_ai.usage.completion_tokens": 45,
+          "gen_ai.usage.total_tokens": 123,
+          "gen_ai.usage.cost.total": 0.0006,
+          "gen_ai.response.finish_reasons": ["stop"]
+        },
+        "status": {"code": "OK"}
+      },
+      {
+        "spanId": "span_003",
+        "parentSpanId": "span_001",
+        "name": "Tool Call - get_weather",
+        "kind": "CLIENT",
+        "startTime": 1760947219000556600,
+        "endTime": 1760947219890556600,
+        "attributes": {
+          "tool.name": "get_weather",
+          "tool.input": "{\"location\": \"Tokyo\"}",
+          "tool.output": "{\"temp\": \"18°C\", \"condition\": \"clear\"}",
+          "tool.latency_ms": 890
+        },
+        "status": {"code": "OK"}
+      },
+      {
+        "spanId": "span_004",
+        "parentSpanId": "span_001",
+        "name": "LLM Call - Final Response",
+        "kind": "CLIENT",
+        "startTime": 1760947219900556600,
+        "endTime": 1760947220224556600,
+        "attributes": {
+          "gen_ai.system": "openai",
+          "gen_ai.request.model": "gpt-4",
+          "gen_ai.usage.prompt_tokens": 145,
+          "gen_ai.usage.completion_tokens": 111,
+          "gen_ai.usage.cost.total": 0.0006
+        },
+        "status": {"code": "OK"}
+      }
+    ]
+  },
+  {
+    "trace_id": "trace_def456",
+    "run_id": "run_001_gpt4",
+    "traceId": "trace_def456",
+    "spans": [
+      {
+        "spanId": "span_005",
+        "parentSpanId": null,
+        "name": "Agent Execution",
+        "kind": "INTERNAL",
+        "startTime": 1760947221000000000,
+        "endTime": 1760947224800000000,
+        "attributes": {
+          "agent.type": "both",
+          "agent.name": "ToolCallingAgent",
+          "gen_ai.system": "openai",
+          "gen_ai.request.model": "gpt-4"
+        },
+        "status": {"code": "OK"}
+      },
+      {
+        "spanId": "span_006",
+        "parentSpanId": "span_005",
+        "name": "LLM Call - Reasoning",
+        "kind": "CLIENT",
+        "startTime": 1760947221000000000,
+        "endTime": 1760947222200000000,
+        "attributes": {
+          "gen_ai.system": "openai",
+          "gen_ai.request.model": "gpt-4",
+          "gen_ai.operation.name": "chat",
+          "gen_ai.usage.prompt_tokens": 120,
+          "gen_ai.usage.completion_tokens": 67,
+          "gen_ai.usage.total_tokens": 187
+        },
+        "status": {"code": "OK"}
+      },
+      {
+        "spanId": "span_007",
+        "parentSpanId": "span_005",
+        "name": "Tool Call - web_search",
+        "kind": "CLIENT",
+        "startTime": 1760947222300000000,
+        "endTime": 1760947224000000000,
+        "attributes": {
+          "tool.name": "web_search",
+          "tool.input": "{\"query\": \"recent AI news\"}",
+          "tool.output": "{\"results\": [...]}",
+          "tool.latency_ms": 1700
+        },
+        "status": {"code": "OK"}
+      },
+      {
+        "spanId": "span_008",
+        "parentSpanId": "span_005",
+        "name": "LLM Call - Final Response",
+        "kind": "CLIENT",
+        "startTime": 1760947224100000000,
+        "endTime": 1760947224800000000,
+        "attributes": {
+          "gen_ai.system": "openai",
+          "gen_ai.request.model": "gpt-4",
+          "gen_ai.usage.prompt_tokens": 189,
+          "gen_ai.usage.completion_tokens": 269
+        },
+        "status": {"code": "OK"}
+      }
+    ]
+  }
+]

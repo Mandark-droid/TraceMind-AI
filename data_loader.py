@@ -1,255 +1,430 @@
 """
-Data Loader for TraceMind-AI
-Loads real data from HuggingFace datasets (not mock data)
+Data Loader for MockTraceMind
+Supports loading from both JSON files and HuggingFace datasets
 """
 
 import os
-from typing import Optional, Dict, Any, List
+import json
+from pathlib import Path
+from typing import Dict, List, Optional, Any, Literal
 import pandas as pd
 from datasets import load_dataset
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
+from huggingface_hub import HfApi
+import gradio as gr
 
 
-class TraceMindDataLoader:
-    """Loads evaluation data from HuggingFace datasets"""
+DataSource = Literal["json", "huggingface", "both"]
+
+
+class DataLoader:
+    """
+    Unified data loader for MockTraceMind
+
+    Supports:
+    - Local JSON files
+    - HuggingFace datasets
+    - Automatic fallback between sources
+    - Caching for performance
+    """
 
     def __init__(
         self,
-        leaderboard_repo: Optional[str] = None,
+        data_source: DataSource = "both",
+        json_data_path: Optional[str] = None,
+        leaderboard_dataset: Optional[str] = None,
         hf_token: Optional[str] = None
     ):
+        self.data_source = data_source
+        self.json_data_path = Path(json_data_path or os.getenv("JSON_DATA_PATH", "./sample_data"))
+        self.leaderboard_dataset = leaderboard_dataset or os.getenv("LEADERBOARD_DATASET", "huggingface/smolagents-leaderboard")
+        self.hf_token = hf_token or os.getenv("HF_TOKEN")
+
+        # Cache
+        self._cache: Dict[str, Any] = {}
+        self.hf_api = HfApi(token=self.hf_token) if self.hf_token else None
+
+    def load_leaderboard(self) -> pd.DataFrame:
         """
-        Initialize data loader
-
-        Args:
-            leaderboard_repo: HuggingFace dataset repo for leaderboard
-            hf_token: HuggingFace API token for private datasets
-        """
-        self.leaderboard_repo = leaderboard_repo or os.getenv(
-            'LEADERBOARD_REPO',
-            'kshitijthakkar/smoltrace-leaderboard'
-        )
-        self.hf_token = hf_token or os.getenv('HF_TOKEN')
-
-        # Cache for loaded datasets
-        self._leaderboard_df: Optional[pd.DataFrame] = None
-        self._results_cache: Dict[str, pd.DataFrame] = {}
-        self._traces_cache: Dict[str, List[Dict]] = {}
-        self._metrics_cache: Dict[str, Dict] = {}
-
-    def load_leaderboard(self, force_refresh: bool = False) -> pd.DataFrame:
-        """
-        Load leaderboard dataset from HuggingFace
-
-        Args:
-            force_refresh: Force reload from HF (ignore cache)
+        Load leaderboard dataset
 
         Returns:
             DataFrame with leaderboard data
         """
-        if self._leaderboard_df is not None and not force_refresh:
-            return self._leaderboard_df
+        cache_key = "leaderboard"
 
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
+        # Try HuggingFace first
+        if self.data_source in ["huggingface", "both"]:
+            try:
+                df = self._load_leaderboard_from_hf()
+                self._cache[cache_key] = df
+                return df
+            except Exception as e:
+                print(f"Failed to load from HuggingFace: {e}")
+                if self.data_source == "huggingface":
+                    raise
+
+        # Fallback to JSON
+        if self.data_source in ["json", "both"]:
+            try:
+                df = self._load_leaderboard_from_json()
+                self._cache[cache_key] = df
+                return df
+            except Exception as e:
+                print(f"Failed to load from JSON: {e}")
+                raise
+
+        raise ValueError("No valid data source available")
+
+    def _load_leaderboard_from_hf(self) -> pd.DataFrame:
+        """Load leaderboard from HuggingFace dataset"""
         try:
-            print(f"📊 Loading leaderboard from {self.leaderboard_repo}...")
-
-            # Load dataset from HuggingFace
-            dataset = load_dataset(
-                self.leaderboard_repo,
-                split='train',
-                token=self.hf_token
-            )
-
-            # Convert to DataFrame
-            self._leaderboard_df = pd.DataFrame(dataset)
-
-            print(f"✅ Loaded {len(self._leaderboard_df)} evaluation runs")
-            return self._leaderboard_df
-
+            ds = load_dataset(self.leaderboard_dataset, split="train", token=self.hf_token)
+            df = ds.to_pandas()
+            print(f"[OK] Loaded leaderboard from HuggingFace: {len(df)} rows")
+            return df
         except Exception as e:
-            print(f"❌ Error loading leaderboard: {e}")
-            # Return empty DataFrame with expected columns
-            return pd.DataFrame(columns=[
-                'run_id', 'model', 'agent_type', 'provider',
-                'success_rate', 'total_tests', 'successful_tests', 'failed_tests',
-                'avg_steps', 'avg_duration_ms', 'total_duration_ms',
-                'total_tokens', 'avg_tokens_per_test', 'total_cost_usd', 'avg_cost_per_test_usd',
-                'co2_emissions_g', 'gpu_utilization_avg', 'gpu_memory_max_mib',
-                'results_dataset', 'traces_dataset', 'metrics_dataset',
-                'timestamp', 'submitted_by', 'hf_job_id', 'job_type',
-                'dataset_used', 'smoltrace_version'
-            ])
+            print(f"[ERROR] Loading from HuggingFace: {e}")
+            raise
 
-    def load_results(self, results_repo: str, force_refresh: bool = False) -> pd.DataFrame:
+    def _load_leaderboard_from_json(self) -> pd.DataFrame:
+        """Load leaderboard from local JSON file"""
+        json_path = self.json_data_path / "leaderboard.json"
+
+        if not json_path.exists():
+            raise FileNotFoundError(f"Leaderboard JSON not found: {json_path}")
+
+        with open(json_path, "r") as f:
+            data = json.load(f)
+
+        df = pd.DataFrame(data)
+        print(f"[OK] Loaded leaderboard from JSON: {len(df)} rows")
+        return df
+
+    def load_results(self, results_dataset: str) -> pd.DataFrame:
         """
         Load results dataset for a specific run
 
         Args:
-            results_repo: HuggingFace dataset repo for results (e.g., 'user/agent-results-gpt4')
-            force_refresh: Force reload from HF
+            results_dataset: Dataset reference (e.g., "user/agent-results-gpt4")
 
         Returns:
             DataFrame with test case results
         """
-        if results_repo in self._results_cache and not force_refresh:
-            return self._results_cache[results_repo]
+        cache_key = f"results_{results_dataset}"
 
-        try:
-            print(f"📊 Loading results from {results_repo}...")
+        if cache_key in self._cache:
+            return self._cache[cache_key]
 
-            dataset = load_dataset(
-                results_repo,
-                split='train',
-                token=self.hf_token
-            )
+        # Try HuggingFace first
+        if self.data_source in ["huggingface", "both"]:
+            try:
+                df = self._load_results_from_hf(results_dataset)
+                self._cache[cache_key] = df
+                return df
+            except Exception as e:
+                print(f"Failed to load results from HuggingFace: {e}")
+                if self.data_source == "huggingface":
+                    raise
 
-            df = pd.DataFrame(dataset)
-            self._results_cache[results_repo] = df
+        # Fallback to JSON
+        if self.data_source in ["json", "both"]:
+            try:
+                df = self._load_results_from_json(results_dataset)
+                self._cache[cache_key] = df
+                return df
+            except Exception as e:
+                print(f"Failed to load results from JSON: {e}")
+                raise
 
-            print(f"✅ Loaded {len(df)} test cases")
-            return df
+        raise ValueError("No valid data source available")
 
-        except Exception as e:
-            print(f"❌ Error loading results: {e}")
-            return pd.DataFrame(columns=[
-                'run_id', 'task_id', 'test_index',
-                'prompt', 'expected_tool', 'difficulty', 'category',
-                'success', 'response', 'tool_called', 'tool_correct',
-                'expected_keywords', 'keywords_matched',
-                'execution_time_ms', 'total_tokens', 'prompt_tokens', 'completion_tokens', 'cost_usd',
-                'trace_id', 'start_time', 'end_time', 'start_time_unix_nano', 'end_time_unix_nano',
-                'error', 'error_type'
-            ])
+    def _load_results_from_hf(self, dataset_id: str) -> pd.DataFrame:
+        """Load results from HuggingFace dataset"""
+        ds = load_dataset(dataset_id, split="train", token=self.hf_token)
+        df = ds.to_pandas()
+        print(f"[OK] Loaded results from HuggingFace: {len(df)} rows")
+        return df
 
-    def load_traces(self, traces_repo: str, force_refresh: bool = False) -> List[Dict[str, Any]]:
+    def _load_results_from_json(self, dataset_id: str) -> pd.DataFrame:
+        """Load results from local JSON file"""
+        # Extract filename from dataset ID (e.g., "user/agent-results-gpt4" -> "results_gpt4.json")
+        filename = dataset_id.split("/")[-1].replace("agent-", "") + ".json"
+        json_path = self.json_data_path / filename
+
+        if not json_path.exists():
+            raise FileNotFoundError(f"Results JSON not found: {json_path}")
+
+        with open(json_path, "r") as f:
+            data = json.load(f)
+
+        df = pd.DataFrame(data)
+        print(f"[OK] Loaded results from JSON: {len(df)} rows")
+        return df
+
+    def load_traces(self, traces_dataset: str) -> List[Dict[str, Any]]:
         """
         Load traces dataset for a specific run
 
         Args:
-            traces_repo: HuggingFace dataset repo for traces
-            force_refresh: Force reload from HF
+            traces_dataset: Dataset reference (e.g., "user/agent-traces-gpt4")
 
         Returns:
-            List of trace dictionaries (OpenTelemetry format)
+            List of trace objects (OpenTelemetry format)
         """
-        if traces_repo in self._traces_cache and not force_refresh:
-            return self._traces_cache[traces_repo]
+        cache_key = f"traces_{traces_dataset}"
 
-        try:
-            print(f"🔍 Loading traces from {traces_repo}...")
+        if cache_key in self._cache:
+            return self._cache[cache_key]
 
-            dataset = load_dataset(
-                traces_repo,
-                split='train',
-                token=self.hf_token
-            )
+        # Try HuggingFace first
+        if self.data_source in ["huggingface", "both"]:
+            try:
+                traces = self._load_traces_from_hf(traces_dataset)
+                self._cache[cache_key] = traces
+                return traces
+            except Exception as e:
+                print(f"Failed to load traces from HuggingFace: {e}")
+                if self.data_source == "huggingface":
+                    raise
 
-            # Convert to list of dicts
-            traces = [dict(item) for item in dataset]
-            self._traces_cache[traces_repo] = traces
+        # Fallback to JSON
+        if self.data_source in ["json", "both"]:
+            try:
+                traces = self._load_traces_from_json(traces_dataset)
+                self._cache[cache_key] = traces
+                return traces
+            except Exception as e:
+                print(f"Failed to load traces from JSON: {e}")
+                raise
 
-            print(f"✅ Loaded {len(traces)} traces")
-            return traces
+        raise ValueError("No valid data source available")
 
-        except Exception as e:
-            print(f"❌ Error loading traces: {e}")
-            return []
+    def _load_traces_from_hf(self, dataset_id: str) -> List[Dict[str, Any]]:
+        """Load traces from HuggingFace dataset"""
+        ds = load_dataset(dataset_id, split="train", token=self.hf_token)
+        traces = ds.to_pandas().to_dict("records")
+        print(f"[OK] Loaded traces from HuggingFace: {len(traces)} traces")
+        return traces
 
-    def load_metrics(self, metrics_repo: str, force_refresh: bool = False) -> Dict[str, Any]:
+    def _load_traces_from_json(self, dataset_id: str) -> List[Dict[str, Any]]:
+        """Load traces from local JSON file"""
+        filename = dataset_id.split("/")[-1].replace("agent-", "") + ".json"
+        json_path = self.json_data_path / filename
+
+        if not json_path.exists():
+            raise FileNotFoundError(f"Traces JSON not found: {json_path}")
+
+        with open(json_path, "r") as f:
+            data = json.load(f)
+
+        print(f"[OK] Loaded traces from JSON: {len(data)} traces")
+        return data
+
+    def load_metrics(self, metrics_dataset: str) -> pd.DataFrame:
         """
-        Load GPU metrics dataset for a specific run
+        Load metrics dataset for a specific run (GPU metrics)
 
         Args:
-            metrics_repo: HuggingFace dataset repo for metrics
-            force_refresh: Force reload from HF
+            metrics_dataset: Dataset reference (e.g., "user/agent-metrics-gpt4")
 
         Returns:
-            Metrics data (OpenTelemetry metrics format)
+            DataFrame with GPU metrics in flat format (columns: timestamp, gpu_utilization_percent, etc.)
         """
-        if metrics_repo in self._metrics_cache and not force_refresh:
-            return self._metrics_cache[metrics_repo]
+        cache_key = f"metrics_{metrics_dataset}"
 
-        try:
-            print(f"📈 Loading metrics from {metrics_repo}...")
+        if cache_key in self._cache:
+            return self._cache[cache_key]
 
-            dataset = load_dataset(
-                metrics_repo,
-                split='train',
-                token=self.hf_token
-            )
-
-            # Assume metrics dataset has one row with all metrics
-            if len(dataset) > 0:
-                metrics = dict(dataset[0])
-                self._metrics_cache[metrics_repo] = metrics
-                print(f"✅ Loaded metrics data")
+        # Try HuggingFace first
+        if self.data_source in ["huggingface", "both"]:
+            try:
+                metrics = self._load_metrics_from_hf(metrics_dataset)
+                self._cache[cache_key] = metrics
                 return metrics
-            else:
-                print(f"⚠️ No metrics data found")
-                return {}
+            except Exception as e:
+                print(f"Failed to load metrics from HuggingFace: {e}")
+                if self.data_source == "huggingface":
+                    raise
 
-        except Exception as e:
-            print(f"❌ Error loading metrics: {e}")
-            return {}
+        # Fallback to JSON
+        if self.data_source in ["json", "both"]:
+            try:
+                metrics = self._load_metrics_from_json(metrics_dataset)
+                self._cache[cache_key] = metrics
+                return metrics
+            except Exception as e:
+                print(f"Failed to load metrics from JSON: {e}")
+                # Metrics might not exist for API models, don't raise
+                print("⚠️ No metrics available (expected for API models)")
+                return pd.DataFrame()
 
-    def get_run_by_id(self, run_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Get a specific run from the leaderboard by run_id
+        return pd.DataFrame()
 
-        Args:
-            run_id: Run ID to fetch
+    def _load_metrics_from_hf(self, dataset_id: str) -> pd.DataFrame:
+        """Load metrics from HuggingFace dataset (flat format)"""
+        ds = load_dataset(dataset_id, split="train", token=self.hf_token)
+        df = ds.to_pandas()
 
-        Returns:
-            Run data as dict, or None if not found
-        """
-        leaderboard_df = self.load_leaderboard()
+        # Convert timestamp strings to datetime if needed
+        if 'timestamp' in df.columns:
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-        run_rows = leaderboard_df[leaderboard_df['run_id'] == run_id]
+        print(f"[OK] Loaded metrics from HuggingFace: {len(df)} rows")
+        print(f"   Columns: {list(df.columns)}")
+        return df
 
-        if len(run_rows) > 0:
-            return run_rows.iloc[0].to_dict()
+    def _load_metrics_from_json(self, dataset_id: str) -> pd.DataFrame:
+        """Load metrics from local JSON file"""
+        filename = dataset_id.split("/")[-1].replace("agent-", "") + ".json"
+        json_path = self.json_data_path / filename
+
+        if not json_path.exists():
+            # Metrics might not exist for API models
+            return pd.DataFrame()
+
+        with open(json_path, "r") as f:
+            data = json.load(f)
+
+        # Check if it's OpenTelemetry format (nested) or flat format
+        if isinstance(data, dict) and 'resourceMetrics' in data:
+            # Legacy OpenTelemetry format - convert to flat format
+            df = self._convert_otel_to_flat(data)
+        elif isinstance(data, list):
+            df = pd.DataFrame(data)
         else:
-            return None
+            df = pd.DataFrame()
 
-    def get_trace_by_id(self, traces_repo: str, trace_id: str) -> Optional[Dict[str, Any]]:
+        # Convert timestamp strings to datetime if needed
+        if 'timestamp' in df.columns and not df.empty:
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+        print(f"[OK] Loaded metrics from JSON: {len(df)} rows")
+        return df
+
+    def _convert_otel_to_flat(self, otel_data: Dict[str, Any]) -> pd.DataFrame:
+        """Convert OpenTelemetry resourceMetrics format to flat DataFrame"""
+        rows = []
+
+        for resource_metric in otel_data.get('resourceMetrics', []):
+            for scope_metric in resource_metric.get('scopeMetrics', []):
+                for metric in scope_metric.get('metrics', []):
+                    metric_name = metric.get('name', '')
+
+                    # Handle gauge metrics
+                    if 'gauge' in metric:
+                        for data_point in metric['gauge'].get('dataPoints', []):
+                            row = self._extract_data_point(metric_name, data_point, metric.get('unit', ''))
+                            if row:
+                                rows.append(row)
+
+                    # Handle sum metrics (like CO2)
+                    elif 'sum' in metric:
+                        for data_point in metric['sum'].get('dataPoints', []):
+                            row = self._extract_data_point(metric_name, data_point, metric.get('unit', ''))
+                            if row:
+                                rows.append(row)
+
+        return pd.DataFrame(rows)
+
+    def _extract_data_point(self, metric_name: str, data_point: Dict, unit: str) -> Optional[Dict[str, Any]]:
+        """Extract a single data point from OpenTelemetry format to flat row"""
+        # Get GPU attributes
+        gpu_id = None
+        gpu_name = None
+        for attr in data_point.get('attributes', []):
+            if attr.get('key') == 'gpu_id':
+                gpu_id = attr.get('value', {}).get('stringValue', '')
+            elif attr.get('key') == 'gpu_name':
+                gpu_name = attr.get('value', {}).get('stringValue', '')
+
+        # Get value
+        value = None
+        if 'asInt' in data_point and data_point['asInt'] is not None:
+            value = int(data_point['asInt'])
+        elif 'asDouble' in data_point and data_point['asDouble'] is not None:
+            value = float(data_point['asDouble'])
+
+        # Get timestamp
+        timestamp_nano = data_point.get('timeUnixNano', '')
+        if timestamp_nano:
+            timestamp_sec = int(timestamp_nano) / 1e9
+            timestamp = pd.to_datetime(timestamp_sec, unit='s')
+        else:
+            timestamp = None
+
+        # Map metric names to column names
+        metric_col_map = {
+            'gen_ai.gpu.utilization': 'gpu_utilization_percent',
+            'gen_ai.gpu.memory.used': 'gpu_memory_used_mib',
+            'gen_ai.gpu.temperature': 'gpu_temperature_celsius',
+            'gen_ai.gpu.power': 'gpu_power_watts',
+            'gen_ai.co2.emissions': 'co2_emissions_gco2e'
+        }
+
+        return {
+            'timestamp': timestamp,
+            'timestamp_unix_nano': timestamp_nano,
+            'gpu_id': gpu_id,
+            'gpu_name': gpu_name,
+            'metric_name': metric_name,
+            'value': value,
+            'unit': unit
+        }
+
+    def get_trace_by_id(self, traces_dataset: str, trace_id: str) -> Optional[Dict[str, Any]]:
         """
-        Get a specific trace by trace_id
+        Get a specific trace by ID
 
         Args:
-            traces_repo: HuggingFace dataset repo for traces
-            trace_id: Trace ID to fetch
+            traces_dataset: Dataset reference
+            trace_id: Trace ID to find
 
         Returns:
-            Trace data as dict, or None if not found
+            Trace object or None if not found
         """
-        traces = self.load_traces(traces_repo)
+        traces = self.load_traces(traces_dataset)
 
         for trace in traces:
-            if trace.get('trace_id') == trace_id or trace.get('traceId') == trace_id:
+            if trace.get("trace_id") == trace_id or trace.get("traceId") == trace_id:
+                # Ensure spans is a proper list (not numpy array or pandas Series)
+                if "spans" in trace:
+                    spans = trace["spans"]
+                    if hasattr(spans, 'tolist'):
+                        trace["spans"] = spans.tolist()
+                    elif not isinstance(spans, list):
+                        trace["spans"] = list(spans) if spans is not None else []
+
                 return trace
 
         return None
 
-    def clear_cache(self):
-        """Clear all cached data"""
-        self._leaderboard_df = None
-        self._results_cache.clear()
-        self._traces_cache.clear()
-        self._metrics_cache.clear()
-        print("🧹 Cache cleared")
+    def clear_cache(self) -> None:
+        """Clear the internal cache"""
+        self._cache.clear()
+        print("[OK] Cache cleared")
+
+    def refresh_leaderboard(self) -> pd.DataFrame:
+        """Refresh leaderboard data (clear cache and reload)"""
+        if "leaderboard" in self._cache:
+            del self._cache["leaderboard"]
+        return self.load_leaderboard()
 
 
-def create_data_loader_from_env() -> TraceMindDataLoader:
+def create_data_loader_from_env() -> DataLoader:
     """
-    Create a data loader using environment variables
+    Create DataLoader instance from environment variables
 
     Returns:
-        TraceMindDataLoader instance
+        Configured DataLoader instance
     """
-    return TraceMindDataLoader(
-        leaderboard_repo=os.getenv('LEADERBOARD_REPO'),
-        hf_token=os.getenv('HF_TOKEN')
+    data_source = os.getenv("DATA_SOURCE", "both")
+
+    return DataLoader(
+        data_source=data_source,
+        json_data_path=os.getenv("JSON_DATA_PATH"),
+        leaderboard_dataset=os.getenv("LEADERBOARD_DATASET"),
+        hf_token=os.getenv("HF_TOKEN")
     )
