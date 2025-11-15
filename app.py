@@ -188,16 +188,22 @@ def build_ui():
         )
 
         def test_mcp_connection(mcp_url):
+            import requests
+
             try:
-                from mcp_client.sync_wrapper import SyncMCPClient
+                # Simple HTTP test to see if the server is accessible
+                response = requests.get(mcp_url, timeout=10)
 
-                # Create a new client with the provided URL
-                test_client = SyncMCPClient(server_url=mcp_url)
-                test_client.initialize()
-
-                return f"✅ **Connected Successfully!**\n\nMCP server at `{mcp_url}` is online and ready"
+                if response.status_code == 200:
+                    return f"✅ **Server Accessible!**\n\nMCP server at:\n`{mcp_url}`\n\nStatus: {response.status_code} OK"
+                else:
+                    return f"⚠️ **Server Responded**\n\nURL: `{mcp_url}`\n\nStatus: {response.status_code}\n\nNote: MCP server may require SSE connection"
+            except requests.exceptions.Timeout:
+                return f"❌ **Connection Timeout**\n\nURL: `{mcp_url}`\n\nThe server took too long to respond (>10s)"
+            except requests.exceptions.ConnectionError as e:
+                return f"❌ **Connection Failed**\n\nURL: `{mcp_url}`\n\nCannot reach the server. Check:\n- URL is correct\n- Server is running\n- No firewall blocking"
             except Exception as e:
-                return f"❌ **Connection Failed**\n\nError: {str(e)}\n\nURL: `{mcp_url}`"
+                return f"❌ **Error**\n\nURL: `{mcp_url}`\n\nError: {str(e)}"
 
         test_mcp_btn.click(
             fn=test_mcp_connection,
