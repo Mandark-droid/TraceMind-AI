@@ -198,20 +198,31 @@ def build_ui():
                 import requests
 
                 print(f"[DEBUG] Making HTTP GET request...")
-                # Simple HTTP test to see if the server is accessible
-                response = requests.get(mcp_url, timeout=10)
+                # Test with SSE headers
+                headers = {
+                    'Accept': 'text/event-stream',
+                    'Cache-Control': 'no-cache'
+                }
+                response = requests.get(mcp_url, headers=headers, timeout=5, stream=True)
                 print(f"[DEBUG] Response status: {response.status_code}")
 
                 if response.status_code == 200:
-                    return f"✅ **Server Accessible!**\n\nMCP server at:\n`{mcp_url}`\n\nStatus: {response.status_code} OK"
+                    response.close()
+                    return f"✅ **MCP Server Online!**\n\nServer at: `{mcp_url}`\n\nStatus: {response.status_code} OK\n\nThe MCP server is accessible and ready to use."
+                elif response.status_code == 406:
+                    # 406 Not Acceptable - server is online but rejecting the request type (expected for MCP endpoints)
+                    return f"✅ **MCP Server Online!**\n\nServer at: `{mcp_url}`\n\nStatus: 406 (Not Acceptable)\n\n**This is expected behavior** - MCP servers reject simple HTTP requests but accept SSE connections from MCP clients.\n\nThe server is working correctly!"
+                elif response.status_code == 404:
+                    return f"❌ **Endpoint Not Found**\n\nURL: `{mcp_url}`\n\nStatus: 404\n\nThe MCP endpoint doesn't exist at this URL. Check the path is correct."
                 else:
-                    return f"⚠️ **Server Responded**\n\nURL: `{mcp_url}`\n\nStatus: {response.status_code}\n\nNote: MCP server may require SSE connection"
+                    return f"⚠️ **Server Responded**\n\nURL: `{mcp_url}`\n\nStatus: {response.status_code}\n\nServer is online but returned unexpected status."
             except requests.exceptions.Timeout:
                 print(f"[DEBUG] Timeout error")
-                return f"❌ **Connection Timeout**\n\nURL: `{mcp_url}`\n\nThe server took too long to respond (>10s)"
+                # Timeout on SSE endpoint might mean it's waiting for connection - could be OK
+                return f"⚠️ **Connection Timeout**\n\nURL: `{mcp_url}`\n\nThe server may be waiting for an SSE connection (streaming). This could mean:\n- ✅ Server is online but requires proper MCP client\n- ❌ Server is slow or overloaded\n\nTry using the MCP tools in the other tabs to test actual functionality."
             except requests.exceptions.ConnectionError as e:
                 print(f"[DEBUG] Connection error: {e}")
-                return f"❌ **Connection Failed**\n\nURL: `{mcp_url}`\n\nCannot reach the server. Check:\n- URL is correct\n- Server is running\n- No firewall blocking"
+                return f"❌ **Connection Failed**\n\nURL: `{mcp_url}`\n\nCannot reach the server. Check:\n- URL is correct\n- Server is running\n- Network/firewall not blocking"
             except Exception as e:
                 print(f"[DEBUG] Unexpected error: {e}")
                 return f"❌ **Error**\n\nURL: `{mcp_url}`\n\nError: {str(e)}"
