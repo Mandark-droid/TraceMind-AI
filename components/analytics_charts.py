@@ -648,7 +648,16 @@ def create_trends_plot(df: pd.DataFrame) -> go.Figure:
 
     # Convert timestamp to datetime
     df = df.copy()
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    try:
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+    except Exception as e:
+        return _create_empty_figure(f"Error parsing timestamp data: {str(e)}")
+
+    # Remove rows with invalid timestamps
+    df = df.dropna(subset=['timestamp'])
+
+    if df.empty:
+        return _create_empty_figure("No valid timestamp data available")
 
     # Sort by timestamp
     df = df.sort_values('timestamp')
@@ -656,51 +665,72 @@ def create_trends_plot(df: pd.DataFrame) -> go.Figure:
     # Aggregate by date (in case multiple runs per day)
     df['date'] = df['timestamp'].dt.date
 
-    daily_stats = df.groupby('date').agg({
-        'success_rate': 'mean',
-        'avg_duration_ms': 'mean',
-        'total_cost_usd': 'mean',
-        'total_tokens': 'mean'
-    }).reset_index()
+    # Check which metrics are available
+    available_metrics = []
+    agg_dict = {}
+
+    if 'success_rate' in df.columns:
+        agg_dict['success_rate'] = 'mean'
+        available_metrics.append('success_rate')
+    if 'avg_duration_ms' in df.columns:
+        agg_dict['avg_duration_ms'] = 'mean'
+        available_metrics.append('avg_duration_ms')
+    if 'total_cost_usd' in df.columns:
+        agg_dict['total_cost_usd'] = 'mean'
+        available_metrics.append('total_cost_usd')
+    if 'total_tokens' in df.columns:
+        agg_dict['total_tokens'] = 'mean'
+        available_metrics.append('total_tokens')
+
+    if not agg_dict:
+        return _create_empty_figure("No metrics available for trends analysis")
+
+    daily_stats = df.groupby('date').agg(agg_dict).reset_index()
+
+    if daily_stats.empty:
+        return _create_empty_figure("No data after aggregation")
 
     # Create figure with secondary y-axis
     fig = go.Figure()
 
     # Success Rate
-    fig.add_trace(go.Scatter(
-        x=daily_stats['date'],
-        y=daily_stats['success_rate'],
-        name='Success Rate (%)',
-        mode='lines+markers',
-        line=dict(color='#2ECC71', width=3),
-        marker=dict(size=8),
-        yaxis='y1',
-        hovertemplate='<b>Success Rate</b><br>Date: %{x}<br>Rate: %{y:.1f}%<extra></extra>'
-    ))
+    if 'success_rate' in daily_stats.columns:
+        fig.add_trace(go.Scatter(
+            x=daily_stats['date'],
+            y=daily_stats['success_rate'],
+            name='Success Rate (%)',
+            mode='lines+markers',
+            line=dict(color='#2ECC71', width=3),
+            marker=dict(size=8),
+            yaxis='y1',
+            hovertemplate='<b>Success Rate</b><br>Date: %{x}<br>Rate: %{y:.1f}%<extra></extra>'
+        ))
 
     # Duration
-    fig.add_trace(go.Scatter(
-        x=daily_stats['date'],
-        y=daily_stats['avg_duration_ms'],
-        name='Avg Duration (ms)',
-        mode='lines+markers',
-        line=dict(color='#3498DB', width=3),
-        marker=dict(size=8),
-        yaxis='y2',
-        hovertemplate='<b>Duration</b><br>Date: %{x}<br>Time: %{y:.0f}ms<extra></extra>'
-    ))
+    if 'avg_duration_ms' in daily_stats.columns:
+        fig.add_trace(go.Scatter(
+            x=daily_stats['date'],
+            y=daily_stats['avg_duration_ms'],
+            name='Avg Duration (ms)',
+            mode='lines+markers',
+            line=dict(color='#3498DB', width=3),
+            marker=dict(size=8),
+            yaxis='y2',
+            hovertemplate='<b>Duration</b><br>Date: %{x}<br>Time: %{y:.0f}ms<extra></extra>'
+        ))
 
     # Cost
-    fig.add_trace(go.Scatter(
-        x=daily_stats['date'],
-        y=daily_stats['total_cost_usd'],
-        name='Avg Cost (USD)',
-        mode='lines+markers',
-        line=dict(color='#E67E22', width=3),
-        marker=dict(size=8),
-        yaxis='y2',
-        hovertemplate='<b>Cost</b><br>Date: %{x}<br>Cost: $%{y:.4f}<extra></extra>'
-    ))
+    if 'total_cost_usd' in daily_stats.columns:
+        fig.add_trace(go.Scatter(
+            x=daily_stats['date'],
+            y=daily_stats['total_cost_usd'],
+            name='Avg Cost (USD)',
+            mode='lines+markers',
+            line=dict(color='#E67E22', width=3),
+            marker=dict(size=8),
+            yaxis='y2',
+            hovertemplate='<b>Cost</b><br>Date: %{x}<br>Cost: $%{y:.4f}<extra></extra>'
+        ))
 
     fig.update_layout(
         title={
