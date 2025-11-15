@@ -41,7 +41,7 @@ def load_leaderboard():
     # Get filter choices
     models = ["All Models"] + sorted(df['model'].unique().tolist())
 
-    return html, gr.update(choices=models)
+    return html, gr.update(choices=models), gr.update(choices=models)
 
 
 def apply_filters(model, provider, sort_by_col):
@@ -167,14 +167,45 @@ def generate_insights():
 
 # Build Gradio app
 with gr.Blocks(title="TraceMind-AI") as app:
-    gr.Markdown("# 🧠 TraceMind-AI")
 
-    # Navigation (placeholder)
-    with gr.Row():
-        nav_title = gr.Markdown("## 🏆 Agent Evaluation Leaderboard")
+    # Sidebar Navigation
+    with gr.Sidebar():
+        gr.Markdown("## 🧠 TraceMind")
+        gr.Markdown("*Navigation & Controls*")
 
+        gr.Markdown("---")
+
+        # Navigation section
+        gr.Markdown("### 🧭 Navigation")
+
+        # Navigation buttons
+        leaderboard_nav_btn = gr.Button("🏆 Leaderboard", variant="primary", size="lg")
+        compare_nav_btn = gr.Button("⚖️ Compare", variant="secondary", size="lg")
+        docs_nav_btn = gr.Button("📚 Documentation", variant="secondary", size="lg")
+
+        gr.Markdown("---")
+
+        # Filters section
+        gr.Markdown("### 🔍 Global Filters")
+
+        sidebar_model_filter = gr.Dropdown(
+            choices=["All Models"],
+            value="All Models",
+            label="Model",
+            info="Filter evaluations by AI model"
+        )
+
+        sidebar_agent_type_filter = gr.Radio(
+            choices=["All", "tool", "code", "both"],
+            value="All",
+            label="Agent Type",
+            info="Tool: Function calling | Code: Code execution | Both: Hybrid"
+        )
+
+    # Main content area
     # Screen 1: Main Leaderboard
     with gr.Column(visible=True) as leaderboard_screen:
+        gr.Markdown("## 🏆 Agent Evaluation Leaderboard")
         with gr.Tabs():
             with gr.TabItem("🏆 Leaderboard"):
                 # Filters
@@ -246,7 +277,7 @@ with gr.Blocks(title="TraceMind-AI") as app:
     # Event handlers
     app.load(
         fn=load_leaderboard,
-        outputs=[leaderboard_by_model, model_filter]
+        outputs=[leaderboard_by_model, model_filter, sidebar_model_filter]
     )
 
     app.load(
