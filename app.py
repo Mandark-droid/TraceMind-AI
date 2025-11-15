@@ -13,7 +13,12 @@ load_dotenv()
 # Import data loader and components
 from data_loader import create_data_loader_from_env
 from components.leaderboard_table import generate_leaderboard_html
-from components.analytics_charts import create_trends_plot
+from components.analytics_charts import (
+    create_trends_plot,
+    create_performance_heatmap,
+    create_speed_accuracy_scatter,
+    create_cost_efficiency_scatter
+)
 
 # Initialize data loader
 data_loader = create_data_loader_from_env()
@@ -81,6 +86,18 @@ def load_trends():
     return fig
 
 
+def update_analytics(viz_type):
+    """Update analytics chart based on visualization type"""
+    df = data_loader.load_leaderboard()
+
+    if "Heatmap" in viz_type:
+        return create_performance_heatmap(df)
+    elif "Speed" in viz_type:
+        return create_speed_accuracy_scatter(df)
+    else:
+        return create_cost_efficiency_scatter(df)
+
+
 # Build Gradio app
 with gr.Blocks(title="TraceMind-AI") as app:
     gr.Markdown("# 🧠 TraceMind-AI")
@@ -139,6 +156,14 @@ with gr.Blocks(title="TraceMind-AI") as app:
             with gr.TabItem("📈 Trends"):
                 trends_plot = gr.Plot()
 
+            with gr.TabItem("📊 Analytics"):
+                viz_type = gr.Radio(
+                    choices=["🔥 Performance Heatmap", "⚡ Speed vs Accuracy", "💰 Cost Efficiency"],
+                    value="🔥 Performance Heatmap",
+                    label="Select Visualization"
+                )
+                analytics_chart = gr.Plot()
+
         # Hidden textbox for row selection (JavaScript bridge)
         selected_row_index = gr.Textbox(visible=False, elem_id="selected_row_index")
 
@@ -163,6 +188,18 @@ with gr.Blocks(title="TraceMind-AI") as app:
         fn=load_drilldown,
         inputs=[drilldown_agent_type, drilldown_provider],
         outputs=[leaderboard_table]
+    )
+
+    viz_type.change(
+        fn=update_analytics,
+        inputs=[viz_type],
+        outputs=[analytics_chart]
+    )
+
+    app.load(
+        fn=update_analytics,
+        inputs=[viz_type],
+        outputs=[analytics_chart]
     )
 
 
