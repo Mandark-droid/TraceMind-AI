@@ -630,146 +630,186 @@ def create_comparison_radar(runs: List[Dict[str, Any]]) -> go.Figure:
 
 def create_trends_plot(df: pd.DataFrame) -> go.Figure:
     """
-    Create time series visualization of evaluation metrics over time
+    Create trends visualization over time with enhanced GPU metrics
 
     Args:
-        df: Leaderboard DataFrame with timestamp column
+        df: Leaderboard DataFrame with timestamp or evaluation_date column
 
     Returns:
-        Plotly figure with time series chart
+        Plotly figure showing trends
     """
+    from plotly.subplots import make_subplots
 
-    if df.empty:
-        return _create_empty_figure("No data available for trends")
-
-    # Check if timestamp column exists
-    if 'timestamp' not in df.columns:
-        return _create_empty_figure("Missing timestamp column for trends analysis")
-
-    # Convert timestamp to datetime
-    df = df.copy()
     try:
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
-    except Exception as e:
-        return _create_empty_figure(f"Error parsing timestamp data: {str(e)}")
+        # Use evaluation_date or timestamp depending on what's available
+        date_col = 'evaluation_date' if 'evaluation_date' in df.columns else 'timestamp'
 
-    # Remove rows with invalid timestamps
-    df = df.dropna(subset=['timestamp'])
+        if df.empty or date_col not in df.columns:
+            fig = go.Figure()
+            fig.add_annotation(text="No trend data available", showarrow=False)
+            return fig
 
-    if df.empty:
-        return _create_empty_figure("No valid timestamp data available")
+        # Convert date column to datetime to avoid type errors
+        df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
 
-    # Sort by timestamp
-    df = df.sort_values('timestamp')
+        # Sort by date column
+        df_sorted = df.sort_values(date_col)
 
-    # Aggregate by date (in case multiple runs per day)
-    df['date'] = df['timestamp'].dt.date
+        # Check which GPU metrics are available
+        has_gpu_util = 'gpu_utilization_avg' in df.columns and df_sorted['gpu_utilization_avg'].notna().any()
+        has_gpu_memory = 'gpu_memory_avg_mib' in df.columns and df_sorted['gpu_memory_avg_mib'].notna().any()
+        has_gpu_temp = 'gpu_temperature_avg' in df.columns and df_sorted['gpu_temperature_avg'].notna().any()
+        has_power_cost = 'power_cost_total_usd' in df.columns and df_sorted['power_cost_total_usd'].notna().any()
 
-    # Check which metrics are available
-    available_metrics = []
-    agg_dict = {}
+        # Determine number of subplots based on available data
+        num_plots = 2  # Always show success rate and cost
+        if has_gpu_util:
+            num_plots += 1
+        if has_gpu_memory:
+            num_plots += 1
+        if has_gpu_temp:
+            num_plots += 1
+        if has_power_cost:
+            num_plots += 1
 
-    if 'success_rate' in df.columns:
-        agg_dict['success_rate'] = 'mean'
-        available_metrics.append('success_rate')
-    if 'avg_duration_ms' in df.columns:
-        agg_dict['avg_duration_ms'] = 'mean'
-        available_metrics.append('avg_duration_ms')
-    if 'total_cost_usd' in df.columns:
-        agg_dict['total_cost_usd'] = 'mean'
-        available_metrics.append('total_cost_usd')
-    if 'total_tokens' in df.columns:
-        agg_dict['total_tokens'] = 'mean'
-        available_metrics.append('total_tokens')
+        # Create subplots
+        subplot_titles = ["Success Rate Over Time", "Cost Over Time"]
+        if has_gpu_util:
+            subplot_titles.append("GPU Utilization Over Time")
+        if has_gpu_memory:
+            subplot_titles.append("GPU Memory Usage Over Time")
+        if has_gpu_temp:
+            subplot_titles.append("GPU Temperature Over Time")
+        if has_power_cost:
+            subplot_titles.append("Power Cost Over Time")
 
-    if not agg_dict:
-        return _create_empty_figure("No metrics available for trends analysis")
-
-    daily_stats = df.groupby('date').agg(agg_dict).reset_index()
-
-    if daily_stats.empty:
-        return _create_empty_figure("No data after aggregation")
-
-    # Create figure with secondary y-axis
-    fig = go.Figure()
-
-    # Success Rate
-    if 'success_rate' in daily_stats.columns:
-        fig.add_trace(go.Scatter(
-            x=daily_stats['date'],
-            y=daily_stats['success_rate'],
-            name='Success Rate (%)',
-            mode='lines+markers',
-            line=dict(color='#2ECC71', width=3),
-            marker=dict(size=8),
-            yaxis='y1',
-            hovertemplate='<b>Success Rate</b><br>Date: %{x}<br>Rate: %{y:.1f}%<extra></extra>'
-        ))
-
-    # Duration
-    if 'avg_duration_ms' in daily_stats.columns:
-        fig.add_trace(go.Scatter(
-            x=daily_stats['date'],
-            y=daily_stats['avg_duration_ms'],
-            name='Avg Duration (ms)',
-            mode='lines+markers',
-            line=dict(color='#3498DB', width=3),
-            marker=dict(size=8),
-            yaxis='y2',
-            hovertemplate='<b>Duration</b><br>Date: %{x}<br>Time: %{y:.0f}ms<extra></extra>'
-        ))
-
-    # Cost
-    if 'total_cost_usd' in daily_stats.columns:
-        fig.add_trace(go.Scatter(
-            x=daily_stats['date'],
-            y=daily_stats['total_cost_usd'],
-            name='Avg Cost (USD)',
-            mode='lines+markers',
-            line=dict(color='#E67E22', width=3),
-            marker=dict(size=8),
-            yaxis='y2',
-            hovertemplate='<b>Cost</b><br>Date: %{x}<br>Cost: $%{y:.4f}<extra></extra>'
-        ))
-
-    fig.update_layout(
-        title={
-            'text': '📈 Evaluation Metrics Trends Over Time',
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 20}
-        },
-        xaxis=dict(
-            title='Date',
-            showgrid=True,
-            gridcolor='lightgray'
-        ),
-        yaxis=dict(
-            title='Success Rate (%)',
-            titlefont=dict(color='#2ECC71'),
-            tickfont=dict(color='#2ECC71'),
-            showgrid=True,
-            gridcolor='lightgray'
-        ),
-        yaxis2=dict(
-            title='Duration (ms) / Cost (USD)',
-            titlefont=dict(color='#3498DB'),
-            tickfont=dict(color='#3498DB'),
-            overlaying='y',
-            side='right'
-        ),
-        hovermode='x unified',
-        height=500,
-        plot_bgcolor='white',
-        paper_bgcolor='#f8f9fa',
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
+        fig = make_subplots(
+            rows=num_plots, cols=1,
+            subplot_titles=subplot_titles,
+            vertical_spacing=0.08
         )
-    )
 
-    return fig
+        current_row = 1
+
+        # Success rate trend
+        fig.add_trace(
+            go.Scatter(
+                x=df_sorted[date_col],
+                y=df_sorted['success_rate'],
+                mode='lines+markers',
+                name='Success Rate',
+                line=dict(color='#3498DB', width=2),
+                marker=dict(size=6),
+                hovertemplate='<b>%{x}</b><br>Success Rate: %{y:.1f}%<extra></extra>'
+            ),
+            row=current_row, col=1
+        )
+        fig.update_yaxes(title_text="Success Rate (%)", row=current_row, col=1)
+        current_row += 1
+
+        # Cost trend
+        fig.add_trace(
+            go.Scatter(
+                x=df_sorted[date_col],
+                y=df_sorted['total_cost_usd'],
+                mode='lines+markers',
+                name='Cost (USD)',
+                line=dict(color='#E67E22', width=2),
+                marker=dict(size=6),
+                hovertemplate='<b>%{x}</b><br>Cost: $%{y:.4f}<extra></extra>'
+            ),
+            row=current_row, col=1
+        )
+        fig.update_yaxes(title_text="Cost (USD)", row=current_row, col=1)
+        current_row += 1
+
+        # GPU Utilization trend (if available)
+        if has_gpu_util:
+            gpu_data = df_sorted[df_sorted['gpu_utilization_avg'].notna()]
+            fig.add_trace(
+                go.Scatter(
+                    x=gpu_data[date_col],
+                    y=gpu_data['gpu_utilization_avg'],
+                    mode='lines+markers',
+                    name='GPU Utilization',
+                    line=dict(color='#9B59B6', width=2),
+                    marker=dict(size=6),
+                    hovertemplate='<b>%{x}</b><br>GPU Util: %{y:.1f}%<extra></extra>'
+                ),
+                row=current_row, col=1
+            )
+            fig.update_yaxes(title_text="GPU Utilization (%)", row=current_row, col=1)
+            current_row += 1
+
+        # GPU Memory trend (if available)
+        if has_gpu_memory:
+            gpu_memory_data = df_sorted[df_sorted['gpu_memory_avg_mib'].notna()]
+            fig.add_trace(
+                go.Scatter(
+                    x=gpu_memory_data[date_col],
+                    y=gpu_memory_data['gpu_memory_avg_mib'],
+                    mode='lines+markers',
+                    name='GPU Memory',
+                    line=dict(color='#1ABC9C', width=2),
+                    marker=dict(size=6),
+                    hovertemplate='<b>%{x}</b><br>GPU Memory: %{y:.0f} MiB<extra></extra>'
+                ),
+                row=current_row, col=1
+            )
+            fig.update_yaxes(title_text="GPU Memory (MiB)", row=current_row, col=1)
+            current_row += 1
+
+        # GPU Temperature trend (if available)
+        if has_gpu_temp:
+            gpu_temp_data = df_sorted[df_sorted['gpu_temperature_avg'].notna()]
+            fig.add_trace(
+                go.Scatter(
+                    x=gpu_temp_data[date_col],
+                    y=gpu_temp_data['gpu_temperature_avg'],
+                    mode='lines+markers',
+                    name='GPU Temperature',
+                    line=dict(color='#E74C3C', width=2),
+                    marker=dict(size=6),
+                    hovertemplate='<b>%{x}</b><br>GPU Temp: %{y:.1f}°C<extra></extra>'
+                ),
+                row=current_row, col=1
+            )
+            fig.update_yaxes(title_text="GPU Temperature (°C)", row=current_row, col=1)
+            current_row += 1
+
+        # Power Cost trend (if available)
+        if has_power_cost:
+            power_cost_data = df_sorted[df_sorted['power_cost_total_usd'].notna()]
+            fig.add_trace(
+                go.Scatter(
+                    x=power_cost_data[date_col],
+                    y=power_cost_data['power_cost_total_usd'],
+                    mode='lines+markers',
+                    name='Power Cost',
+                    line=dict(color='#F39C12', width=2),
+                    marker=dict(size=6),
+                    hovertemplate='<b>%{x}</b><br>Power Cost: $%{y:.4f}<extra></extra>'
+                ),
+                row=current_row, col=1
+            )
+            fig.update_yaxes(title_text="Power Cost (USD)", row=current_row, col=1)
+
+        fig.update_xaxes(title_text="Date", row=num_plots, col=1)
+
+        # Calculate dynamic height based on number of plots
+        plot_height = max(400, num_plots * 200)
+
+        fig.update_layout(
+            height=plot_height,
+            showlegend=False,
+            margin=dict(l=50, r=50, t=50, b=50)
+        )
+
+        return fig
+    except Exception as e:
+        print(f"[ERROR] Creating trends plot: {e}")
+        import traceback
+        traceback.print_exc()
+        fig = go.Figure()
+        fig.add_annotation(text=f"Error creating trends: {str(e)}", showarrow=False)
+        return fig
