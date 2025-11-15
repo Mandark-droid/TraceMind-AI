@@ -748,6 +748,31 @@ def on_drilldown_select(evt: gr.SelectData, df):
         # Generate performance chart
         perf_chart = create_performance_charts(results_df)
 
+        # Create metadata HTML
+        metadata_html = f"""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;">
+            <h2 style="margin: 0 0 10px 0;">📊 Run Detail: {run_data.get('model', 'Unknown')}</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div>
+                    <strong>Agent Type:</strong> {run_data.get('agent_type', 'N/A')}<br>
+                    <strong>Provider:</strong> {run_data.get('provider', 'N/A')}<br>
+                    <strong>Success Rate:</strong> {run_data.get('success_rate', 0):.1f}%
+                </div>
+                <div>
+                    <strong>Total Tests:</strong> {run_data.get('total_tests', 0)}<br>
+                    <strong>Successful:</strong> {run_data.get('successful_tests', 0)}<br>
+                    <strong>Failed:</strong> {run_data.get('failed_tests', 0)}
+                </div>
+                <div>
+                    <strong>Total Cost:</strong> ${run_data.get('total_cost_usd', 0):.4f}<br>
+                    <strong>Avg Duration:</strong> {run_data.get('avg_duration_ms', 0):.0f}ms<br>
+                    <strong>Submitted By:</strong> {run_data.get('submitted_by', 'Unknown')}
+                </div>
+            </div>
+        </div>
+        """
+
         # Format results for display
         display_df = results_df.copy()
 
@@ -781,7 +806,8 @@ def on_drilldown_select(evt: gr.SelectData, df):
             leaderboard_screen: gr.update(visible=False),
             run_detail_screen: gr.update(visible=True),
             run_metadata_html: gr.update(value=metadata_html),
-            test_cases_table: gr.update(value=display_df)
+            test_cases_table: gr.update(value=display_df),
+            performance_charts: gr.update(value=perf_chart)
         }
 
     except Exception as e:
