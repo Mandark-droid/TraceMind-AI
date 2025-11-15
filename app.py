@@ -236,6 +236,13 @@ with gr.Blocks(title="TraceMind-AI") as app:
         outputs=[trends_plot]
     )
 
+    # Load drilldown data on page load
+    app.load(
+        fn=load_drilldown,
+        inputs=[drilldown_agent_type, drilldown_provider],
+        outputs=[leaderboard_table]
+    )
+
     apply_filters_btn.click(
         fn=apply_filters,
         inputs=[model_filter, provider_filter, sort_by],
