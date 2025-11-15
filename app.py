@@ -106,6 +106,37 @@ def generate_card(top_n):
     return html
 
 
+def generate_insights():
+    """Generate AI insights summary"""
+    df = data_loader.load_leaderboard()
+
+    top_model = df.loc[df['success_rate'].idxmax()]
+    most_cost_effective = df.loc[(df['success_rate'] / (df['total_cost_usd'] + 0.0001)).idxmax()]
+    fastest = df.loc[df['avg_duration_ms'].idxmin()]
+
+    insights = f"""
+## 📊 Leaderboard Summary
+
+**Total Runs:** {len(df)}
+
+**Top Performers:**
+- 🥇 **Best Accuracy:** {top_model['model']} ({top_model['success_rate']:.1f}%)
+- 💰 **Most Cost-Effective:** {most_cost_effective['model']} ({most_cost_effective['success_rate']:.1f}% @ ${most_cost_effective['total_cost_usd']:.4f})
+- ⚡ **Fastest:** {fastest['model']} ({fastest['avg_duration_ms']:.0f}ms avg)
+
+**Key Trends:**
+- Average Success Rate: {df['success_rate'].mean():.1f}%
+- Average Cost: ${df['total_cost_usd'].mean():.4f}
+- Average Duration: {df['avg_duration_ms'].mean():.0f}ms
+
+---
+
+*Note: AI-powered insights will be available via MCP integration in the full version.*
+    """
+
+    return insights
+
+
 # Build Gradio app
 with gr.Blocks(title="TraceMind-AI") as app:
     gr.Markdown("# 🧠 TraceMind-AI")
@@ -177,6 +208,10 @@ with gr.Blocks(title="TraceMind-AI") as app:
                 generate_card_btn = gr.Button("🎨 Generate Card")
                 card_preview = gr.HTML()
 
+            with gr.TabItem("🤖 AI Insights"):
+                regenerate_btn = gr.Button("🔄 Regenerate")
+                mcp_insights = gr.Markdown("*Loading insights...*")
+
         # Hidden textbox for row selection (JavaScript bridge)
         selected_row_index = gr.Textbox(visible=False, elem_id="selected_row_index")
 
@@ -219,6 +254,16 @@ with gr.Blocks(title="TraceMind-AI") as app:
         fn=generate_card,
         inputs=[top_n_slider],
         outputs=[card_preview]
+    )
+
+    app.load(
+        fn=generate_insights,
+        outputs=[mcp_insights]
+    )
+
+    regenerate_btn.click(
+        fn=generate_insights,
+        outputs=[mcp_insights]
     )
 
 
