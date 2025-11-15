@@ -168,6 +168,26 @@ def generate_insights():
 # Build Gradio app
 with gr.Blocks(title="TraceMind-AI") as app:
 
+    # Top Banner
+    gr.HTML("""
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 25px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                text-align: center;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h1 style="color: white !important; margin: 0; font-size: 2.5em; font-weight: bold;">
+            🧠 TraceMind
+        </h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 1.2em;">
+            Agent Evaluation Platform
+        </p>
+        <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0; font-size: 0.9em;">
+            Powered by Gradio 6 🚀 | HuggingFace Jobs | MCP Integration
+        </p>
+    </div>
+    """)
+
     # Sidebar Navigation
     with gr.Sidebar():
         gr.Markdown("## 🧠 TraceMind")
