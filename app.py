@@ -4,6 +4,7 @@ Enterprise-grade AI agent evaluation with MCP integration
 """
 
 import os
+import pandas as pd
 import gradio as gr
 from dotenv import load_dotenv
 
@@ -66,16 +67,25 @@ def load_drilldown(agent_type, provider):
     """Load drilldown data with filters"""
     df = data_loader.load_leaderboard()
 
-    if agent_type != "All":
+    if agent_type != "All" and 'agent_type' in df.columns:
         df = df[df['agent_type'] == agent_type]
-    if provider != "All":
+    if provider != "All" and 'provider' in df.columns:
         df = df[df['provider'] == provider]
 
-    # Format for dataframe
-    display_df = df[[
+    # Select only columns that exist
+    desired_columns = [
         'run_id', 'model', 'agent_type', 'provider',
         'success_rate', 'total_tests', 'avg_duration_ms', 'total_cost_usd'
-    ]].copy()
+    ]
+
+    # Filter to only existing columns
+    available_columns = [col for col in desired_columns if col in df.columns]
+
+    if not available_columns:
+        # If no desired columns exist, return empty dataframe
+        return pd.DataFrame()
+
+    display_df = df[available_columns].copy()
 
     return display_df
 
