@@ -1,9 +1,9 @@
 # Gradio for UI
-gradio[mcp]==5.49.1
+gradio>=5.0.0
 
 # HuggingFace for dataset loading
 datasets>=2.14.0
-huggingface-hub>=0.20.0
+huggingface-hub>=0.26.0
 
 # Data processing
 pandas>=2.0.0
@@ -16,3 +16,5 @@ requests>=2.31.0
 
 # Optional: For enhanced visualizations
 plotly>=5.18.0
+matplotlib>=3.8.0
+hf_xet
