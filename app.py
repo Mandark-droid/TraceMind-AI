@@ -1,247 +1,117 @@
 """
 TraceMind-AI - Agent Evaluation Platform
-MCP Client consuming TraceMind-mcp-server for intelligent analysis
+Enterprise-grade AI agent evaluation with MCP integration
 """
 
 import os
 import gradio as gr
 from dotenv import load_dotenv
-import pandas as pd
 
 # Load environment variables
 load_dotenv()
 
-# Import utilities
-from utils.auth import is_authenticated, get_user_info, create_login_button, create_user_info_display, DEV_MODE
-from utils.navigation import Navigator, Screen
+# Import data loader and components
 from data_loader import create_data_loader_from_env
-from mcp_client.sync_wrapper import get_sync_mcp_client
-from screens.leaderboard import prepare_leaderboard_data, get_run_id_from_selection
+from components.leaderboard_table import generate_leaderboard_html
 
-# Initialize
+# Initialize data loader
 data_loader = create_data_loader_from_env()
-navigator = Navigator()
-mcp_client = get_sync_mcp_client()
 
 # Global state
-current_selected_run = None
-leaderboard_df_cache = None  # Cache full leaderboard with run_id column
+leaderboard_df_cache = None
 
 
-def load_leaderboard_view():
-    """Load and display the leaderboard with MCP-powered insights"""
+def load_leaderboard():
+    """Load initial leaderboard data"""
     global leaderboard_df_cache
 
-    # OAuth disabled for now
-    # if not is_authenticated(token, profile):
-    #     return "Please log in to view the leaderboard", ""
+    df = data_loader.load_leaderboard()
+    leaderboard_df_cache = df.copy()
 
-    try:
-        # Load real data from HuggingFace
-        leaderboard_df = data_loader.load_leaderboard()
+    html = generate_leaderboard_html(df)
 
-        if leaderboard_df.empty:
-            return "No evaluation runs found in the leaderboard", ""
+    # Get filter choices
+    models = ["All Models"] + sorted(df['model'].unique().tolist())
 
-        # Cache the full dataframe (with run_id) for navigation
-        leaderboard_df_cache = leaderboard_df.copy()
-
-        # Prepare dataframe for display (formatted, sorted)
-        display_df = prepare_leaderboard_data(leaderboard_df)
-
-        # Get MCP-powered insights
-        try:
-            insights = mcp_client.analyze_leaderboard(
-                metric_focus="overall",
-                time_range="all_time",
-                top_n=5,
-                hf_token=os.getenv('HF_TOKEN'),
-                gemini_api_key=os.getenv('GEMINI_API_KEY')
-            )
-        except Exception as e:
-            insights = f"⚠️ MCP analysis unavailable: {str(e)}\n\n(Server may need initialization)"
-
-        return display_df, insights
-
-    except Exception as e:
-        return f"Error loading leaderboard: {e}", ""
+    return html, gr.update(choices=models)
 
 
-def estimate_evaluation_cost(model, agent_type, num_tests):
-    """Estimate cost for a new evaluation using MCP server"""
-    try:
-        cost_estimate = mcp_client.estimate_cost(
-            model=model,
-            agent_type=agent_type,
-            num_tests=int(num_tests),
-            hf_token=os.getenv('HF_TOKEN'),
-            gemini_api_key=os.getenv('GEMINI_API_KEY')
-        )
-        return cost_estimate
-    except Exception as e:
-        return f"❌ Error estimating cost: {str(e)}"
+def apply_filters(model, provider, sort_by_col):
+    """Apply filters and sorting to leaderboard"""
+    global leaderboard_df_cache
+
+    df = leaderboard_df_cache.copy() if leaderboard_df_cache is not None else data_loader.load_leaderboard()
+
+    # Apply filters
+    if model != "All Models":
+        df = df[df['model'] == model]
+    if provider != "All":
+        df = df[df['provider'] == provider]
+
+    # Sort
+    df = df.sort_values(by=sort_by_col, ascending=False)
+
+    html = generate_leaderboard_html(df, sort_by_col)
+    return html
 
 
-def build_ui():
-    """Build the Gradio UI"""
+# Build Gradio app
+with gr.Blocks(title="TraceMind-AI") as app:
+    gr.Markdown("# 🧠 TraceMind-AI")
 
-    with gr.Blocks(title="TraceMind-AI") as demo:
-        # Header
-        gr.Markdown("""
-        # 🔍 TraceMind-AI
-        ### Agent Evaluation Platform with MCP-Powered Intelligence
+    # Navigation (placeholder)
+    with gr.Row():
+        nav_title = gr.Markdown("## 🏆 Agent Evaluation Leaderboard")
 
-        **Powered by:**
-        - 📊 Real data from HuggingFace datasets
-        - 🤖 MCP Server for AI-powered insights ([TraceMind-mcp-server](https://huggingface.co/spaces/kshitijthakkar/TraceMind-mcp-server))
-        - 🧠 Google Gemini 2.5 Flash for analysis
-        """)
-
-        # # OAuth Authentication (disabled for now)
-        # with gr.Row():
-        #     with gr.Column(scale=2):
-        #         user_display = gr.HTML(create_user_info_display(None))
-        #     with gr.Column(scale=1):
-        #         login_btn = create_login_button()
-
-        # Main content (always visible - OAuth disabled)
-        with gr.Column(visible=True) as main_content:
-            with gr.Tabs() as tabs:
-                # Tab 1: Leaderboard
-                with gr.Tab("📊 Leaderboard"):
-                    gr.Markdown("### Agent Evaluation Leaderboard")
-                    gr.Markdown("Real-time data from `kshitijthakkar/smoltrace-leaderboard`")
-
-                    load_leaderboard_btn = gr.Button("🔄 Load Leaderboard", variant="primary")
-
-                    with gr.Row():
-                        with gr.Column(scale=2):
-                            leaderboard_table = gr.Dataframe(
-                                headers=["Model", "Agent Type", "Success Rate %", "Total Tests", "Avg Duration (ms)", "Cost ($)", "CO2 (g)"],
-                                label="Evaluation Runs",
-                                interactive=False
-                            )
-                        with gr.Column(scale=1):
-                            leaderboard_insights = gr.Markdown("**MCP Analysis:**\n\nClick 'Load Leaderboard' to see AI-powered insights")
-
-                # Tab 2: Cost Estimator
-                with gr.Tab("💰 Cost Estimator"):
-                    gr.Markdown("### Estimate Evaluation Costs")
-                    gr.Markdown("Uses MCP server to calculate costs for different models and configurations")
-
-                    with gr.Row():
-                        model_input = gr.Textbox(
-                            label="Model",
-                            placeholder="openai/gpt-4 or meta-llama/Llama-3.1-8B",
-                            value="openai/gpt-4"
-                        )
-                        agent_type_input = gr.Dropdown(
-                            ["tool", "code", "both"],
-                            label="Agent Type",
-                            value="both"
-                        )
-                        num_tests_input = gr.Number(
-                            label="Number of Tests",
-                            value=100
-                        )
-
-                    estimate_btn = gr.Button("💵 Estimate Cost", variant="primary")
-                    cost_output = gr.Markdown("**Cost Estimate:**\n\nEnter details and click 'Estimate Cost'")
-
-                # Tab 3: MCP Server Status
-                with gr.Tab("🔧 MCP Status"):
-                    gr.Markdown("### TraceMind MCP Server Connection")
-
-                    mcp_url_display = gr.Textbox(
-                        label="MCP Server URL",
-                        value=os.getenv('MCP_SERVER_URL', 'https://kshitijthakkar-tracemind-mcp-server.hf.space/gradio_api/mcp/'),
-                        interactive=True,
-                        placeholder="Enter MCP server URL"
+    # Screen 1: Main Leaderboard
+    with gr.Column(visible=True) as leaderboard_screen:
+        with gr.Tabs():
+            with gr.TabItem("🏆 Leaderboard"):
+                # Filters
+                with gr.Row():
+                    model_filter = gr.Dropdown(
+                        choices=["All Models"],
+                        value="All Models",
+                        label="Filter by Model"
+                    )
+                    provider_filter = gr.Dropdown(
+                        choices=["All", "litellm", "transformers"],
+                        value="All",
+                        label="Provider"
+                    )
+                    sort_by = gr.Dropdown(
+                        choices=["success_rate", "total_cost_usd", "avg_duration_ms"],
+                        value="success_rate",
+                        label="Sort By"
                     )
 
-                    test_mcp_btn = gr.Button("🧪 Test MCP Connection", variant="secondary")
-                    mcp_status = gr.Markdown("**Status:** Not tested yet")
+                apply_filters_btn = gr.Button("🔍 Apply Filters")
 
-        # Event handlers (OAuth disabled)
-        # def handle_login(token, profile):
-        #     user = get_user_info(token, profile)
-        #     return create_user_info_display(user), gr.update(visible=True)
-        #
-        # login_btn.click(
-        #     fn=handle_login,
-        #     inputs=[login_btn, login_btn],  # Gradio provides token/profile automatically
-        #     outputs=[user_display, main_content]
-        # )
+                # HTML table
+                leaderboard_by_model = gr.HTML()
 
-        load_leaderboard_btn.click(
-            fn=load_leaderboard_view,
-            inputs=[],
-            outputs=[leaderboard_table, leaderboard_insights]
-        )
+        # Hidden textbox for row selection (JavaScript bridge)
+        selected_row_index = gr.Textbox(visible=False, elem_id="selected_row_index")
 
-        estimate_btn.click(
-            fn=estimate_evaluation_cost,
-            inputs=[model_input, agent_type_input, num_tests_input],
-            outputs=[cost_output]
-        )
+    # Event handlers
+    app.load(
+        fn=load_leaderboard,
+        outputs=[leaderboard_by_model, model_filter]
+    )
 
-        def test_mcp_connection(mcp_url):
-            """Test MCP server connection"""
-            print(f"[DEBUG] Testing connection to: {mcp_url}")
-
-            if not mcp_url or not mcp_url.strip():
-                return "❌ **Error**\n\nPlease enter a valid URL"
-
-            try:
-                import requests
-
-                print(f"[DEBUG] Making HTTP GET request...")
-                # Test with SSE headers
-                headers = {
-                    'Accept': 'text/event-stream',
-                    'Cache-Control': 'no-cache'
-                }
-                response = requests.get(mcp_url, headers=headers, timeout=5, stream=True)
-                print(f"[DEBUG] Response status: {response.status_code}")
-
-                if response.status_code == 200:
-                    response.close()
-                    return f"✅ **MCP Server Online!**\n\nServer at: `{mcp_url}`\n\nStatus: {response.status_code} OK\n\nThe MCP server is accessible and ready to use."
-                elif response.status_code == 406:
-                    # 406 Not Acceptable - server is online but rejecting the request type (expected for MCP endpoints)
-                    return f"✅ **MCP Server Online!**\n\nServer at: `{mcp_url}`\n\nStatus: 406 (Not Acceptable)\n\n**This is expected behavior** - MCP servers reject simple HTTP requests but accept SSE connections from MCP clients.\n\nThe server is working correctly!"
-                elif response.status_code == 404:
-                    return f"❌ **Endpoint Not Found**\n\nURL: `{mcp_url}`\n\nStatus: 404\n\nThe MCP endpoint doesn't exist at this URL. Check the path is correct."
-                else:
-                    return f"⚠️ **Server Responded**\n\nURL: `{mcp_url}`\n\nStatus: {response.status_code}\n\nServer is online but returned unexpected status."
-            except requests.exceptions.Timeout:
-                print(f"[DEBUG] Timeout error")
-                # Timeout on SSE endpoint might mean it's waiting for connection - could be OK
-                return f"⚠️ **Connection Timeout**\n\nURL: `{mcp_url}`\n\nThe server may be waiting for an SSE connection (streaming). This could mean:\n- ✅ Server is online but requires proper MCP client\n- ❌ Server is slow or overloaded\n\nTry using the MCP tools in the other tabs to test actual functionality."
-            except requests.exceptions.ConnectionError as e:
-                print(f"[DEBUG] Connection error: {e}")
-                return f"❌ **Connection Failed**\n\nURL: `{mcp_url}`\n\nCannot reach the server. Check:\n- URL is correct\n- Server is running\n- Network/firewall not blocking"
-            except Exception as e:
-                print(f"[DEBUG] Unexpected error: {e}")
-                return f"❌ **Error**\n\nURL: `{mcp_url}`\n\nError: {str(e)}"
-
-        test_mcp_btn.click(
-            fn=test_mcp_connection,
-            inputs=[mcp_url_display],
-            outputs=[mcp_status]
-        )
-
-    return demo
+    apply_filters_btn.click(
+        fn=apply_filters,
+        inputs=[model_filter, provider_filter, sort_by],
+        outputs=[leaderboard_by_model]
+    )
 
 
 if __name__ == "__main__":
     print("🚀 Starting TraceMind-AI...")
-    print(f"📊 Leaderboard: {os.getenv('LEADERBOARD_REPO', 'kshitijthakkar/smoltrace-leaderboard')}")
-    print(f"🤖 MCP Server: {os.getenv('MCP_SERVER_URL', 'https://kshitijthakkar-tracemind-mcp-server.hf.space/gradio_api/mcp/')}")
-    print(f"🛠️  Dev Mode: {DEV_MODE}")
+    print(f"📊 Data Source: {os.getenv('DATA_SOURCE', 'both')}")
+    print(f"📁 JSON Path: {os.getenv('JSON_DATA_PATH', './sample_data')}")
 
-    demo = build_ui()
-    demo.launch(
+    app.launch(
         server_name="0.0.0.0",
         server_port=7860,
         share=False
