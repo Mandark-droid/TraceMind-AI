@@ -16,6 +16,7 @@ from utils.auth import is_authenticated, get_user_info, create_login_button, cre
 from utils.navigation import Navigator, Screen
 from data_loader import create_data_loader_from_env
 from mcp_client.sync_wrapper import get_sync_mcp_client
+from screens.leaderboard import prepare_leaderboard_data, get_run_id_from_selection
 
 # Initialize
 data_loader = create_data_loader_from_env()
@@ -24,10 +25,13 @@ mcp_client = get_sync_mcp_client()
 
 # Global state
 current_selected_run = None
+leaderboard_df_cache = None  # Cache full leaderboard with run_id column
 
 
 def load_leaderboard_view():
     """Load and display the leaderboard with MCP-powered insights"""
+    global leaderboard_df_cache
+
     # OAuth disabled for now
     # if not is_authenticated(token, profile):
     #     return "Please log in to view the leaderboard", ""
@@ -39,17 +43,11 @@ def load_leaderboard_view():
         if leaderboard_df.empty:
             return "No evaluation runs found in the leaderboard", ""
 
-        # Format dataframe for display
-        display_df = leaderboard_df[[
-            'model', 'agent_type', 'success_rate', 'total_tests',
-            'avg_duration_ms', 'total_cost_usd', 'co2_emissions_g'
-        ]].copy()
+        # Cache the full dataframe (with run_id) for navigation
+        leaderboard_df_cache = leaderboard_df.copy()
 
-        # Round numeric columns
-        display_df['success_rate'] = display_df['success_rate'].round(1)
-        display_df['avg_duration_ms'] = display_df['avg_duration_ms'].round(0)
-        display_df['total_cost_usd'] = display_df['total_cost_usd'].round(4)
-        display_df['co2_emissions_g'] = display_df['co2_emissions_g'].round(2)
+        # Prepare dataframe for display (formatted, sorted)
+        display_df = prepare_leaderboard_data(leaderboard_df)
 
         # Get MCP-powered insights
         try:
