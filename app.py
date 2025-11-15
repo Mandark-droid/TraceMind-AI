@@ -304,6 +304,27 @@ with gr.Blocks(title="TraceMind-AI") as app:
         outputs=[leaderboard_table]
     )
 
+    # Sidebar filter handlers
+    def apply_sidebar_model_filter(model, sort_by_col):
+        """Apply sidebar model filter to leaderboard"""
+        return apply_filters(model, "All", sort_by_col), gr.update(value=model)
+
+    sidebar_model_filter.change(
+        fn=apply_sidebar_model_filter,
+        inputs=[sidebar_model_filter, sort_by],
+        outputs=[leaderboard_by_model, model_filter]
+    )
+
+    def apply_sidebar_agent_type_filter(agent_type):
+        """Apply sidebar agent type filter to drilldown"""
+        return load_drilldown(agent_type, "All"), gr.update(value=agent_type)
+
+    sidebar_agent_type_filter.change(
+        fn=apply_sidebar_agent_type_filter,
+        inputs=[sidebar_agent_type_filter],
+        outputs=[leaderboard_table, drilldown_agent_type]
+    )
+
     viz_type.change(
         fn=update_analytics,
         inputs=[viz_type],
