@@ -21,7 +21,338 @@ from components.analytics_charts import (
     create_cost_efficiency_scatter
 )
 from components.report_cards import generate_leaderboard_summary_card
+from screens.trace_detail import (
+    create_span_visualization,
+    create_span_table,
+    create_gpu_metrics_dashboard,
+    create_gpu_summary_cards
+)
 from utils.navigation import Navigator, Screen
+
+
+
+# Trace Detail handlers and helpers
+
+def create_span_details_table(spans):
+    """
+    Create table view of span details
+
+    Args:
+        spans: List of span dictionaries
+
+    Returns:
+        DataFrame with span details
+    """
+    try:
+        if not spans:
+            return pd.DataFrame(columns=["Span Name", "Kind", "Duration (ms)", "Tokens", "Cost (USD)", "Status"])
+
+        rows = []
+        for span in spans:
+            name = span.get('name', 'Unknown')
+            kind = span.get('kind', 'INTERNAL')
+
+            # Get attributes
+            attributes = span.get('attributes', {})
+            if isinstance(attributes, dict) and 'openinference.span.kind' in attributes:
+                kind = attributes.get('openinference.span.kind', kind)
+
+            # Calculate duration
+            start = span.get('startTime') or span.get('startTimeUnixNano', 0)
+            end = span.get('endTime') or span.get('endTimeUnixNano', 0)
+            duration = (end - start) / 1000000 if start and end else 0  # Convert to ms
+
+            status = span.get('status', {}).get('code', 'OK') if isinstance(span.get('status'), dict) else 'OK'
+
+            # Extract tokens and cost information
+            tokens_str = "-"
+            cost_str = "-"
+
+            if isinstance(attributes, dict):
+                # Check for token usage
+                prompt_tokens = attributes.get('gen_ai.usage.prompt_tokens') or attributes.get('llm.token_count.prompt')
+                completion_tokens = attributes.get('gen_ai.usage.completion_tokens') or attributes.get('llm.token_count.completion')
+                total_tokens = attributes.get('llm.usage.total_tokens')
+
+                # Build tokens string
+                if prompt_tokens is not None and completion_tokens is not None:
+                    total = int(prompt_tokens) + int(completion_tokens)
+                    tokens_str = f"{total} ({int(prompt_tokens)}+{int(completion_tokens)})"
+                elif total_tokens is not None:
+                    tokens_str = str(int(total_tokens))
+
+                # Check for cost
+                cost = attributes.get('gen_ai.usage.cost.total') or attributes.get('llm.usage.cost')
+                if cost is not None:
+                    cost_str = f"${float(cost):.6f}"
+
+            rows.append({
+                "Span Name": name,
+                "Kind": kind,
+                "Duration (ms)": round(duration, 2),
+                "Tokens": tokens_str,
+                "Cost (USD)": cost_str,
+                "Status": status
+            })
+
+        return pd.DataFrame(rows)
+
+    except Exception as e:
+        print(f"[ERROR] create_span_details_table: {e}")
+        import traceback
+        traceback.print_exc()
+        return pd.DataFrame(columns=["Span Name", "Kind", "Duration (ms)", "Tokens", "Cost (USD)", "Status"])
+
+
+def create_trace_metadata_html(trace_data: dict) -> str:
+    """Create HTML for trace metadata display"""
+    trace_id = trace_data.get('trace_id', 'Unknown')
+    spans = trace_data.get('spans', [])
+    if hasattr(spans, 'tolist'):
+        spans = spans.tolist()
+    elif not isinstance(spans, list):
+        spans = list(spans) if spans is not None else []
+
+    metadata_html = f"""
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0;">Trace Information</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <strong>Trace ID:</strong> {trace_id}<br>
+                <strong>Total Spans:</strong> {len(spans)}
+            </div>
+        </div>
+    </div>
+    """
+    return metadata_html
+
+
+def on_test_case_select(evt: gr.SelectData, df):
+    """Handle test case selection in run detail - navigate to trace detail"""
+    global current_selected_run, current_selected_trace
+
+    print(f"[DEBUG] on_test_case_select called with index: {evt.index}")
+
+    # Check if we have a selected run
+    if current_selected_run is None:
+        print("[ERROR] No run selected - current_selected_run is None")
+        gr.Warning("Please select a run from the leaderboard first")
+        return {}
+
+    try:
+        # Get selected test case
+        selected_idx = evt.index[0]
+        if df is None or df.empty or selected_idx >= len(df):
+            gr.Warning("Invalid test case selection")
+            return {}
+
+        test_case = df.iloc[selected_idx].to_dict()
+        trace_id = test_case.get('trace_id')
+
+        print(f"[DEBUG] Selected test case: {test_case.get('task_id', 'Unknown')} (trace_id: {trace_id})")
+
+        # Load trace data
+        traces_dataset = current_selected_run.get('traces_dataset')
+        if not traces_dataset:
+            gr.Warning("No traces dataset found in current run")
+            return {}
+
+        trace_data = data_loader.get_trace_by_id(traces_dataset, trace_id)
+
+        if not trace_data:
+            gr.Warning(f"Trace not found: {trace_id}")
+            return {}
+
+        current_selected_trace = trace_data
+
+        # Get spans and ensure it's a list
+        spans = trace_data.get('spans', [])
+        if hasattr(spans, 'tolist'):
+            spans = spans.tolist()
+        elif not isinstance(spans, list):
+            spans = list(spans) if spans is not None else []
+
+        print(f"[DEBUG] Loaded trace with {len(spans)} spans")
+
+        # Create visualizations
+        span_viz_plot = create_span_visualization(spans, trace_id)
+        span_details_json = create_span_table(spans).value
+
+        # Create thought graph
+        from components.thought_graph import create_thought_graph as create_network_graph
+        thought_graph_plot = create_network_graph(spans, trace_id)
+
+        # Create span details table
+        span_table_df = create_span_details_table(spans)
+
+        # Load GPU metrics (if available)
+        gpu_summary_html = "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
+        gpu_plot = None
+        gpu_json_data = {}
+
+        try:
+            if 'metrics_dataset' in current_selected_run and current_selected_run['metrics_dataset']:
+                metrics_dataset = current_selected_run['metrics_dataset']
+                gpu_metrics_data = data_loader.load_metrics(metrics_dataset)
+
+                if gpu_metrics_data is not None and not gpu_metrics_data.empty:
+                    gpu_plot = create_gpu_metrics_dashboard(gpu_metrics_data)
+                    gpu_summary_html = create_gpu_summary_cards(gpu_metrics_data)
+                    gpu_json_data = gpu_metrics_data.to_dict('records')
+        except Exception as e:
+            print(f"[WARNING] Could not load GPU metrics: {e}")
+
+        # Return dictionary with visibility updates and data
+        return {
+            run_detail_screen: gr.update(visible=False),
+            trace_detail_screen: gr.update(visible=True),
+            trace_title: gr.update(value=f"# 🔍 Trace Detail: {trace_id}"),
+            trace_metadata_html: gr.update(value=create_trace_metadata_html(trace_data)),
+            trace_thought_graph: gr.update(value=thought_graph_plot),
+            span_visualization: gr.update(value=span_viz_plot),
+            span_details_table: gr.update(value=span_table_df),
+            span_details_json: gr.update(value=span_details_json),
+            gpu_summary_cards_html: gr.update(value=gpu_summary_html),
+            gpu_metrics_plot: gr.update(value=gpu_plot),
+            gpu_metrics_json: gr.update(value=gpu_json_data)
+        }
+
+    except Exception as e:
+        print(f"[ERROR] on_test_case_select failed: {e}")
+        import traceback
+        traceback.print_exc()
+        gr.Warning(f"Error loading trace: {e}")
+        return {}
+
+
+
+def create_performance_charts(results_df):
+    """
+    Create performance analysis charts for the Performance tab
+
+    Args:
+        results_df: DataFrame with test results
+
+    Returns:
+        Plotly figure with performance metrics
+    """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    try:
+        if results_df.empty:
+            fig = go.Figure()
+            fig.add_annotation(text="No performance data available", showarrow=False)
+            return fig
+
+        # Create 2x2 subplots
+        fig = make_subplots(
+            rows=2, cols=2,
+            subplot_titles=(
+                "Response Time Distribution",
+                "Token Usage per Test",
+                "Cost per Test",
+                "Success vs Failure"
+            ),
+            specs=[[{"type": "histogram"}, {"type": "bar"}],
+                   [{"type": "bar"}, {"type": "pie"}]]
+        )
+
+        # 1. Response Time Distribution (Histogram)
+        if 'execution_time_ms' in results_df.columns:
+            fig.add_trace(
+                go.Histogram(
+                    x=results_df['execution_time_ms'],
+                    nbinsx=20,
+                    marker_color='#3498DB',
+                    name='Response Time',
+                    showlegend=False
+                ),
+                row=1, col=1
+            )
+            fig.update_xaxes(title_text="Time (ms)", row=1, col=1)
+            fig.update_yaxes(title_text="Count", row=1, col=1)
+
+        # 2. Token Usage per Test (Bar)
+        if 'total_tokens' in results_df.columns:
+            test_indices = list(range(len(results_df)))
+            fig.add_trace(
+                go.Bar(
+                    x=test_indices,
+                    y=results_df['total_tokens'],
+                    marker_color='#9B59B6',
+                    name='Tokens',
+                    showlegend=False
+                ),
+                row=1, col=2
+            )
+            fig.update_xaxes(title_text="Test Index", row=1, col=2)
+            fig.update_yaxes(title_text="Tokens", row=1, col=2)
+
+        # 3. Cost per Test (Bar)
+        if 'cost_usd' in results_df.columns:
+            test_indices = list(range(len(results_df)))
+            fig.add_trace(
+                go.Bar(
+                    x=test_indices,
+                    y=results_df['cost_usd'],
+                    marker_color='#E67E22',
+                    name='Cost',
+                    showlegend=False
+                ),
+                row=2, col=1
+            )
+            fig.update_xaxes(title_text="Test Index", row=2, col=1)
+            fig.update_yaxes(title_text="Cost (USD)", row=2, col=1)
+
+        # 4. Success vs Failure (Pie)
+        if 'success' in results_df.columns:
+            # Convert to boolean if needed
+            success_series = results_df['success']
+            if success_series.dtype == object:
+                success_series = success_series == "✅"
+
+            success_count = int(success_series.sum())
+            failure_count = len(results_df) - success_count
+
+            fig.add_trace(
+                go.Pie(
+                    labels=['Success', 'Failure'],
+                    values=[success_count, failure_count],
+                    marker_colors=['#2ECC71', '#E74C3C'],
+                    showlegend=True
+                ),
+                row=2, col=2
+            )
+
+        # Update layout
+        fig.update_layout(
+            height=700,
+            showlegend=False,
+            title_text="Performance Analysis Dashboard",
+            title_x=0.5
+        )
+
+        return fig
+
+    except Exception as e:
+        print(f"[ERROR] create_performance_charts: {e}")
+        import traceback
+        traceback.print_exc()
+        fig = go.Figure()
+        fig.add_annotation(text=f"Error creating charts: {str(e)}", showarrow=False)
+        return fig
+
+
+
+def go_back_to_run_detail():
+    """Navigate from trace detail back to run detail"""
+    return {
+        run_detail_screen: gr.update(visible=True),
+        trace_detail_screen: gr.update(visible=False)
+    }
+
 
 # Initialize data loader
 data_loader = create_data_loader_from_env()
@@ -265,30 +596,8 @@ def on_html_table_row_click(row_index_str):
 
         results_df = data_loader.load_results(results_dataset)
 
-        # Create metadata HTML
-        metadata_html = f"""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;">
-            <h2 style="margin: 0 0 10px 0;">📊 Run Detail: {run_data.get('model', 'Unknown')}</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 15px;">
-                <div>
-                    <strong>Agent Type:</strong> {run_data.get('agent_type', 'N/A')}<br>
-                    <strong>Provider:</strong> {run_data.get('provider', 'N/A')}<br>
-                    <strong>Success Rate:</strong> {run_data.get('success_rate', 0):.1f}%
-                </div>
-                <div>
-                    <strong>Total Tests:</strong> {run_data.get('total_tests', 0)}<br>
-                    <strong>Successful:</strong> {run_data.get('successful_tests', 0)}<br>
-                    <strong>Failed:</strong> {run_data.get('failed_tests', 0)}
-                </div>
-                <div>
-                    <strong>Total Cost:</strong> ${run_data.get('total_cost_usd', 0):.4f}<br>
-                    <strong>Avg Duration:</strong> {run_data.get('avg_duration_ms', 0):.0f}ms<br>
-                    <strong>Submitted By:</strong> {run_data.get('submitted_by', 'Unknown')}
-                </div>
-            </div>
-        </div>
-        """
+        # Generate performance chart
+        perf_chart = create_performance_charts(results_df)
 
         # Format results for display
         display_df = results_df.copy()
@@ -358,30 +667,8 @@ def load_run_detail(run_id):
 
         results_df = data_loader.load_results(results_dataset)
 
-        # Create metadata HTML
-        metadata_html = f"""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;">
-            <h2 style="margin: 0 0 10px 0;">📊 Run Detail: {run_data.get('model', 'Unknown')}</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 15px;">
-                <div>
-                    <strong>Agent Type:</strong> {run_data.get('agent_type', 'N/A')}<br>
-                    <strong>Provider:</strong> {run_data.get('provider', 'N/A')}<br>
-                    <strong>Success Rate:</strong> {run_data.get('success_rate', 0):.1f}%
-                </div>
-                <div>
-                    <strong>Total Tests:</strong> {run_data.get('total_tests', 0)}<br>
-                    <strong>Successful:</strong> {run_data.get('successful_tests', 0)}<br>
-                    <strong>Failed:</strong> {run_data.get('failed_tests', 0)}
-                </div>
-                <div>
-                    <strong>Total Cost:</strong> ${run_data.get('total_cost_usd', 0):.4f}<br>
-                    <strong>Avg Duration:</strong> {run_data.get('avg_duration_ms', 0):.0f}ms<br>
-                    <strong>Submitted By:</strong> {run_data.get('submitted_by', 'Unknown')}
-                </div>
-            </div>
-        </div>
-        """
+        # Generate performance chart
+        perf_chart = create_performance_charts(results_df)
 
         # Format results for display
         display_df = results_df.copy()
@@ -458,30 +745,8 @@ def on_drilldown_select(evt: gr.SelectData, df):
 
         results_df = data_loader.load_results(results_dataset)
 
-        # Create metadata HTML
-        metadata_html = f"""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;">
-            <h2 style="margin: 0 0 10px 0;">📊 Run Detail: {run_data.get('model', 'Unknown')}</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 15px;">
-                <div>
-                    <strong>Agent Type:</strong> {run_data.get('agent_type', 'N/A')}<br>
-                    <strong>Provider:</strong> {run_data.get('provider', 'N/A')}<br>
-                    <strong>Success Rate:</strong> {run_data.get('success_rate', 0):.1f}%
-                </div>
-                <div>
-                    <strong>Total Tests:</strong> {run_data.get('total_tests', 0)}<br>
-                    <strong>Successful:</strong> {run_data.get('successful_tests', 0)}<br>
-                    <strong>Failed:</strong> {run_data.get('failed_tests', 0)}
-                </div>
-                <div>
-                    <strong>Total Cost:</strong> ${run_data.get('total_cost_usd', 0):.4f}<br>
-                    <strong>Avg Duration:</strong> {run_data.get('avg_duration_ms', 0):.0f}ms<br>
-                    <strong>Submitted By:</strong> {run_data.get('submitted_by', 'Unknown')}
-                </div>
-            </div>
-        </div>
-        """
+        # Generate performance chart
+        perf_chart = create_performance_charts(results_df)
 
         # Format results for display
         display_df = results_df.copy()
@@ -697,23 +962,95 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             # Hidden textbox for row selection (JavaScript bridge)
             selected_row_index = gr.Textbox(visible=False, elem_id="selected_row_index")
     
-        # Screen 3: Run Detail
+        # Screen 3: Run Detail (Enhanced with Tabs)
         with gr.Column(visible=False) as run_detail_screen:
             # Navigation
             with gr.Row():
                 back_to_leaderboard_btn = gr.Button("⬅️ Back to Leaderboard", variant="secondary", size="sm")
-    
-            # Run metadata display
-            run_metadata_html = gr.HTML()
-    
-            # Test cases table
-            gr.Markdown("## 📋 Test Cases")
-            test_cases_table = gr.Dataframe(
-                headers=["Task ID", "Status", "Tool", "Duration", "Tokens", "Cost", "Trace ID"],
-                interactive=False,
-                wrap=True
-            )
-    
+
+            run_detail_title = gr.Markdown("# 📊 Run Detail")
+
+            with gr.Tabs():
+                with gr.TabItem("📋 Overview"):
+                    gr.Markdown("*Run metadata and summary*")
+                    run_metadata_html = gr.HTML("")
+
+                with gr.TabItem("✅ Test Cases"):
+                    gr.Markdown("*Individual test case results*")
+                    test_cases_table = gr.Dataframe(
+                        headers=["Task ID", "Status", "Tool", "Duration", "Tokens", "Cost", "Trace ID"],
+                        interactive=False,
+                        wrap=True
+                    )
+                    gr.Markdown("*Click a test case to view detailed trace (including Thought Graph)*")
+
+                with gr.TabItem("⚡ Performance"):
+                    gr.Markdown("*Performance metrics and charts*")
+                    performance_charts = gr.Plot(label="Performance Analysis", show_label=False)
+
+        # Screen 4: Trace Detail with Sub-tabs
+        with gr.Column(visible=False) as trace_detail_screen:
+            with gr.Row():
+                back_to_run_detail_btn = gr.Button("⬅️ Back to Run Detail", variant="secondary", size="sm")
+
+            trace_title = gr.Markdown("# 🔍 Trace Detail")
+            trace_metadata_html = gr.HTML("")
+
+            with gr.Tabs():
+                with gr.TabItem("🧠 Thought Graph"):
+                    gr.Markdown("""
+                    ### Agent Reasoning Flow
+
+                    This interactive network graph shows **how your agent thinks** - the logical flow of reasoning steps,
+                    tool calls, and LLM interactions.
+
+                    **How to read it:**
+                    - 🟣 **Purple nodes** = LLM reasoning steps
+                    - 🟠 **Orange nodes** = Tool calls
+                    - 🔵 **Blue nodes** = Chains/Agents
+                    - **Arrows** = Flow from one step to the next
+                    - **Hover** = See tokens, costs, and timing details
+                    """)
+                    trace_thought_graph = gr.Plot(label="Thought Graph", show_label=False)
+
+                with gr.TabItem("📊 Waterfall"):
+                    gr.Markdown("*Interactive waterfall diagram showing span execution timeline*")
+                    gr.Markdown("*Hover over spans for details. Drag to zoom, double-click to reset.*")
+                    span_visualization = gr.Plot(label="Trace Waterfall", show_label=False)
+
+                with gr.TabItem("🖥️ GPU Metrics"):
+                    gr.Markdown("*Performance metrics for GPU-based models (not available for API models)*")
+                    gpu_summary_cards_html = gr.HTML(label="GPU Summary", show_label=False)
+
+                    with gr.Tabs():
+                        with gr.TabItem("📈 Time Series Dashboard"):
+                            gpu_metrics_plot = gr.Plot(label="GPU Metrics Over Time", show_label=False)
+
+                        with gr.TabItem("📋 Raw Metrics Data"):
+                            gpu_metrics_json = gr.JSON(label="GPU Metrics Data")
+
+                with gr.TabItem("📝 Span Details"):
+                    gr.Markdown("*Detailed span information with token and cost data*")
+                    span_details_table = gr.Dataframe(
+                        headers=["Span Name", "Kind", "Duration (ms)", "Tokens", "Cost (USD)", "Status"],
+                        interactive=False,
+                        wrap=True,
+                        label="Span Breakdown"
+                    )
+
+                with gr.TabItem("🔍 Raw Data"):
+                    gr.Markdown("*Raw OpenTelemetry trace data (JSON)*")
+                    span_details_json = gr.JSON()
+
+            with gr.Accordion("🤖 Ask About This Trace", open=False):
+                trace_question = gr.Textbox(
+                    label="Question",
+                    placeholder="e.g., Why was the tool called twice?",
+                    lines=2
+                )
+                trace_ask_btn = gr.Button("Ask", variant="primary")
+                trace_answer = gr.Markdown("*Ask a question to get AI-powered insights*")
+
         # Event handlers
         app.load(
         fn=load_leaderboard,
@@ -811,6 +1148,31 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         inputs=[],
         outputs=[leaderboard_screen, run_detail_screen]
         )
+
+        # Trace detail navigation
+        test_cases_table.select(
+            fn=on_test_case_select,
+            inputs=[test_cases_table],
+            outputs=[
+                run_detail_screen,
+                trace_detail_screen,
+                trace_title,
+                trace_metadata_html,
+                trace_thought_graph,
+                span_visualization,
+                span_details_table,
+                span_details_json,
+                gpu_summary_cards_html,
+                gpu_metrics_plot,
+                gpu_metrics_json
+            ]
+        )
+
+        back_to_run_detail_btn.click(
+            fn=go_back_to_run_detail,
+            outputs=[run_detail_screen, trace_detail_screen]
+        )
+
 
         # HTML table row click handler (JavaScript bridge via hidden textbox)
         selected_row_index.change(
