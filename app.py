@@ -188,21 +188,32 @@ def build_ui():
         )
 
         def test_mcp_connection(mcp_url):
-            import requests
+            """Test MCP server connection"""
+            print(f"[DEBUG] Testing connection to: {mcp_url}")
+
+            if not mcp_url or not mcp_url.strip():
+                return "❌ **Error**\n\nPlease enter a valid URL"
 
             try:
+                import requests
+
+                print(f"[DEBUG] Making HTTP GET request...")
                 # Simple HTTP test to see if the server is accessible
                 response = requests.get(mcp_url, timeout=10)
+                print(f"[DEBUG] Response status: {response.status_code}")
 
                 if response.status_code == 200:
                     return f"✅ **Server Accessible!**\n\nMCP server at:\n`{mcp_url}`\n\nStatus: {response.status_code} OK"
                 else:
                     return f"⚠️ **Server Responded**\n\nURL: `{mcp_url}`\n\nStatus: {response.status_code}\n\nNote: MCP server may require SSE connection"
             except requests.exceptions.Timeout:
+                print(f"[DEBUG] Timeout error")
                 return f"❌ **Connection Timeout**\n\nURL: `{mcp_url}`\n\nThe server took too long to respond (>10s)"
             except requests.exceptions.ConnectionError as e:
+                print(f"[DEBUG] Connection error: {e}")
                 return f"❌ **Connection Failed**\n\nURL: `{mcp_url}`\n\nCannot reach the server. Check:\n- URL is correct\n- Server is running\n- No firewall blocking"
             except Exception as e:
+                print(f"[DEBUG] Unexpected error: {e}")
                 return f"❌ **Error**\n\nURL: `{mcp_url}`\n\nError: {str(e)}"
 
         test_mcp_btn.click(
