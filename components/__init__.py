@@ -29,13 +29,14 @@ from .analytics_charts import (
     create_comparison_radar
 )
 
+from .report_cards import (
+    generate_leaderboard_summary_card,
+    generate_run_report_card,
+    download_card_as_png_js
+)
+
 # Additional components (to be added)
 # from .thought_graph import create_thought_graph
-# from .report_cards import (
-#     generate_leaderboard_summary_card,
-#     generate_run_report_card,
-#     download_card_as_png_js
-# )
 
 __all__ = [
     'get_rank_badge',
@@ -55,4 +56,7 @@ __all__ = [
     'create_speed_accuracy_scatter',
     'create_cost_efficiency_scatter',
     'create_comparison_radar',
+    'generate_leaderboard_summary_card',
+    'generate_run_report_card',
+    'download_card_as_png_js',
 ]

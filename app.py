@@ -19,6 +19,7 @@ from components.analytics_charts import (
     create_speed_accuracy_scatter,
     create_cost_efficiency_scatter
 )
+from components.report_cards import generate_leaderboard_summary_card
 
 # Initialize data loader
 data_loader = create_data_loader_from_env()
@@ -98,6 +99,13 @@ def update_analytics(viz_type):
         return create_cost_efficiency_scatter(df)
 
 
+def generate_card(top_n):
+    """Generate summary card HTML"""
+    df = data_loader.load_leaderboard()
+    html = generate_leaderboard_summary_card(df, top_n)
+    return html
+
+
 # Build Gradio app
 with gr.Blocks(title="TraceMind-AI") as app:
     gr.Markdown("# 🧠 TraceMind-AI")
@@ -164,6 +172,11 @@ with gr.Blocks(title="TraceMind-AI") as app:
                 )
                 analytics_chart = gr.Plot()
 
+            with gr.TabItem("📥 Summary Card"):
+                top_n_slider = gr.Slider(1, 5, 3, step=1, label="Top N Models")
+                generate_card_btn = gr.Button("🎨 Generate Card")
+                card_preview = gr.HTML()
+
         # Hidden textbox for row selection (JavaScript bridge)
         selected_row_index = gr.Textbox(visible=False, elem_id="selected_row_index")
 
@@ -200,6 +213,12 @@ with gr.Blocks(title="TraceMind-AI") as app:
         fn=update_analytics,
         inputs=[viz_type],
         outputs=[analytics_chart]
+    )
+
+    generate_card_btn.click(
+        fn=generate_card,
+        inputs=[top_n_slider],
+        outputs=[card_preview]
     )
 
 
