@@ -65,29 +65,38 @@ def apply_filters(model, provider, sort_by_col):
 
 def load_drilldown(agent_type, provider):
     """Load drilldown data with filters"""
-    df = data_loader.load_leaderboard()
+    try:
+        df = data_loader.load_leaderboard()
 
-    if agent_type != "All" and 'agent_type' in df.columns:
-        df = df[df['agent_type'] == agent_type]
-    if provider != "All" and 'provider' in df.columns:
-        df = df[df['provider'] == provider]
+        if df.empty:
+            return pd.DataFrame()
 
-    # Select only columns that exist
-    desired_columns = [
-        'run_id', 'model', 'agent_type', 'provider',
-        'success_rate', 'total_tests', 'avg_duration_ms', 'total_cost_usd'
-    ]
+        if agent_type != "All" and 'agent_type' in df.columns:
+            df = df[df['agent_type'] == agent_type]
+        if provider != "All" and 'provider' in df.columns:
+            df = df[df['provider'] == provider]
 
-    # Filter to only existing columns
-    available_columns = [col for col in desired_columns if col in df.columns]
+        # Select only columns that exist
+        desired_columns = [
+            'run_id', 'model', 'agent_type', 'provider',
+            'success_rate', 'total_tests', 'avg_duration_ms', 'total_cost_usd'
+        ]
 
-    if not available_columns:
-        # If no desired columns exist, return empty dataframe
+        # Filter to only existing columns
+        available_columns = [col for col in desired_columns if col in df.columns]
+
+        if not available_columns:
+            # If no desired columns exist, return empty dataframe
+            return pd.DataFrame()
+
+        display_df = df[available_columns].copy()
+
+        return display_df
+    except Exception as e:
+        print(f"[ERROR] load_drilldown: {e}")
+        import traceback
+        traceback.print_exc()
         return pd.DataFrame()
-
-    display_df = df[available_columns].copy()
-
-    return display_df
 
 
 def load_trends():
@@ -118,13 +127,17 @@ def generate_card(top_n):
 
 def generate_insights():
     """Generate AI insights summary"""
-    df = data_loader.load_leaderboard()
+    try:
+        df = data_loader.load_leaderboard()
 
-    top_model = df.loc[df['success_rate'].idxmax()]
-    most_cost_effective = df.loc[(df['success_rate'] / (df['total_cost_usd'] + 0.0001)).idxmax()]
-    fastest = df.loc[df['avg_duration_ms'].idxmin()]
+        if df.empty or 'success_rate' not in df.columns:
+            return "## 📊 Leaderboard Summary\n\nNo data available for insights."
 
-    insights = f"""
+        top_model = df.loc[df['success_rate'].idxmax()]
+        most_cost_effective = df.loc[(df['success_rate'] / (df['total_cost_usd'] + 0.0001)).idxmax()]
+        fastest = df.loc[df['avg_duration_ms'].idxmin()]
+
+        insights = f"""
 ## 📊 Leaderboard Summary
 
 **Total Runs:** {len(df)}
@@ -142,9 +155,14 @@ def generate_insights():
 ---
 
 *Note: AI-powered insights will be available via MCP integration in the full version.*
-    """
+        """
 
-    return insights
+        return insights
+    except Exception as e:
+        print(f"[ERROR] generate_insights: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"## 📊 Leaderboard Summary\n\nError generating insights: {str(e)}"
 
 
 # Build Gradio app
