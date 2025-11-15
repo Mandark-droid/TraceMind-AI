@@ -5,9 +5,8 @@ colorFrom: indigo
 colorTo: purple
 sdk: gradio
 sdk_version: 5.49.1
-
 app_file: app.py
-short_description: Enterprise-grade AI agent evaluation platform with MCP-powered intelligence and real-time leaderboards
+short_description: AI agent evaluation with MCP-powered intelligence
 pinned: false
 tags:
   - mcp-in-action-track-enterprise
