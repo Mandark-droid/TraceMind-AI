@@ -55,6 +55,24 @@ def apply_filters(model, provider, sort_by_col):
     return html
 
 
+def load_drilldown(agent_type, provider):
+    """Load drilldown data with filters"""
+    df = data_loader.load_leaderboard()
+
+    if agent_type != "All":
+        df = df[df['agent_type'] == agent_type]
+    if provider != "All":
+        df = df[df['provider'] == provider]
+
+    # Format for dataframe
+    display_df = df[[
+        'run_id', 'model', 'agent_type', 'provider',
+        'success_rate', 'total_tests', 'avg_duration_ms', 'total_cost_usd'
+    ]].copy()
+
+    return display_df
+
+
 # Build Gradio app
 with gr.Blocks(title="TraceMind-AI") as app:
     gr.Markdown("# 🧠 TraceMind-AI")
@@ -90,6 +108,26 @@ with gr.Blocks(title="TraceMind-AI") as app:
                 # HTML table
                 leaderboard_by_model = gr.HTML()
 
+            with gr.TabItem("📋 DrillDown"):
+                with gr.Row():
+                    drilldown_agent_type = gr.Radio(
+                        choices=["All", "tool", "code", "both"],
+                        value="All",
+                        label="Agent Type"
+                    )
+                    drilldown_provider = gr.Dropdown(
+                        choices=["All", "litellm", "transformers"],
+                        value="All",
+                        label="Provider"
+                    )
+
+                apply_drilldown_btn = gr.Button("🔍 Apply")
+
+                leaderboard_table = gr.Dataframe(
+                    headers=["Run ID", "Model", "Agent Type", "Provider", "Success Rate", "Tests", "Duration", "Cost"],
+                    interactive=False
+                )
+
         # Hidden textbox for row selection (JavaScript bridge)
         selected_row_index = gr.Textbox(visible=False, elem_id="selected_row_index")
 
@@ -103,6 +141,12 @@ with gr.Blocks(title="TraceMind-AI") as app:
         fn=apply_filters,
         inputs=[model_filter, provider_filter, sort_by],
         outputs=[leaderboard_by_model]
+    )
+
+    apply_drilldown_btn.click(
+        fn=load_drilldown,
+        inputs=[drilldown_agent_type, drilldown_provider],
+        outputs=[leaderboard_table]
     )
 
 
