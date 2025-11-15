@@ -21,14 +21,16 @@ from .leaderboard_table import (
     generate_filter_summary_html
 )
 
+from .analytics_charts import (
+    create_trends_plot,
+    create_performance_heatmap,
+    create_speed_accuracy_scatter,
+    create_cost_efficiency_scatter,
+    create_comparison_radar
+)
+
 # Additional components (to be added)
 # from .thought_graph import create_thought_graph
-# from .analytics_charts import (
-#     create_performance_heatmap,
-#     create_speed_accuracy_scatter,
-#     create_cost_efficiency_scatter,
-#     create_comparison_radar
-# )
 # from .report_cards import (
 #     generate_leaderboard_summary_card,
 #     generate_run_report_card,
@@ -48,4 +50,9 @@ __all__ = [
     'generate_leaderboard_html',
     'generate_empty_state_html',
     'generate_filter_summary_html',
+    'create_trends_plot',
+    'create_performance_heatmap',
+    'create_speed_accuracy_scatter',
+    'create_cost_efficiency_scatter',
+    'create_comparison_radar',
 ]

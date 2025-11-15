@@ -13,6 +13,7 @@ load_dotenv()
 # Import data loader and components
 from data_loader import create_data_loader_from_env
 from components.leaderboard_table import generate_leaderboard_html
+from components.analytics_charts import create_trends_plot
 
 # Initialize data loader
 data_loader = create_data_loader_from_env()
@@ -73,6 +74,13 @@ def load_drilldown(agent_type, provider):
     return display_df
 
 
+def load_trends():
+    """Load trends visualization"""
+    df = data_loader.load_leaderboard()
+    fig = create_trends_plot(df)
+    return fig
+
+
 # Build Gradio app
 with gr.Blocks(title="TraceMind-AI") as app:
     gr.Markdown("# 🧠 TraceMind-AI")
@@ -128,6 +136,9 @@ with gr.Blocks(title="TraceMind-AI") as app:
                     interactive=False
                 )
 
+            with gr.TabItem("📈 Trends"):
+                trends_plot = gr.Plot()
+
         # Hidden textbox for row selection (JavaScript bridge)
         selected_row_index = gr.Textbox(visible=False, elem_id="selected_row_index")
 
@@ -135,6 +146,11 @@ with gr.Blocks(title="TraceMind-AI") as app:
     app.load(
         fn=load_leaderboard,
         outputs=[leaderboard_by_model, model_filter]
+    )
+
+    app.load(
+        fn=load_trends,
+        outputs=[trends_plot]
     )
 
     apply_filters_btn.click(
