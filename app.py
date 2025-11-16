@@ -597,16 +597,88 @@ def load_trends():
     return fig
 
 
+def get_chart_explanation(viz_type):
+    """Get explanation text for the selected chart type"""
+    explanations = {
+        "🔥 Performance Heatmap": """
+#### 🔥 Performance Heatmap
+
+**What it shows:** All models compared across all metrics in one view
+
+**How to read it:**
+- 🟢 **Green cells** = Better performance (higher is better)
+- 🟡 **Yellow cells** = Average performance
+- 🔴 **Red cells** = Worse performance (needs improvement)
+
+**Metrics displayed:**
+- Success Rate (%), Avg Duration (ms), Total Cost ($)
+- CO2 Emissions (g), GPU Utilization (%), Total Tokens
+
+**Use it to:** Quickly identify which models excel in which areas
+        """,
+
+        "⚡ Speed vs Accuracy": """
+#### ⚡ Speed vs Accuracy Trade-off
+
+**What it shows:** The relationship between model speed and accuracy
+
+**How to read it:**
+- **X-axis** = Average Duration (log scale) - left is faster
+- **Y-axis** = Success Rate (%) - higher is better
+- **Bubble size** = Total Cost - larger bubbles are more expensive
+- **Color** = Agent Type (tool/code/both)
+
+**Sweet spot:** Top-left quadrant = ⭐ **Fast & Accurate** models
+
+**Quadrant lines:**
+- Median lines split the chart into 4 zones
+- Models above/left of medians are better than average
+
+**Use it to:** Find models that balance speed and accuracy for your needs
+        """,
+
+        "💰 Cost Efficiency": """
+#### 💰 Cost-Performance Efficiency
+
+**What it shows:** Best value-for-money models
+
+**How to read it:**
+- **X-axis** = Total Cost (log scale) - left is cheaper
+- **Y-axis** = Success Rate (%) - higher is better
+- **Bubble size** = Duration - smaller bubbles are faster
+- **Color** = Provider (blue=API, green=GPU/local)
+- **⭐ Stars** = Top 3 most efficient models
+
+**Cost bands:**
+- 🟢 **Budget** = < $0.01 per run
+- 🟡 **Mid-Range** = $0.01 - $0.10 per run
+- 🟠 **Premium** = > $0.10 per run
+
+**Efficiency metric:** Success Rate ÷ Cost (higher is better)
+
+**Use it to:** Maximize ROI by finding models with best success-to-cost ratio
+        """
+    }
+
+    return explanations.get(viz_type, explanations["🔥 Performance Heatmap"])
+
+
 def update_analytics(viz_type):
-    """Update analytics chart based on visualization type"""
+    """Update analytics chart and explanation based on visualization type"""
     df = data_loader.load_leaderboard()
 
+    # Get chart
     if "Heatmap" in viz_type:
-        return create_performance_heatmap(df)
+        chart = create_performance_heatmap(df)
     elif "Speed" in viz_type:
-        return create_speed_accuracy_scatter(df)
+        chart = create_speed_accuracy_scatter(df)
     else:
-        return create_cost_efficiency_scatter(df)
+        chart = create_cost_efficiency_scatter(df)
+
+    # Get explanation
+    explanation = get_chart_explanation(viz_type)
+
+    return chart, explanation
 
 
 def generate_card(top_n):
@@ -1065,8 +1137,6 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         - 🎨 **Visual Design**: Gradient cards with model logos and performance metrics
                         - 🔍 **Filters**: Use agent type, provider, and sorting controls above
                         - 📊 **Sort Options**: Click "Sort By" to order by success rate, cost, duration, or tokens
-                        - 👆 **Click to Drill Down**: Click any model card to view detailed run information
-                        - 🎯 **Quick Comparison**: Select 2+ runs and click "Compare" button
 
                         **Performance Indicators:**
                         - 🟢 Green metrics = Excellent performance
@@ -1235,7 +1305,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     )
                     analytics_chart = gr.Plot(label="Interactive Chart", show_label=False)
 
-                    # Explanation panel in accordion
+                    # Explanation panel in accordion (dynamically updates based on chart selection)
                     with gr.Accordion("💡 How to Read This Chart", open=False):
                         viz_explanation = gr.Markdown("""
                         #### 🔥 Performance Heatmap
@@ -1252,34 +1322,6 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         - CO2 Emissions (g), GPU Utilization (%), Total Tokens
 
                         **Use it to:** Quickly identify which models excel in which areas
-
-                        ---
-
-                        #### ⚡ Speed vs Accuracy
-
-                        **What it shows:** Trade-off between execution speed and success rate
-
-                        **How to read it:**
-                        - Each bubble represents a model
-                        - X-axis: Average duration (lower is faster)
-                        - Y-axis: Success rate (higher is better)
-                        - Bubble size: Total cost (smaller bubbles = cheaper)
-                        - Bubble color: CO2 emissions (greener = more eco-friendly)
-
-                        **Look for:** Models in top-left corner (fast + accurate)
-
-                        ---
-
-                        #### 💰 Cost Efficiency
-
-                        **What it shows:** Cost per successful test case
-
-                        **How to read it:**
-                        - Bar chart showing cost efficiency (lower is better)
-                        - Calculated as: Total Cost / Successful Tests
-                        - Helps identify best value models
-
-                        **Use it to:** Choose models that balance quality and budget
                         """, elem_id="viz-explanation")
 
                 with gr.TabItem("📥 Summary Card"):
@@ -1617,13 +1659,13 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         viz_type.change(
         fn=update_analytics,
         inputs=[viz_type],
-        outputs=[analytics_chart]
+        outputs=[analytics_chart, viz_explanation]
         )
 
         app.load(
         fn=update_analytics,
         inputs=[viz_type],
-        outputs=[analytics_chart]
+        outputs=[analytics_chart, viz_explanation]
         )
 
         generate_card_btn.click(
