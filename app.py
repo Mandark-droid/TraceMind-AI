@@ -1166,7 +1166,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         leaderboard_table.select(
         fn=on_drilldown_select,
         inputs=[leaderboard_table],  # Pass dataframe to handler (like MockTraceMind)
-        outputs=[leaderboard_screen, run_detail_screen, run_metadata_html, test_cases_table]
+        outputs=[leaderboard_screen, run_detail_screen, run_metadata_html, test_cases_table, performance_charts]
         )
 
         back_to_leaderboard_btn.click(
