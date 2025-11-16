@@ -420,8 +420,9 @@ def load_leaderboard():
 
     # Get filter choices
     models = ["All Models"] + sorted(df['model'].unique().tolist())
+    providers = ["All"] + sorted(df['provider'].unique().tolist())
 
-    return html, gr.update(choices=models), gr.update(choices=models)
+    return html, gr.update(choices=models), gr.update(choices=models), gr.update(choices=providers)
 
 
 def refresh_leaderboard():
@@ -439,23 +440,109 @@ def refresh_leaderboard():
     return html, gr.update(choices=models), gr.update(choices=models)
 
 
-def apply_filters(model, provider, sort_by_col):
-    """Apply filters and sorting to leaderboard"""
-    global leaderboard_df_cache
+def apply_leaderboard_filters(agent_type, provider, sort_by_col, sort_order):
+    """Apply filters and sorting to styled HTML leaderboard"""
+    global leaderboard_df_cache, model_filter
 
     df = leaderboard_df_cache.copy() if leaderboard_df_cache is not None else data_loader.load_leaderboard()
 
-    # Apply filters
-    if model != "All Models":
-        df = df[df['model'] == model]
+    # Apply model filter from sidebar
+    selected_model = model_filter.value if hasattr(model_filter, 'value') else "All Models"
+    if selected_model != "All Models":
+        df = df[df['model'] == selected_model]
+
+    # Apply agent type filter
+    if agent_type != "All":
+        df = df[df['agent_type'] == agent_type]
+
+    # Apply provider filter
     if provider != "All":
         df = df[df['provider'] == provider]
 
     # Sort
-    df = df.sort_values(by=sort_by_col, ascending=False)
+    ascending = (sort_order == "Ascending")
+    df = df.sort_values(by=sort_by_col, ascending=ascending)
 
-    html = generate_leaderboard_html(df, sort_by_col)
+    html = generate_leaderboard_html(df, sort_by_col, ascending)
     return html
+
+
+def apply_drilldown_filters(agent_type, provider, sort_by_col, sort_order):
+    """Apply filters and sorting to drilldown table"""
+    global leaderboard_df_cache
+
+    df = leaderboard_df_cache.copy() if leaderboard_df_cache is not None else data_loader.load_leaderboard()
+
+    # Apply model filter from sidebar
+    selected_model = model_filter.value if hasattr(model_filter, 'value') else "All Models"
+    if selected_model != "All Models":
+        df = df[df['model'] == selected_model]
+
+    # Apply agent type filter
+    if agent_type != "All":
+        df = df[df['agent_type'] == agent_type]
+
+    # Apply provider filter
+    if provider != "All":
+        df = df[df['provider'] == provider]
+
+    # Sort
+    ascending = (sort_order == "Ascending")
+    df = df.sort_values(by=sort_by_col, ascending=ascending).reset_index(drop=True)
+
+    # Prepare simplified dataframe for display
+    display_df = df[[
+        'run_id', 'model', 'agent_type', 'provider', 'success_rate',
+        'total_tests', 'avg_duration_ms', 'total_cost_usd', 'submitted_by'
+    ]].copy()
+    display_df.columns = ['Run ID', 'Model', 'Agent Type', 'Provider', 'Success Rate', 'Tests', 'Duration (ms)', 'Cost (USD)', 'Submitted By']
+
+    return gr.update(value=display_df)
+
+
+def apply_sidebar_filters(selected_model, selected_agent_type):
+    """Apply sidebar filters to both leaderboard tabs"""
+    global leaderboard_df_cache
+
+    df = leaderboard_df_cache.copy() if leaderboard_df_cache is not None else data_loader.load_leaderboard()
+
+    # Apply model filter
+    if selected_model != "All Models":
+        df = df[df['model'] == selected_model]
+
+    # Apply agent type filter
+    if selected_agent_type != "All":
+        df = df[df['agent_type'] == selected_agent_type]
+
+    # For HTML leaderboard
+    sorted_df = df.sort_values(by='success_rate', ascending=False).reset_index(drop=True)
+    html = generate_leaderboard_html(sorted_df, 'success_rate', False)
+
+    # For drilldown table
+    display_df = df[[
+        'run_id', 'model', 'agent_type', 'provider', 'success_rate',
+        'total_tests', 'avg_duration_ms', 'total_cost_usd', 'submitted_by'
+    ]].copy()
+    display_df.columns = ['Run ID', 'Model', 'Agent Type', 'Provider', 'Success Rate', 'Tests', 'Duration (ms)', 'Cost (USD)', 'Submitted By']
+
+    # Update trends
+    trends_fig = create_trends_plot(df)
+
+    # Update compare dropdowns
+    compare_choices = []
+    for _, row in df.iterrows():
+        label = f"{row.get('model', 'Unknown')} - {row.get('timestamp', 'N/A')}"
+        value = row.get('run_id', '')
+        if value:
+            compare_choices.append((label, value))
+
+    return {
+        leaderboard_by_model: gr.update(value=html),
+        leaderboard_table: gr.update(value=display_df),
+        trends_plot: gr.update(value=trends_fig),
+        compare_components['compare_run_a_dropdown']: gr.update(choices=compare_choices),
+        compare_components['compare_run_b_dropdown']: gr.update(choices=compare_choices)
+    }
 
 
 def load_drilldown(agent_type, provider):
@@ -938,20 +1025,20 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             gr.Markdown("---")
     
             # Filters section
-            gr.Markdown("### 🔍 Global Filters")
-    
-            sidebar_model_filter = gr.Dropdown(
+            gr.Markdown("### 🔍 Filters")
+
+            model_filter = gr.Dropdown(
                 choices=["All Models"],
                 value="All Models",
                 label="Model",
-                info="Filter evaluations by AI model"
+                info="Filter evaluations by AI model. Select 'All Models' to see all runs."
             )
-    
+
             sidebar_agent_type_filter = gr.Radio(
                 choices=["All", "tool", "code", "both"],
                 value="All",
                 label="Agent Type",
-                info="Tool: Function calling | Code: Code execution | Both: Hybrid"
+                info="Tool: Function calling agents | Code: Code execution | Both: Hybrid agents"
             )
 
         # Main content area
@@ -963,47 +1050,83 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             gr.Markdown("## 🏆 Agent Evaluation Leaderboard")
             with gr.Tabs():
                 with gr.TabItem("🏆 Leaderboard"):
-                    # Filters
+                    gr.Markdown("*Styled leaderboard with inline filters*")
+
+                    # Inline filters for styled leaderboard
                     with gr.Row():
-                        model_filter = gr.Dropdown(
-                            choices=["All Models"],
-                            value="All Models",
-                            label="Filter by Model"
-                        )
-                        provider_filter = gr.Dropdown(
-                            choices=["All", "litellm", "transformers"],
-                            value="All",
-                            label="Provider"
-                        )
-                        sort_by = gr.Dropdown(
-                            choices=["success_rate", "total_cost_usd", "avg_duration_ms"],
-                            value="success_rate",
-                            label="Sort By"
-                        )
-    
-                    apply_filters_btn = gr.Button("🔍 Apply Filters")
-    
-                    # HTML table
-                    leaderboard_by_model = gr.HTML()
+                        with gr.Column(scale=1):
+                            agent_type_filter = gr.Radio(
+                                choices=["All", "tool", "code", "both"],
+                                value="All",
+                                label="Agent Type",
+                                info="Filter by agent type"
+                            )
+                        with gr.Column(scale=1):
+                            provider_filter = gr.Dropdown(
+                                choices=["All"],
+                                value="All",
+                                label="Provider",
+                                info="Filter by provider"
+                            )
+                        with gr.Column(scale=1):
+                            sort_by_dropdown = gr.Dropdown(
+                                choices=["success_rate", "total_cost_usd", "avg_duration_ms", "total_tokens"],
+                                value="success_rate",
+                                label="Sort By"
+                            )
+                        with gr.Column(scale=1):
+                            sort_order = gr.Radio(
+                                choices=["Descending", "Ascending"],
+                                value="Descending",
+                                label="Sort Order"
+                            )
+
+                    with gr.Row():
+                        apply_filters_btn = gr.Button("🔍 Apply Filters", variant="primary", size="sm")
+
+                    # Styled HTML leaderboard
+                    leaderboard_by_model = gr.HTML(label="Styled Leaderboard")
     
                 with gr.TabItem("📋 DrillDown"):
+                    gr.Markdown("*Click any row to view detailed run information*")
+
+                    # Inline filters for drilldown table
                     with gr.Row():
-                        drilldown_agent_type = gr.Radio(
-                            choices=["All", "tool", "code", "both"],
-                            value="All",
-                            label="Agent Type"
-                        )
-                        drilldown_provider = gr.Dropdown(
-                            choices=["All", "litellm", "transformers"],
-                            value="All",
-                            label="Provider"
-                        )
-    
-                    apply_drilldown_btn = gr.Button("🔍 Apply")
-    
+                        with gr.Column(scale=1):
+                            drilldown_agent_type_filter = gr.Radio(
+                                choices=["All", "tool", "code", "both"],
+                                value="All",
+                                label="Agent Type",
+                                info="Filter by agent type"
+                            )
+                        with gr.Column(scale=1):
+                            drilldown_provider_filter = gr.Dropdown(
+                                choices=["All"],
+                                value="All",
+                                label="Provider",
+                                info="Filter by provider"
+                            )
+                        with gr.Column(scale=1):
+                            drilldown_sort_by_dropdown = gr.Dropdown(
+                                choices=["success_rate", "total_cost_usd", "avg_duration_ms", "total_tokens"],
+                                value="success_rate",
+                                label="Sort By"
+                            )
+                        with gr.Column(scale=1):
+                            drilldown_sort_order = gr.Radio(
+                                choices=["Descending", "Ascending"],
+                                value="Descending",
+                                label="Sort Order"
+                            )
+
+                    with gr.Row():
+                        apply_drilldown_filters_btn = gr.Button("🔍 Apply Filters", variant="primary", size="sm")
+
+                    # Simple table controlled by inline filters
                     leaderboard_table = gr.Dataframe(
-                        headers=["Run ID", "Model", "Agent Type", "Provider", "Success Rate", "Tests", "Duration", "Cost"],
-                        interactive=False
+                        headers=["Run ID", "Model", "Agent Type", "Provider", "Success Rate", "Tests", "Duration (ms)", "Cost (USD)", "Submitted By"],
+                        interactive=False,
+                        wrap=True
                     )
     
                 with gr.TabItem("📈 Trends"):
@@ -1212,7 +1335,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
 
         app.load(
         fn=load_leaderboard,
-        outputs=[leaderboard_by_model, model_filter, sidebar_model_filter]
+        outputs=[leaderboard_by_model, model_filter, model_filter, provider_filter]
         )
 
         app.load(
@@ -1223,48 +1346,43 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         # Load drilldown data on page load
         app.load(
         fn=load_drilldown,
-        inputs=[drilldown_agent_type, drilldown_provider],
+        inputs=[drilldown_agent_type_filter, drilldown_provider_filter],
         outputs=[leaderboard_table]
         )
 
         # Refresh button handler
         refresh_leaderboard_btn.click(
         fn=refresh_leaderboard,
-        outputs=[leaderboard_by_model, model_filter, sidebar_model_filter]
+        outputs=[leaderboard_by_model, model_filter, model_filter]
         )
 
+        # Leaderboard tab inline filters
         apply_filters_btn.click(
-        fn=apply_filters,
-        inputs=[model_filter, provider_filter, sort_by],
+        fn=apply_leaderboard_filters,
+        inputs=[agent_type_filter, provider_filter, sort_by_dropdown, sort_order],
         outputs=[leaderboard_by_model]
         )
 
-        apply_drilldown_btn.click(
-        fn=load_drilldown,
-        inputs=[drilldown_agent_type, drilldown_provider],
+        # DrillDown tab inline filters
+        apply_drilldown_filters_btn.click(
+        fn=apply_drilldown_filters,
+        inputs=[drilldown_agent_type_filter, drilldown_provider_filter, drilldown_sort_by_dropdown, drilldown_sort_order],
         outputs=[leaderboard_table]
         )
 
-        # Sidebar filter handlers
-        def apply_sidebar_model_filter(model, sort_by_col):
-            """Apply sidebar model filter to leaderboard"""
-            return apply_filters(model, "All", sort_by_col), gr.update(value=model)
-
-        sidebar_model_filter.change(
-        fn=apply_sidebar_model_filter,
-        inputs=[sidebar_model_filter, sort_by],
-        outputs=[leaderboard_by_model, model_filter]
+        # Sidebar filters (apply to all tabs)
+        model_filter.change(
+        fn=apply_sidebar_filters,
+        inputs=[model_filter, sidebar_agent_type_filter],
+        outputs=[leaderboard_by_model, leaderboard_table, trends_plot, compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']]
         )
-
-        def apply_sidebar_agent_type_filter(agent_type):
-            """Apply sidebar agent type filter to drilldown"""
-            return load_drilldown(agent_type, "All"), gr.update(value=agent_type)
 
         sidebar_agent_type_filter.change(
-        fn=apply_sidebar_agent_type_filter,
-        inputs=[sidebar_agent_type_filter],
-        outputs=[leaderboard_table, drilldown_agent_type]
+        fn=apply_sidebar_filters,
+        inputs=[model_filter, sidebar_agent_type_filter],
+        outputs=[leaderboard_by_model, leaderboard_table, trends_plot, compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']]
         )
+
 
         viz_type.change(
         fn=update_analytics,
