@@ -1510,6 +1510,9 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     gr.Markdown("*Run metadata and summary*")
                     run_metadata_html = gr.HTML("")
 
+                    gr.Markdown("### 📥 Downloadable Run Report Card")
+                    run_card_html = gr.HTML(label="Run Report Card", elem_id="run-card-html")
+
                 with gr.TabItem("✅ Test Cases"):
                     gr.Markdown("*Individual test case results*")
                     test_cases_table = gr.Dataframe(
@@ -1522,10 +1525,6 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 with gr.TabItem("⚡ Performance"):
                     gr.Markdown("*Performance metrics and charts*")
                     performance_charts = gr.Plot(label="Performance Analysis", show_label=False)
-
-                with gr.TabItem("📄 Report Card"):
-                    gr.Markdown("*Downloadable run summary card*")
-                    run_card_html = gr.HTML(label="Run Report Card", value="<p style='text-align: center; color: #666; padding: 40px;'>Select a run to view its report card</p>")
 
         # Screen 4: Trace Detail with Sub-tabs
         with gr.Column(visible=False) as trace_detail_screen:
