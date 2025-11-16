@@ -532,7 +532,8 @@ def apply_sidebar_filters(selected_model, selected_agent_type):
     compare_choices = []
     for _, row in df.iterrows():
         label = f"{row.get('model', 'Unknown')} - {row.get('timestamp', 'N/A')}"
-        value = row.get('run_id', '')
+        # Use composite key: run_id|timestamp to ensure uniqueness
+        value = f"{row.get('run_id', '')}|{row.get('timestamp', '')}"
         if value:
             compare_choices.append((label, value))
 
@@ -1288,11 +1289,12 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             try:
                 leaderboard_df = data_loader.load_leaderboard()
 
-                # Create run choices for dropdowns (model name with run_id)
+                # Create run choices for dropdowns (model name with composite unique identifier)
                 run_choices = []
                 for _, row in leaderboard_df.iterrows():
                     label = f"{row.get('model', 'Unknown')} - {row.get('timestamp', 'N/A')}"
-                    value = row.get('run_id', '')
+                    # Use composite key: run_id|timestamp to ensure uniqueness
+                    value = f"{row.get('run_id', '')}|{row.get('timestamp', '')}"
                     if value:
                         run_choices.append((label, value))
 

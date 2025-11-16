@@ -325,9 +325,37 @@ def on_compare_runs(run_a_id: str, run_b_id: str, leaderboard_df, components: Di
                 components['comparison_output']: gr.update(visible=False)
             }
 
-        # Find the runs in the dataframe
-        run_a = leaderboard_df[leaderboard_df['run_id'] == run_a_id].iloc[0].to_dict()
-        run_b = leaderboard_df[leaderboard_df['run_id'] == run_b_id].iloc[0].to_dict()
+        # Parse composite keys (run_id|timestamp)
+        run_a_parts = run_a_id.split('|')
+        run_b_parts = run_b_id.split('|')
+
+        if len(run_a_parts) != 2 or len(run_b_parts) != 2:
+            gr.Warning("Invalid run selection")
+            return {
+                components['comparison_output']: gr.update(visible=False)
+            }
+
+        run_a_id_parsed, run_a_timestamp = run_a_parts
+        run_b_id_parsed, run_b_timestamp = run_b_parts
+
+        # Find the runs in the dataframe using both run_id and timestamp
+        run_a_match = leaderboard_df[
+            (leaderboard_df['run_id'] == run_a_id_parsed) &
+            (leaderboard_df['timestamp'] == run_a_timestamp)
+        ]
+        run_b_match = leaderboard_df[
+            (leaderboard_df['run_id'] == run_b_id_parsed) &
+            (leaderboard_df['timestamp'] == run_b_timestamp)
+        ]
+
+        if run_a_match.empty or run_b_match.empty:
+            gr.Warning("Could not find selected runs in leaderboard data")
+            return {
+                components['comparison_output']: gr.update(visible=False)
+            }
+
+        run_a = run_a_match.iloc[0].to_dict()
+        run_b = run_b_match.iloc[0].to_dict()
 
         # Create comparison visualizations
         card_a = create_run_comparison_card(run_a, "A")
