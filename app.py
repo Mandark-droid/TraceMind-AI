@@ -20,7 +20,7 @@ from components.analytics_charts import (
     create_speed_accuracy_scatter,
     create_cost_efficiency_scatter
 )
-from components.report_cards import generate_leaderboard_summary_card
+from components.report_cards import generate_leaderboard_summary_card, generate_run_report_card, download_card_as_png_js
 from screens.trace_detail import (
     create_span_visualization,
     create_span_table,
@@ -684,8 +684,12 @@ def update_analytics(viz_type):
 def generate_card(top_n):
     """Generate summary card HTML"""
     df = data_loader.load_leaderboard()
+
+    if df is None or df.empty:
+        return "<p>No data available</p>", gr.update(visible=False)
+
     html = generate_leaderboard_summary_card(df, top_n)
-    return html
+    return html, gr.update(visible=True)
 
 
 def generate_insights():
@@ -743,6 +747,7 @@ def on_html_table_row_click(row_index_str):
                 run_detail_screen: gr.update(),
                 run_metadata_html: gr.update(),
                 test_cases_table: gr.update(),
+                run_card_html: gr.update(),
                 selected_row_index: gr.update(value="")  # Clear textbox
             }
 
@@ -758,6 +763,7 @@ def on_html_table_row_click(row_index_str):
                 run_detail_screen: gr.update(),
                 run_metadata_html: gr.update(),
                 test_cases_table: gr.update(),
+                run_card_html: gr.update(),
                 selected_row_index: gr.update(value="")  # Clear textbox
             }
 
@@ -769,6 +775,7 @@ def on_html_table_row_click(row_index_str):
                 run_detail_screen: gr.update(),
                 run_metadata_html: gr.update(),
                 test_cases_table: gr.update(),
+                run_card_html: gr.update(),
                 selected_row_index: gr.update(value="")  # Clear textbox
             }
 
@@ -795,6 +802,34 @@ def on_html_table_row_click(row_index_str):
 
         # Generate performance chart
         perf_chart = create_performance_charts(results_df)
+
+        # Create metadata HTML
+        metadata_html = f"""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;">
+            <h2 style="margin: 0 0 10px 0;">📊 Run Detail: {run_data.get('model', 'Unknown')}</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div>
+                    <strong>Agent Type:</strong> {run_data.get('agent_type', 'N/A')}<br>
+                    <strong>Provider:</strong> {run_data.get('provider', 'N/A')}<br>
+                    <strong>Success Rate:</strong> {run_data.get('success_rate', 0):.1f}%
+                </div>
+                <div>
+                    <strong>Total Tests:</strong> {run_data.get('total_tests', 0)}<br>
+                    <strong>Successful:</strong> {run_data.get('successful_tests', 0)}<br>
+                    <strong>Failed:</strong> {run_data.get('failed_tests', 0)}
+                </div>
+                <div>
+                    <strong>Total Cost:</strong> ${run_data.get('total_cost_usd', 0):.4f}<br>
+                    <strong>Avg Duration:</strong> {run_data.get('avg_duration_ms', 0):.0f}ms<br>
+                    <strong>Submitted By:</strong> {run_data.get('submitted_by', 'Unknown')}
+                </div>
+            </div>
+        </div>
+        """
+
+        # Generate run report card HTML
+        run_card_html_content = generate_run_report_card(run_data)
 
         # Format results for display
         display_df = results_df.copy()
@@ -830,6 +865,7 @@ def on_html_table_row_click(row_index_str):
             run_detail_screen: gr.update(visible=True),
             run_metadata_html: gr.update(value=metadata_html),
             test_cases_table: gr.update(value=display_df),
+            run_card_html: gr.update(value=run_card_html_content),
             selected_row_index: gr.update(value="")  # Clear textbox
         }
 
@@ -843,6 +879,7 @@ def on_html_table_row_click(row_index_str):
             run_detail_screen: gr.update(visible=False),
             run_metadata_html: gr.update(),
             test_cases_table: gr.update(),
+            run_card_html: gr.update(),
             selected_row_index: gr.update(value="")  # Clear textbox
         }
 
@@ -866,6 +903,34 @@ def load_run_detail(run_id):
 
         # Generate performance chart
         perf_chart = create_performance_charts(results_df)
+
+        # Create metadata HTML
+        metadata_html = f"""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;">
+            <h2 style="margin: 0 0 10px 0;">📊 Run Detail: {run_data.get('model', 'Unknown')}</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div>
+                    <strong>Agent Type:</strong> {run_data.get('agent_type', 'N/A')}<br>
+                    <strong>Provider:</strong> {run_data.get('provider', 'N/A')}<br>
+                    <strong>Success Rate:</strong> {run_data.get('success_rate', 0):.1f}%
+                </div>
+                <div>
+                    <strong>Total Tests:</strong> {run_data.get('total_tests', 0)}<br>
+                    <strong>Successful:</strong> {run_data.get('successful_tests', 0)}<br>
+                    <strong>Failed:</strong> {run_data.get('failed_tests', 0)}
+                </div>
+                <div>
+                    <strong>Total Cost:</strong> ${run_data.get('total_cost_usd', 0):.4f}<br>
+                    <strong>Avg Duration:</strong> {run_data.get('avg_duration_ms', 0):.0f}ms<br>
+                    <strong>Submitted By:</strong> {run_data.get('submitted_by', 'Unknown')}
+                </div>
+            </div>
+        </div>
+        """
+
+        # Generate run report card HTML
+        run_card_html_content = generate_run_report_card(run_data)
 
         # Format results for display
         display_df = results_df.copy()
@@ -937,7 +1002,9 @@ def on_drilldown_select(evt: gr.SelectData, df):
                 leaderboard_screen: gr.update(visible=True),
                 run_detail_screen: gr.update(visible=False),
                 run_metadata_html: gr.update(value="<h3>No results dataset found</h3>"),
-                test_cases_table: gr.update(value=pd.DataFrame())
+                test_cases_table: gr.update(value=pd.DataFrame()),
+                performance_charts: gr.update(),
+                run_card_html: gr.update()
             }
 
         results_df = data_loader.load_results(results_dataset)
@@ -969,6 +1036,9 @@ def on_drilldown_select(evt: gr.SelectData, df):
             </div>
         </div>
         """
+
+        # Generate run report card HTML
+        run_card_html_content = generate_run_report_card(run_data)
 
         # Format results for display
         display_df = results_df.copy()
@@ -1004,7 +1074,8 @@ def on_drilldown_select(evt: gr.SelectData, df):
             run_detail_screen: gr.update(visible=True),
             run_metadata_html: gr.update(value=metadata_html),
             test_cases_table: gr.update(value=display_df),
-            performance_charts: gr.update(value=perf_chart)
+            performance_charts: gr.update(value=perf_chart),
+            run_card_html: gr.update(value=run_card_html_content)
         }
 
     except Exception as e:
@@ -1018,7 +1089,9 @@ def on_drilldown_select(evt: gr.SelectData, df):
             leaderboard_screen: gr.update(visible=True),  # Stay on leaderboard
             run_detail_screen: gr.update(visible=False),
             run_metadata_html: gr.update(value="<h3>Error loading run detail</h3>"),
-            test_cases_table: gr.update(value=pd.DataFrame())
+            test_cases_table: gr.update(value=pd.DataFrame()),
+            performance_charts: gr.update(),
+            run_card_html: gr.update()
         }
 
 
@@ -1428,6 +1501,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             # Navigation
             with gr.Row():
                 back_to_leaderboard_btn = gr.Button("⬅️ Back to Leaderboard", variant="secondary", size="sm")
+                download_run_card_btn = gr.Button("📥 Download Run Report Card", variant="secondary", size="sm")
 
             run_detail_title = gr.Markdown("# 📊 Run Detail")
 
@@ -1448,6 +1522,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 with gr.TabItem("⚡ Performance"):
                     gr.Markdown("*Performance metrics and charts*")
                     performance_charts = gr.Plot(label="Performance Analysis", show_label=False)
+
+                with gr.TabItem("📄 Report Card"):
+                    gr.Markdown("*Downloadable run summary card*")
+                    run_card_html = gr.HTML(label="Run Report Card", value="<p style='text-align: center; color: #666; padding: 40px;'>Select a run to view its report card</p>")
 
         # Screen 4: Trace Detail with Sub-tabs
         with gr.Column(visible=False) as trace_detail_screen:
@@ -1671,7 +1749,13 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         generate_card_btn.click(
         fn=generate_card,
         inputs=[top_n_slider],
-        outputs=[card_preview]
+        outputs=[card_preview, download_card_btn]
+        )
+
+        # Download leaderboard summary card as PNG
+        download_card_btn.click(
+            fn=None,
+            js=download_card_as_png_js("summary-card-html")
         )
 
         app.load(
@@ -1739,7 +1823,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         leaderboard_table.select(
         fn=on_drilldown_select,
         inputs=[leaderboard_table],  # Pass dataframe to handler (like MockTraceMind)
-        outputs=[leaderboard_screen, run_detail_screen, run_metadata_html, test_cases_table, performance_charts]
+        outputs=[leaderboard_screen, run_detail_screen, run_metadata_html, test_cases_table, performance_charts, run_card_html]
         )
 
         back_to_leaderboard_btn.click(
@@ -1777,7 +1861,13 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         selected_row_index.change(
         fn=on_html_table_row_click,
         inputs=[selected_row_index],
-        outputs=[leaderboard_screen, run_detail_screen, run_metadata_html, test_cases_table, selected_row_index]
+        outputs=[leaderboard_screen, run_detail_screen, run_metadata_html, test_cases_table, run_card_html, selected_row_index]
+        )
+
+        # Download run report card as PNG
+        download_run_card_btn.click(
+            fn=None,
+            js=download_card_as_png_js(element_id="run-card-html")
         )
 
 
