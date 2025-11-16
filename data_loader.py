@@ -18,7 +18,7 @@ DataSource = Literal["json", "huggingface", "both"]
 
 class DataLoader:
     """
-    Unified data loader for MockTraceMind
+    Unified data loader for TraceMind
 
     Supports:
     - Local JSON files
@@ -36,7 +36,7 @@ class DataLoader:
     ):
         self.data_source = data_source
         self.json_data_path = Path(json_data_path or os.getenv("JSON_DATA_PATH", "./sample_data"))
-        self.leaderboard_dataset = leaderboard_dataset or os.getenv("LEADERBOARD_DATASET", "huggingface/smolagents-leaderboard")
+        self.leaderboard_dataset = leaderboard_dataset or os.getenv("LEADERBOARD_DATASET", "kshitijthakkar/smoltrace-leaderboard")
         self.hf_token = hf_token or os.getenv("HF_TOKEN")
 
         # Cache

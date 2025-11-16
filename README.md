@@ -27,10 +27,12 @@ TraceMind-AI is a comprehensive platform for evaluating AI agent performance acr
 ## Features
 
 - **📊 Real-time Leaderboard**: Live evaluation data from HuggingFace datasets
-- **🤖 MCP Integration**: AI-powered analysis using remote MCP servers
+- **🤖 Autonomous Agent Chat**: Interactive agent powered by smolagents with MCP tools (Track 2)
+- **💬 MCP Integration**: AI-powered analysis using remote MCP servers
 - **💰 Cost Estimation**: Calculate evaluation costs for different models and configurations
 - **🔍 Trace Visualization**: Detailed OpenTelemetry trace analysis
 - **📈 Performance Metrics**: GPU utilization, CO2 emissions, token usage tracking
+- **🧠 Agent Reasoning**: View step-by-step agent planning and tool execution
 
 ## MCP Integration
 
@@ -84,8 +86,16 @@ Create a `.env` file with the following variables:
 # HuggingFace Configuration
 HF_TOKEN=your_token_here
 
-# MCP Server URL
-MCP_SERVER_URL=https://kshitijthakkar-tracemind-mcp-server.hf.space/gradio_api/mcp/
+# Agent Model Configuration (for Chat Screen - Track 2)
+# Options: "hfapi" (default), "inference_client", "litellm"
+AGENT_MODEL_TYPE=hfapi
+
+# API Keys for different model types
+# Required if AGENT_MODEL_TYPE=litellm
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# MCP Server URL (note: /sse endpoint for smolagents integration)
+MCP_SERVER_URL=https://kshitijthakkar-tracemind-mcp-server.hf.space/gradio_api/mcp/sse
 
 # Dataset Configuration
 LEADERBOARD_REPO=kshitijthakkar/smoltrace-leaderboard
@@ -93,6 +103,25 @@ LEADERBOARD_REPO=kshitijthakkar/smoltrace-leaderboard
 # Development Mode (optional - disables OAuth for local testing)
 DISABLE_OAUTH=true
 ```
+
+### Agent Model Options
+
+The Agent Chat screen supports three model configurations:
+
+1. **`hfapi` (Default)**: Uses HuggingFace Inference API
+   - Model: `Qwen/Qwen2.5-Coder-32B-Instruct`
+   - Requires: `HF_TOKEN`
+   - Best for: General use, free tier available
+
+2. **`inference_client`**: Uses Nebius provider
+   - Model: `deepseek-ai/DeepSeek-V3-0324`
+   - Requires: `HF_TOKEN`
+   - Best for: Advanced reasoning, faster inference
+
+3. **`litellm`**: Uses Google Gemini
+   - Model: `gemini/gemini-2.5-flash`
+   - Requires: `GEMINI_API_KEY`
+   - Best for: Gemini-specific features
 
 ## Data Sources
 
@@ -164,13 +193,34 @@ insights = mcp_client.analyze_leaderboard(
 3. View detailed OpenTelemetry trace visualization
 4. Ask questions about the trace using MCP-powered analysis
 
+### Using the Agent Chat (Track 2)
+
+1. Navigate to the "🤖 Agent Chat" tab
+2. The autonomous agent will initialize with MCP tools from TraceMind MCP Server
+3. Ask questions about agent evaluations:
+   - "What are the top 3 performing models and their costs?"
+   - "Estimate the cost of running 500 tests with DeepSeek-V3 on H200"
+   - "Load the leaderboard and show me the last 5 run IDs"
+4. Watch the agent plan, execute tools, and provide detailed answers
+5. Enable "Show Agent Reasoning" to see step-by-step tool execution
+6. Use Quick Action buttons for common queries
+
+**Example Questions:**
+- Analysis: "Analyze the current leaderboard and show me the top performing models with their costs"
+- Cost Comparison: "Compare the costs of the top 3 models - which one offers the best value?"
+- Recommendations: "Based on the leaderboard data, which model would you recommend for a production system?"
+
 ## Technology Stack
 
 - **UI Framework**: Gradio 5.49.1
-- **MCP Protocol**: MCP integration via Gradio
+- **Agent Framework**: smolagents 1.22.0+ (Track 2)
+- **MCP Protocol**: MCP integration via Gradio & smolagents MCPClient
 - **Data**: HuggingFace Datasets API
 - **Authentication**: HuggingFace OAuth
-- **AI**: Google Gemini 2.5 Flash (via MCP server)
+- **AI Models**:
+  - Default: Qwen/Qwen2.5-Coder-32B-Instruct (HF Inference API)
+  - Optional: DeepSeek-V3 (Nebius), Gemini 2.5 Flash
+  - MCP Server: Google Gemini 2.5 Pro
 
 ## Development
 

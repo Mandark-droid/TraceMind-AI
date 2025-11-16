@@ -8,10 +8,11 @@ import gradio as gr
 from typing import List, Tuple, Dict, Any
 import json
 import os
+import yaml
 
 # Smolagents imports
 try:
-    from smolagents import CodeAgent, ApiModel, InferenceClientModel, LiteLLMModel
+    from smolagents import CodeAgent, InferenceClientModel, LiteLLMModel
     from smolagents.mcp_client import MCPClient
     SMOLAGENTS_AVAILABLE = True
 except ImportError:
@@ -26,18 +27,38 @@ MODEL_TYPE = os.getenv("AGENT_MODEL_TYPE", "hfapi")  # Options: "hfapi", "infere
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
+# Global agent and MCP client (reused across requests)
+_global_agent = None
+_global_mcp_client = None
+
 
 def create_agent():
-    """Create smolagents agent with MCP server tools"""
+    """Create smolagents agent with MCP server tools (singleton pattern)"""
+    global _global_agent, _global_mcp_client
+
+    # Return existing agent if already created
+    if _global_agent is not None:
+        return _global_agent
+
     if not SMOLAGENTS_AVAILABLE:
         return None
 
     try:
-        # Connect to TraceMind MCP Server
-        mcp_client = MCPClient({"url": MCP_SERVER_URL})
+        # Connect to TraceMind MCP Server using SSE transport
+        print(f"Connecting to TraceMind MCP Server at {MCP_SERVER_URL}...")
+        print(f"Using SSE transport for Gradio MCP server...")
 
-        # Get tools from MCP server
-        tools = mcp_client.get_tools()
+        # For Gradio MCP servers, must specify transport: "sse"
+        # See: https://huggingface.co/learn/mcp-course/unit2/gradio-client
+        _global_mcp_client = MCPClient(
+            {"url": MCP_SERVER_URL, "transport": "sse"}
+        )
+
+        # Get tools from MCP server (MCPClient.get_tools() doesn't support structured_output parameter)
+        print("Fetching tools from MCP server...")
+        tools = _global_mcp_client.get_tools()
+
+        print(f"Received {len(tools)} tools from MCP server")
 
         # Log available tools
         tools_array = [{
@@ -69,32 +90,36 @@ def create_agent():
             )
             print(f"Using LiteLLMModel: gemini/gemini-2.5-flash")
 
-        else:  # Default: hfapi
-            # ApiModel with Qwen (HF Inference API)
-            model = ApiModel(
-                max_tokens=4096,
-                temperature=0.5,
-                model_id='Qwen/Qwen2.5-Coder-32B-Instruct',
-                custom_role_conversions=None,
+        else:  # Default: hfapi (using InferenceClientModel)
+            # InferenceClientModel with Qwen (HF Inference API)
+            model = InferenceClientModel(
+                model_id='Qwen/Qwen3-Coder-480B-A35B-Instruct',
+                token=HF_TOKEN if HF_TOKEN else None,
             )
-            print(f"Using ApiModel: Qwen/Qwen2.5-Coder-32B-Instruct")
+            print(f"Using InferenceClientModel: Qwen/Qwen3-Coder-480B-A35B-Instruct (HF Inference API)")
 
-        # Get prompt template path
+        # Load prompt templates from YAML file
         prompt_template_path = os.path.join(os.path.dirname(__file__), "../prompts/code_agent.yaml")
+        with open(prompt_template_path, 'r', encoding='utf-8') as stream:
+            prompt_templates = yaml.safe_load(stream)
 
         # Create CodeAgent with MCP server tools and YAML prompt template
         agent = CodeAgent(
             tools=[*tools],
             model=model,
-            prompt_templates=prompt_template_path,
+            prompt_templates=prompt_templates,
             max_steps=10,
             planning_interval=5,
             additional_authorized_imports=[
                 'time', 'math', 'queue', 're', 'stat', 'collections', 'datetime',
-                'statistics', 'itertools', 'unicodedata', 'random', 'matplotlib.pyplot',
-                'pandas', 'numpy', 'json', 'yaml', 'plotly', 'pillow', 'PIL', 'base64', 'io'
+                'statistics', 'itertools', 'unicodedata', 'random',
+                'pandas', 'numpy', 'json', 'yaml', 'plotly'
             ]
         )
+
+        # Store agent globally for reuse
+        _global_agent = agent
+        print("✅ Agent created successfully and cached for reuse")
 
         return agent
 
@@ -103,6 +128,22 @@ def create_agent():
         import traceback
         traceback.print_exc()
         return None
+
+
+def cleanup_agent():
+    """Cleanup MCP client connection"""
+    global _global_agent, _global_mcp_client
+
+    if _global_mcp_client is not None:
+        try:
+            print("Disconnecting MCP client...")
+            _global_mcp_client.disconnect()
+            print("✅ MCP client disconnected")
+        except Exception as e:
+            print(f"[WARNING] Error disconnecting MCP client: {e}")
+        finally:
+            _global_mcp_client = None
+            _global_agent = None
 
 
 def chat_with_agent(
@@ -167,7 +208,7 @@ def create_chat_ui():
         gr.Markdown("*Autonomous AI agent powered by smolagents with MCP tools*")
 
         # Info banner
-        with gr.Accordion("💡 About This Agent", open=True):
+        with gr.Accordion("💡 About This Agent", open=False):
             gr.Markdown("""
             ### 🎯 What is this?
             This is an **autonomous AI agent** that can:
@@ -252,7 +293,9 @@ def on_send_message(message, history, show_reasoning):
 
 
 def on_clear_chat():
-    """Handle clear button click"""
+    """Handle clear button click and cleanup agent connection"""
+    # Cleanup agent and MCP client connection
+    cleanup_agent()
     return [], "", "*Agent's reasoning steps will appear here...*"
 
 
