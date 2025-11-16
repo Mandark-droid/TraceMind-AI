@@ -102,7 +102,8 @@ def create_trace_detail_screen(
                 question_input = gr.Textbox(
                     label="Question",
                     placeholder="e.g., Why was the tool called twice? What tool did the agent use first?",
-                    lines=2
+                    lines=2,
+                    info="Ask questions about this trace execution, tool usage, or agent behavior"
                 )
                 ask_btn = gr.Button("Ask", variant="primary")
                 answer_output = gr.Markdown("*Ask a question to get AI-powered insights*")

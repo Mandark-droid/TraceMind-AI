@@ -230,13 +230,15 @@ def create_compare_ui():
                 components['compare_run_a_dropdown'] = gr.Dropdown(
                     label="Run A",
                     choices=[],
-                    interactive=True
+                    interactive=True,
+                    info="Select the first evaluation run for comparison"
                 )
             with gr.Column():
                 components['compare_run_b_dropdown'] = gr.Dropdown(
                     label="Run B",
                     choices=[],
-                    interactive=True
+                    interactive=True,
+                    info="Select the second evaluation run for comparison"
                 )
 
         components['compare_button'] = gr.Button(

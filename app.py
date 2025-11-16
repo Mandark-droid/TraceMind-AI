@@ -1242,7 +1242,8 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                             sort_by_dropdown = gr.Dropdown(
                                 choices=["success_rate", "total_cost_usd", "avg_duration_ms", "total_tokens"],
                                 value="success_rate",
-                                label="Sort By"
+                                label="Sort By",
+                                info="Choose metric to sort the leaderboard by"
                             )
                         with gr.Column(scale=1):
                             sort_order = gr.Radio(
@@ -1584,7 +1585,8 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 trace_question = gr.Textbox(
                     label="Question",
                     placeholder="e.g., Why was the tool called twice?",
-                    lines=2
+                    lines=2,
+                    info="Ask questions about agent execution, tool usage, or trace behavior"
                 )
                 trace_ask_btn = gr.Button("Ask", variant="primary")
                 trace_answer = gr.Markdown("*Ask a question to get AI-powered insights*")
