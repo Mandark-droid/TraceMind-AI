@@ -7,6 +7,7 @@ import gradio as gr
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from typing import Dict, Any
+from components.report_cards import generate_comparison_report_card
 
 
 def create_run_comparison_card(run_data: Dict[str, Any], label: str) -> str:
@@ -217,12 +218,11 @@ def create_compare_ui():
         gr.Markdown("# Compare Runs")
         gr.Markdown("*Side-by-side comparison of two evaluation runs*")
 
-        with gr.Row():
-            components['back_to_leaderboard_btn'] = gr.Button(
-                "Back to Leaderboard",
-                variant="secondary",
-                size="sm"
-            )
+        components['back_to_leaderboard_btn'] = gr.Button(
+            "⬅️ Back to Leaderboard",
+            variant="secondary",
+            size="sm"
+        )
 
         gr.Markdown("## Select Runs to Compare")
         with gr.Row():
@@ -287,6 +287,23 @@ def create_compare_ui():
                         label="Multi-Dimensional Radar Chart",
                         show_label=False
                     )
+
+                with gr.TabItem("📄 Report Card"):
+                    gr.Markdown("### 📥 Downloadable Comparison Report Card")
+                    gr.Markdown("*Side-by-side comparison card with winner analysis*")
+
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            components['download_comparison_card_btn'] = gr.Button(
+                                "📥 Download as PNG",
+                                variant="primary",
+                                size="lg"
+                            )
+                        with gr.Column(scale=2):
+                            components['comparison_card_html'] = gr.HTML(
+                                label="Comparison Report Card",
+                                elem_id="comparison-card-html"
+                            )
 
         components['comparison_output'] = comparison_output
 
@@ -367,13 +384,17 @@ def on_compare_runs(run_a_id: str, run_b_id: str, leaderboard_df, components: Di
         from components.analytics_charts import create_comparison_radar
         radar_chart = create_comparison_radar([run_a, run_b])
 
+        # Generate comparison report card
+        comparison_card = generate_comparison_report_card(run_a, run_b)
+
         return {
             components['comparison_output']: gr.update(visible=True),
             components['run_a_card']: gr.update(value=card_a),
             components['run_b_card']: gr.update(value=card_b),
             components['comparison_charts']: gr.update(value=charts),
             components['winner_summary']: gr.update(value=summary),
-            components['radar_comparison_chart']: gr.update(value=radar_chart)
+            components['radar_comparison_chart']: gr.update(value=radar_chart),
+            components['comparison_card_html']: gr.update(value=comparison_card)
         }
 
     except Exception as e:

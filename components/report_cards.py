@@ -311,8 +311,8 @@ def download_card_as_png_js(element_id: str = "summary-card-html") -> str:
             let card = document.getElementById('{element_id}');
 
             if (!card) {{
-                console.log('ID not found, trying class selector...');
-                card = document.querySelector('.tracemind-run-card');
+                console.log('ID not found, trying class selectors...');
+                card = document.querySelector('.tracemind-run-card, .tracemind-comparison-card, .tracemind-summary-card');
             }}
 
             if (!card) {{
@@ -599,3 +599,162 @@ def _get_card_css() -> str:
     }
     </style>
     """
+
+
+def generate_comparison_report_card(run_a_data: dict, run_b_data: dict) -> str:
+    """
+    Generate HTML for comparison report card showing two runs side by side
+
+    Args:
+        run_a_data: Dictionary with Run A information
+        run_b_data: Dictionary with Run B information
+
+    Returns:
+        HTML string for comparison report card
+    """
+
+    if not run_a_data or not run_b_data:
+        return _create_empty_card_html("Missing run data for comparison")
+
+    model_a = run_a_data.get('model', 'Unknown').split('/')[-1]
+    model_b = run_b_data.get('model', 'Unknown').split('/')[-1]
+
+    # Get logo
+    logo_base64 = _get_logo_base64()
+
+    # Determine winners for each metric
+    success_winner = "A" if run_a_data.get('success_rate', 0) > run_b_data.get('success_rate', 0) else "B"
+    cost_winner = "A" if run_a_data.get('total_cost_usd', 999) < run_b_data.get('total_cost_usd', 999) else "B"
+    speed_winner = "A" if run_a_data.get('avg_duration_ms', 999999) < run_b_data.get('avg_duration_ms', 999999) else "B"
+    eco_winner = "A" if run_a_data.get('co2_emissions_g', 999) < run_b_data.get('co2_emissions_g', 999) else "B"
+
+    # Count overall wins
+    a_wins = sum(1 for w in [success_winner, cost_winner, speed_winner, eco_winner] if w == "A")
+    b_wins = 4 - a_wins
+    overall_winner = "A" if a_wins > b_wins else ("B" if b_wins > a_wins else "Tie")
+
+    html = f"""
+    <div class="tracemind-comparison-card" id="comparison-card-content">
+        <div class="card-header">
+            {f'<img src="data:image/png;base64,{logo_base64}" alt="TraceMind Logo" class="card-logo" style="display: block !important; margin: 0 auto 15px auto !important; width: 120px !important; height: auto !important;" />' if logo_base64 else ''}
+            <h1>⚖️ Model Comparison Report</h1>
+            <p class="card-meta" style="color: rgba(255, 255, 255, 0.7) !important;">{model_a} vs {model_b}</p>
+            <p class="card-date" style="color: rgba(255, 255, 255, 0.7) !important;">{datetime.now().strftime('%Y-%m-%d %H:%M')}</p>
+        </div>
+
+        <div class="card-body">
+            <!-- Overall Winner -->
+            <div class="success-section">
+                <div class="stars">{'🏆' * 5}</div>
+                <div class="success-rate" style="color: #ffffff !important;">
+                    Overall Winner: Run {overall_winner} ({a_wins if overall_winner == "A" else b_wins}/4 categories)
+                </div>
+            </div>
+
+            <!-- Side by Side Comparison -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                <!-- Run A -->
+                <div style="padding: 15px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 2px solid {'#00ff00' if overall_winner == "A" else '#667eea'};">
+                    <h3 style="color: #667eea !important; margin-top: 0;">Run A: {model_a}</h3>
+                    <div class="metrics-list">
+                        <div style="color: {'#00ff00' if success_winner == "A" else '#ffffff'} !important; font-weight: {'bold' if success_winner == "A" else 'normal'};">
+                            {'✅' if success_winner == "A" else '📊'} Success: {run_a_data.get('success_rate', 0):.1f}%
+                        </div>
+                        <div style="color: {'#00ff00' if cost_winner == "A" else '#ffffff'} !important; font-weight: {'bold' if cost_winner == "A" else 'normal'};">
+                            {'✅' if cost_winner == "A" else '💰'} Cost: ${run_a_data.get('total_cost_usd', 0):.4f}
+                        </div>
+                        <div style="color: {'#00ff00' if speed_winner == "A" else '#ffffff'} !important; font-weight: {'bold' if speed_winner == "A" else 'normal'};">
+                            {'✅' if speed_winner == "A" else '⚡'} Speed: {run_a_data.get('avg_duration_ms', 0)/1000:.2f}s
+                        </div>
+                        <div style="color: {'#00ff00' if eco_winner == "A" else '#ffffff'} !important; font-weight: {'bold' if eco_winner == "A" else 'normal'};">
+                            {'✅' if eco_winner == "A" else '🌱'} CO2: {run_a_data.get('co2_emissions_g', 0):.2f}g
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Run B -->
+                <div style="padding: 15px; background: rgba(118, 75, 162, 0.1); border-radius: 8px; border: 2px solid {'#00ff00' if overall_winner == "B" else '#764ba2'};">
+                    <h3 style="color: #764ba2 !important; margin-top: 0;">Run B: {model_b}</h3>
+                    <div class="metrics-list">
+                        <div style="color: {'#00ff00' if success_winner == "B" else '#ffffff'} !important; font-weight: {'bold' if success_winner == "B" else 'normal'};">
+                            {'✅' if success_winner == "B" else '📊'} Success: {run_b_data.get('success_rate', 0):.1f}%
+                        </div>
+                        <div style="color: {'#00ff00' if cost_winner == "B" else '#ffffff'} !important; font-weight: {'bold' if cost_winner == "B" else 'normal'};">
+                            {'✅' if cost_winner == "B" else '💰'} Cost: ${run_b_data.get('total_cost_usd', 0):.4f}
+                        </div>
+                        <div style="color: {'#00ff00' if speed_winner == "B" else '#ffffff'} !important; font-weight: {'bold' if speed_winner == "B" else 'normal'};">
+                            {'✅' if speed_winner == "B" else '⚡'} Speed: {run_b_data.get('avg_duration_ms', 0)/1000:.2f}s
+                        </div>
+                        <div style="color: {'#00ff00' if eco_winner == "B" else '#ffffff'} !important; font-weight: {'bold' if eco_winner == "B" else 'normal'};">
+                            {'✅' if eco_winner == "B" else '🌱'} CO2: {run_b_data.get('co2_emissions_g', 0):.2f}g
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendation -->
+            <div class="metrics-section">
+                <h2 style="color: #ffffff !important;">💡 Recommendation</h2>
+                <p style="color: #ffffff !important; font-size: 1.1em;">
+                    {f"<strong style='color: #ffffff !important;'>Run {overall_winner}</strong> ({model_a if overall_winner == 'A' else model_b}) is recommended for most use cases" if overall_winner != "Tie" else "Both runs are evenly matched - choose based on your specific priorities"}
+                </p>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <p style="margin: 0; color: #ffffff !important;">🔗 <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 600;">View detailed comparison at tracemind.huggingface.co</span></p>
+        </div>
+    </div>
+
+    <style>
+    .tracemind-comparison-card {{
+        background: #000000 !important;
+        border: 3px solid #667eea;
+        border-radius: 24px;
+        padding: 40px;
+        max-width: 900px;
+        margin: 20px auto;
+        color: #ffffff !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }}
+
+    .tracemind-comparison-card .card-header {{
+        text-align: center;
+        margin-bottom: 25px;
+    }}
+
+    .tracemind-comparison-card h1 {{
+        color: white !important;
+        font-size: 2em !important;
+        margin: 10px 0 !important;
+        font-weight: 700 !important;
+    }}
+
+    .tracemind-comparison-card .metrics-section h2 {{
+        font-size: 1.3em !important;
+        margin: 15px 0 10px 0 !important;
+        font-weight: 600 !important;
+    }}
+
+    .tracemind-comparison-card .metrics-list {{
+        margin: 10px 0;
+        padding: 0;
+        list-style: none;
+    }}
+
+    .tracemind-comparison-card .metrics-list div {{
+        padding: 8px 0;
+        font-size: 1em;
+    }}
+
+    .tracemind-comparison-card .card-footer {{
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px solid rgba(255, 255, 255, 0.2);
+        text-align: center;
+    }}
+    </style>
+    """
+
+    return html

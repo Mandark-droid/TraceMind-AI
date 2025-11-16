@@ -1806,7 +1806,8 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 compare_components['run_b_card'],
                 compare_components['comparison_charts'],
                 compare_components['winner_summary'],
-                compare_components['radar_comparison_chart']
+                compare_components['radar_comparison_chart'],
+                compare_components['comparison_card_html']
             ]
         )
 
@@ -1817,6 +1818,12 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
                 dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
             ]
+        )
+
+        # Download comparison report card as PNG
+        compare_components['download_comparison_card_btn'].click(
+            fn=None,
+            js=download_card_as_png_js(element_id="comparison-card-html")
         )
 
         leaderboard_table.select(
