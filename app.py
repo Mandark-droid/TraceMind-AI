@@ -35,6 +35,12 @@ from screens.compare import (
     create_compare_ui,
     on_compare_runs
 )
+from screens.chat import (
+    create_chat_ui,
+    on_send_message,
+    on_clear_chat,
+    on_quick_action
+)
 from utils.navigation import Navigator, Screen
 
 
@@ -1159,6 +1165,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             dashboard_nav_btn = gr.Button("📊 Dashboard", variant="primary", size="lg")
             leaderboard_nav_btn = gr.Button("🏆 Leaderboard", variant="secondary", size="lg")
             compare_nav_btn = gr.Button("⚖️ Compare", variant="secondary", size="lg")
+            chat_nav_btn = gr.Button("🤖 Agent Chat", variant="secondary", size="lg")
             docs_nav_btn = gr.Button("📚 Documentation", variant="secondary", size="lg")
     
             gr.Markdown("---")
@@ -1594,6 +1601,9 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         # Screen 5: Compare Screen
         compare_screen, compare_components = create_compare_ui()
 
+        # Screen 6: Agent Chat Screen
+        chat_screen, chat_components = create_chat_ui()
+
         # Navigation handlers (define before use)
         def navigate_to_dashboard():
             """Navigate to dashboard screen and load dashboard data"""
@@ -1611,9 +1621,11 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 run_detail_screen: gr.update(visible=False),
                 trace_detail_screen: gr.update(visible=False),
                 compare_screen: gr.update(visible=False),
+                chat_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="primary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
+                chat_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
             }
             result.update(dashboard_updates)
@@ -1627,9 +1639,11 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 run_detail_screen: gr.update(visible=False),
                 trace_detail_screen: gr.update(visible=False),
                 compare_screen: gr.update(visible=False),
+                chat_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="primary"),
                 compare_nav_btn: gr.update(variant="secondary"),
+                chat_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
             }
 
@@ -1653,9 +1667,11 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     run_detail_screen: gr.update(visible=False),
                     trace_detail_screen: gr.update(visible=False),
                     compare_screen: gr.update(visible=True),
+                    chat_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
                     compare_nav_btn: gr.update(variant="primary"),
+                    chat_nav_btn: gr.update(variant="secondary"),
                     docs_nav_btn: gr.update(variant="secondary"),
                     compare_components['compare_run_a_dropdown']: gr.update(choices=run_choices),
                     compare_components['compare_run_b_dropdown']: gr.update(choices=run_choices),
@@ -1668,19 +1684,37 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     run_detail_screen: gr.update(visible=False),
                     trace_detail_screen: gr.update(visible=False),
                     compare_screen: gr.update(visible=True),
+                    chat_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
                     compare_nav_btn: gr.update(variant="primary"),
+                    chat_nav_btn: gr.update(variant="secondary"),
                     docs_nav_btn: gr.update(variant="secondary"),
                 }
+
+        def navigate_to_chat():
+            """Navigate to chat screen"""
+            return {
+                dashboard_screen: gr.update(visible=False),
+                leaderboard_screen: gr.update(visible=False),
+                run_detail_screen: gr.update(visible=False),
+                trace_detail_screen: gr.update(visible=False),
+                compare_screen: gr.update(visible=False),
+                chat_screen: gr.update(visible=True),
+                dashboard_nav_btn: gr.update(variant="secondary"),
+                leaderboard_nav_btn: gr.update(variant="secondary"),
+                compare_nav_btn: gr.update(variant="secondary"),
+                chat_nav_btn: gr.update(variant="primary"),
+                docs_nav_btn: gr.update(variant="secondary"),
+            }
 
         # Event handlers
         # Load dashboard on app start
         app.load(
             fn=navigate_to_dashboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn
             ] + list(dashboard_components.values())
         )
 
@@ -1773,26 +1807,71 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         dashboard_nav_btn.click(
             fn=navigate_to_dashboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn
             ] + list(dashboard_components.values())
         )
 
         leaderboard_nav_btn.click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn
             ]
         )
 
         compare_nav_btn.click(
             fn=navigate_to_compare,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn,
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn,
                 compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']
             ]
+        )
+
+        chat_nav_btn.click(
+            fn=navigate_to_chat,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn
+            ]
+        )
+
+        # Chat screen event handlers
+        chat_components['send_btn'].click(
+            fn=on_send_message,
+            inputs=[chat_components['message'], chat_components['chatbot'], chat_components['show_reasoning']],
+            outputs=[chat_components['chatbot'], chat_components['message'], chat_components['reasoning_display']]
+        )
+
+        chat_components['message'].submit(
+            fn=on_send_message,
+            inputs=[chat_components['message'], chat_components['chatbot'], chat_components['show_reasoning']],
+            outputs=[chat_components['chatbot'], chat_components['message'], chat_components['reasoning_display']]
+        )
+
+        chat_components['clear_btn'].click(
+            fn=on_clear_chat,
+            inputs=[],
+            outputs=[chat_components['chatbot'], chat_components['message'], chat_components['reasoning_display']]
+        )
+
+        chat_components['quick_analyze'].click(
+            fn=lambda: on_quick_action("analyze"),
+            inputs=[],
+            outputs=[chat_components['message']]
+        )
+
+        chat_components['quick_costs'].click(
+            fn=lambda: on_quick_action("costs"),
+            inputs=[],
+            outputs=[chat_components['message']]
+        )
+
+        chat_components['quick_recommend'].click(
+            fn=lambda: on_quick_action("recommend"),
+            inputs=[],
+            outputs=[chat_components['message']]
         )
 
         # Compare button handler
