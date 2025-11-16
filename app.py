@@ -27,6 +27,10 @@ from screens.trace_detail import (
     create_gpu_metrics_dashboard,
     create_gpu_summary_cards
 )
+from screens.dashboard import (
+    create_dashboard_ui,
+    update_dashboard_data
+)
 from utils.navigation import Navigator, Screen
 
 
@@ -388,9 +392,9 @@ data_loader = create_data_loader_from_env()
 navigator = Navigator()
 
 # Pre-load and cache the leaderboard data before building UI
-print("📥 Pre-loading leaderboard data from HuggingFace...")
+print("Pre-loading leaderboard data from HuggingFace...")
 leaderboard_df_cache = data_loader.load_leaderboard()
-print(f"✅ Loaded {len(leaderboard_df_cache)} evaluation runs")
+print(f"Loaded {len(leaderboard_df_cache)} evaluation runs")
 
 # Global state (already populated)
 # leaderboard_df_cache is now set
@@ -895,7 +899,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             Agent Evaluation Platform
         </p>
         <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0; font-size: 0.9em;">
-            Powered by Gradio 6 🚀 | HuggingFace Jobs | TraceVerde | SmolTrace | MCP | Gemini | Modal
+            Powered by Gradio 🚀 | HuggingFace Jobs | TraceVerde | SmolTrace | MCP | Gemini | Modal
         </p>
     </div>
     """)
@@ -913,9 +917,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
     
             # Navigation section
             gr.Markdown("### 🧭 Navigation")
-    
+
             # Navigation buttons
-            leaderboard_nav_btn = gr.Button("🏆 Leaderboard", variant="primary", size="lg")
+            dashboard_nav_btn = gr.Button("📊 Dashboard", variant="primary", size="lg")
+            leaderboard_nav_btn = gr.Button("🏆 Leaderboard", variant="secondary", size="lg")
             compare_nav_btn = gr.Button("⚖️ Compare", variant="secondary", size="lg")
             docs_nav_btn = gr.Button("📚 Documentation", variant="secondary", size="lg")
     
@@ -944,10 +949,13 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 label="Agent Type",
                 info="Tool: Function calling | Code: Code execution | Both: Hybrid"
             )
-    
+
         # Main content area
+        # Screen 0: Dashboard
+        dashboard_screen, dashboard_components = create_dashboard_ui()
+
         # Screen 1: Main Leaderboard
-        with gr.Column(visible=True) as leaderboard_screen:
+        with gr.Column(visible=False) as leaderboard_screen:
             gr.Markdown("## 🏆 Agent Evaluation Leaderboard")
             with gr.Tabs():
                 with gr.TabItem("🏆 Leaderboard"):
@@ -1106,7 +1114,53 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 trace_ask_btn = gr.Button("Ask", variant="primary")
                 trace_answer = gr.Markdown("*Ask a question to get AI-powered insights*")
 
+        # Navigation handlers (define before use)
+        def navigate_to_dashboard():
+            """Navigate to dashboard screen and load dashboard data"""
+            try:
+                leaderboard_df = data_loader.load_leaderboard()
+                dashboard_updates = update_dashboard_data(leaderboard_df, dashboard_components)
+            except Exception as e:
+                print(f"[ERROR] Loading dashboard data: {e}")
+                dashboard_updates = {}
+
+            # Combine navigation updates with dashboard data updates
+            result = {
+                dashboard_screen: gr.update(visible=True),
+                leaderboard_screen: gr.update(visible=False),
+                run_detail_screen: gr.update(visible=False),
+                trace_detail_screen: gr.update(visible=False),
+                dashboard_nav_btn: gr.update(variant="primary"),
+                leaderboard_nav_btn: gr.update(variant="secondary"),
+                compare_nav_btn: gr.update(variant="secondary"),
+                docs_nav_btn: gr.update(variant="secondary"),
+            }
+            result.update(dashboard_updates)
+            return result
+
+        def navigate_to_leaderboard():
+            """Navigate to leaderboard screen"""
+            return {
+                dashboard_screen: gr.update(visible=False),
+                leaderboard_screen: gr.update(visible=True),
+                run_detail_screen: gr.update(visible=False),
+                trace_detail_screen: gr.update(visible=False),
+                dashboard_nav_btn: gr.update(variant="secondary"),
+                leaderboard_nav_btn: gr.update(variant="primary"),
+                compare_nav_btn: gr.update(variant="secondary"),
+                docs_nav_btn: gr.update(variant="secondary"),
+            }
+
         # Event handlers
+        # Load dashboard on app start
+        app.load(
+            fn=navigate_to_dashboard,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
+            ] + list(dashboard_components.values())
+        )
+
         app.load(
         fn=load_leaderboard,
         outputs=[leaderboard_by_model, model_filter, sidebar_model_filter]
@@ -1191,6 +1245,22 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         outputs=[mcp_insights]
         )
 
+        # Wire up navigation buttons
+        dashboard_nav_btn.click(
+            fn=navigate_to_dashboard,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
+            ] + list(dashboard_components.values())
+        )
+
+        leaderboard_nav_btn.click(
+            fn=navigate_to_leaderboard,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
+            ]
+        )
 
         leaderboard_table.select(
         fn=on_drilldown_select,
@@ -1238,9 +1308,9 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
 
 
 if __name__ == "__main__":
-    print("🚀 Starting TraceMind-AI...")
-    print(f"📊 Data Source: {os.getenv('DATA_SOURCE', 'both')}")
-    print(f"📁 JSON Path: {os.getenv('JSON_DATA_PATH', './sample_data')}")
+    print("Starting TraceMind-AI...")
+    print(f"Data Source: {os.getenv('DATA_SOURCE', 'both')}")
+    print(f"JSON Path: {os.getenv('JSON_DATA_PATH', './sample_data')}")
 
     app.launch(
         server_name="0.0.0.0",
