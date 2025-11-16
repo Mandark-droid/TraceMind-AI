@@ -229,23 +229,6 @@ def on_test_case_select(evt: gr.SelectData, df):
         # Create span details table
         span_table_df = create_span_details_table(spans)
 
-        # Load GPU metrics (if available)
-        gpu_summary_html = "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
-        gpu_plot = None
-        gpu_json_data = {}
-
-        try:
-            if 'metrics_dataset' in current_selected_run and current_selected_run['metrics_dataset']:
-                metrics_dataset = current_selected_run['metrics_dataset']
-                gpu_metrics_data = data_loader.load_metrics(metrics_dataset)
-
-                if gpu_metrics_data is not None and not gpu_metrics_data.empty:
-                    gpu_plot = create_gpu_metrics_dashboard(gpu_metrics_data)
-                    gpu_summary_html = create_gpu_summary_cards(gpu_metrics_data)
-                    gpu_json_data = gpu_metrics_data.to_dict('records')
-        except Exception as e:
-            print(f"[WARNING] Could not load GPU metrics: {e}")
-
         # Return dictionary with visibility updates and data
         return {
             run_detail_screen: gr.update(visible=False),
@@ -255,10 +238,7 @@ def on_test_case_select(evt: gr.SelectData, df):
             trace_thought_graph: gr.update(value=thought_graph_plot),
             span_visualization: gr.update(value=span_viz_plot),
             span_details_table: gr.update(value=span_table_df),
-            span_details_json: gr.update(value=span_details_data),
-            gpu_summary_cards_html: gr.update(value=gpu_summary_html),
-            gpu_metrics_plot: gr.update(value=gpu_plot),
-            gpu_metrics_json: gr.update(value=gpu_json_data)
+            span_details_json: gr.update(value=span_details_data)
         }
 
     except Exception as e:
@@ -863,6 +843,24 @@ def on_html_table_row_click(row_index_str):
         if display_columns:
             display_df = display_df[display_columns]
 
+        # Load GPU metrics (if available)
+        gpu_summary_html = "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
+        gpu_plot = None
+        gpu_json_data = {}
+
+        try:
+            if 'metrics_dataset' in run_data and run_data.get('metrics_dataset'):
+                metrics_dataset = run_data['metrics_dataset']
+                gpu_metrics_data = data_loader.load_metrics(metrics_dataset)
+
+                if gpu_metrics_data is not None and not gpu_metrics_data.empty:
+                    from screens.trace_detail import create_gpu_metrics_dashboard, create_gpu_summary_cards
+                    gpu_plot = create_gpu_metrics_dashboard(gpu_metrics_data)
+                    gpu_summary_html = create_gpu_summary_cards(gpu_metrics_data)
+                    gpu_json_data = gpu_metrics_data.to_dict('records')
+        except Exception as e:
+            print(f"[WARNING] Could not load GPU metrics for run: {e}")
+
         print(f"[DEBUG] Successfully loaded run detail for: {run_data.get('model', 'Unknown')}")
 
         return {
@@ -872,7 +870,11 @@ def on_html_table_row_click(row_index_str):
             run_metadata_html: gr.update(value=metadata_html),
             test_cases_table: gr.update(value=display_df),
             run_card_html: gr.update(value=run_card_html_content),
-            selected_row_index: gr.update(value="")  # Clear textbox
+            performance_charts: gr.update(value=perf_chart),
+            selected_row_index: gr.update(value=""),  # Clear textbox
+            run_gpu_summary_cards_html: gr.update(value=gpu_summary_html),
+            run_gpu_metrics_plot: gr.update(value=gpu_plot),
+            run_gpu_metrics_json: gr.update(value=gpu_json_data)
         }
 
     except Exception as e:
@@ -886,7 +888,11 @@ def on_html_table_row_click(row_index_str):
             run_metadata_html: gr.update(),
             test_cases_table: gr.update(),
             run_card_html: gr.update(),
-            selected_row_index: gr.update(value="")  # Clear textbox
+            performance_charts: gr.update(),
+            selected_row_index: gr.update(value=""),  # Clear textbox
+            run_gpu_summary_cards_html: gr.update(),
+            run_gpu_metrics_plot: gr.update(),
+            run_gpu_metrics_json: gr.update()
         }
 
 
@@ -1072,6 +1078,24 @@ def on_drilldown_select(evt: gr.SelectData, df):
         if display_columns:
             display_df = display_df[display_columns]
 
+        # Load GPU metrics (if available)
+        gpu_summary_html = "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
+        gpu_plot = None
+        gpu_json_data = {}
+
+        try:
+            if 'metrics_dataset' in run_data and run_data.get('metrics_dataset'):
+                metrics_dataset = run_data['metrics_dataset']
+                gpu_metrics_data = data_loader.load_metrics(metrics_dataset)
+
+                if gpu_metrics_data is not None and not gpu_metrics_data.empty:
+                    from screens.trace_detail import create_gpu_metrics_dashboard, create_gpu_summary_cards
+                    gpu_plot = create_gpu_metrics_dashboard(gpu_metrics_data)
+                    gpu_summary_html = create_gpu_summary_cards(gpu_metrics_data)
+                    gpu_json_data = gpu_metrics_data.to_dict('records')
+        except Exception as e:
+            print(f"[WARNING] Could not load GPU metrics for run: {e}")
+
         print(f"[DEBUG] Successfully loaded run detail for: {run_data.get('model', 'Unknown')}")
 
         return {
@@ -1081,7 +1105,10 @@ def on_drilldown_select(evt: gr.SelectData, df):
             run_metadata_html: gr.update(value=metadata_html),
             test_cases_table: gr.update(value=display_df),
             performance_charts: gr.update(value=perf_chart),
-            run_card_html: gr.update(value=run_card_html_content)
+            run_card_html: gr.update(value=run_card_html_content),
+            run_gpu_summary_cards_html: gr.update(value=gpu_summary_html),
+            run_gpu_metrics_plot: gr.update(value=gpu_plot),
+            run_gpu_metrics_json: gr.update(value=gpu_json_data)
         }
 
     except Exception as e:
@@ -1097,7 +1124,10 @@ def on_drilldown_select(evt: gr.SelectData, df):
             run_metadata_html: gr.update(value="<h3>Error loading run detail</h3>"),
             test_cases_table: gr.update(value=pd.DataFrame()),
             performance_charts: gr.update(),
-            run_card_html: gr.update()
+            run_card_html: gr.update(),
+            run_gpu_summary_cards_html: gr.update(),
+            run_gpu_metrics_plot: gr.update(),
+            run_gpu_metrics_json: gr.update()
         }
 
 
@@ -1534,6 +1564,17 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     gr.Markdown("*Performance metrics and charts*")
                     performance_charts = gr.Plot(label="Performance Analysis", show_label=False)
 
+                with gr.TabItem("🖥️ GPU Metrics"):
+                    gr.Markdown("*Performance metrics for GPU-based models (not available for API models)*")
+                    run_gpu_summary_cards_html = gr.HTML(label="GPU Summary", show_label=False)
+
+                    with gr.Tabs():
+                        with gr.TabItem("📈 Time Series Dashboard"):
+                            run_gpu_metrics_plot = gr.Plot(label="GPU Metrics Over Time", show_label=False)
+
+                        with gr.TabItem("📋 Raw Metrics Data"):
+                            run_gpu_metrics_json = gr.JSON(label="GPU Metrics Data")
+
         # Screen 4: Trace Detail with Sub-tabs
         with gr.Column(visible=False) as trace_detail_screen:
             with gr.Row():
@@ -1563,17 +1604,6 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     gr.Markdown("*Interactive waterfall diagram showing span execution timeline*")
                     gr.Markdown("*Hover over spans for details. Drag to zoom, double-click to reset.*")
                     span_visualization = gr.Plot(label="Trace Waterfall", show_label=False)
-
-                with gr.TabItem("🖥️ GPU Metrics"):
-                    gr.Markdown("*Performance metrics for GPU-based models (not available for API models)*")
-                    gpu_summary_cards_html = gr.HTML(label="GPU Summary", show_label=False)
-
-                    with gr.Tabs():
-                        with gr.TabItem("📈 Time Series Dashboard"):
-                            gpu_metrics_plot = gr.Plot(label="GPU Metrics Over Time", show_label=False)
-
-                        with gr.TabItem("📋 Raw Metrics Data"):
-                            gpu_metrics_json = gr.JSON(label="GPU Metrics Data")
 
                 with gr.TabItem("📝 Span Details"):
                     gr.Markdown("*Detailed span information with token and cost data*")
@@ -1910,7 +1940,17 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         leaderboard_table.select(
         fn=on_drilldown_select,
         inputs=[leaderboard_table],  # Pass dataframe to handler (like MockTraceMind)
-        outputs=[leaderboard_screen, run_detail_screen, run_metadata_html, test_cases_table, performance_charts, run_card_html]
+        outputs=[
+            leaderboard_screen,
+            run_detail_screen,
+            run_metadata_html,
+            test_cases_table,
+            performance_charts,
+            run_card_html,
+            run_gpu_summary_cards_html,
+            run_gpu_metrics_plot,
+            run_gpu_metrics_json
+        ]
         )
 
         back_to_leaderboard_btn.click(
@@ -1931,10 +1971,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 trace_thought_graph,
                 span_visualization,
                 span_details_table,
-                span_details_json,
-                gpu_summary_cards_html,
-                gpu_metrics_plot,
-                gpu_metrics_json
+                span_details_json
             ]
         )
 
@@ -1948,7 +1985,18 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         selected_row_index.change(
         fn=on_html_table_row_click,
         inputs=[selected_row_index],
-        outputs=[leaderboard_screen, run_detail_screen, run_metadata_html, test_cases_table, run_card_html, selected_row_index]
+        outputs=[
+            leaderboard_screen,
+            run_detail_screen,
+            run_metadata_html,
+            test_cases_table,
+            run_card_html,
+            performance_charts,
+            selected_row_index,
+            run_gpu_summary_cards_html,
+            run_gpu_metrics_plot,
+            run_gpu_metrics_json
+        ]
         )
 
         # Download run report card as PNG
