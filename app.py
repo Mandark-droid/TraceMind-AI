@@ -1137,17 +1137,95 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     viz_type = gr.Radio(
                         choices=["🔥 Performance Heatmap", "⚡ Speed vs Accuracy", "💰 Cost Efficiency"],
                         value="🔥 Performance Heatmap",
-                        label="Select Visualization"
+                        label="Select Visualization",
+                        info="Choose which analytics chart to display"
                     )
-                    analytics_chart = gr.Plot()
-    
+                    analytics_chart = gr.Plot(label="Interactive Chart", show_label=False)
+
+                    # Explanation panel in accordion
+                    with gr.Accordion("💡 How to Read This Chart", open=False):
+                        viz_explanation = gr.Markdown("""
+                        #### 🔥 Performance Heatmap
+
+                        **What it shows:** All models compared across all metrics in one view
+
+                        **How to read it:**
+                        - 🟢 **Green cells** = Better performance (higher is better)
+                        - 🟡 **Yellow cells** = Average performance
+                        - 🔴 **Red cells** = Worse performance (needs improvement)
+
+                        **Metrics displayed:**
+                        - Success Rate (%), Avg Duration (ms), Total Cost ($)
+                        - CO2 Emissions (g), GPU Utilization (%), Total Tokens
+
+                        **Use it to:** Quickly identify which models excel in which areas
+
+                        ---
+
+                        #### ⚡ Speed vs Accuracy
+
+                        **What it shows:** Trade-off between execution speed and success rate
+
+                        **How to read it:**
+                        - Each bubble represents a model
+                        - X-axis: Average duration (lower is faster)
+                        - Y-axis: Success rate (higher is better)
+                        - Bubble size: Total cost (smaller bubbles = cheaper)
+                        - Bubble color: CO2 emissions (greener = more eco-friendly)
+
+                        **Look for:** Models in top-left corner (fast + accurate)
+
+                        ---
+
+                        #### 💰 Cost Efficiency
+
+                        **What it shows:** Cost per successful test case
+
+                        **How to read it:**
+                        - Bar chart showing cost efficiency (lower is better)
+                        - Calculated as: Total Cost / Successful Tests
+                        - Helps identify best value models
+
+                        **Use it to:** Choose models that balance quality and budget
+                        """, elem_id="viz-explanation")
+
                 with gr.TabItem("📥 Summary Card"):
-                    top_n_slider = gr.Slider(1, 5, 3, step=1, label="Top N Models")
-                    generate_card_btn = gr.Button("🎨 Generate Card")
-                    card_preview = gr.HTML()
+                    gr.Markdown("""
+                    ### 📥 Downloadable Leaderboard Summary Card
+
+                    Generate a professional, shareable summary card with top performers and key statistics.
+                    Perfect for presentations, reports, and sharing results with your team!
+
+                    **Features:**
+                    - 🏆 Top N performers with medals
+                    - 📊 Key metrics per model
+                    - 📈 Aggregate leaderboard statistics
+                    - 🎨 TraceMind branding with logo
+                    - 📥 One-click download as high-quality PNG
+                    """)
+
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            top_n_slider = gr.Slider(
+                                minimum=1,
+                                maximum=5,
+                                value=3,
+                                step=1,
+                                label="Number of top models to show",
+                                info="Select how many top performers to include in the card"
+                            )
+
+                            with gr.Row():
+                                generate_card_btn = gr.Button("🎨 Generate Card Preview", variant="secondary", size="lg")
+                                download_card_btn = gr.Button("📥 Download as PNG", variant="primary", size="lg", visible=False)
+
+                        with gr.Column(scale=2):
+                            card_preview = gr.HTML(label="Card Preview", value="<p style='text-align: center; color: #666; padding: 40px;'>Click 'Generate Card Preview' to see your summary card</p>")
     
                 with gr.TabItem("🤖 AI Insights"):
-                    regenerate_btn = gr.Button("🔄 Regenerate")
+                    with gr.Row():
+                        regenerate_btn = gr.Button("🔄 Regenerate Insights (Streaming)", size="sm", variant="secondary")
+                        gr.Markdown("*Real-time AI analysis powered by Gradio 6 streaming*", elem_classes=["text-sm"])
                     mcp_insights = gr.Markdown("*Loading insights...*")
     
             # Hidden textbox for row selection (JavaScript bridge)
