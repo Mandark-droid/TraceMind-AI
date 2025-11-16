@@ -19,9 +19,10 @@ def _get_logo_base64():
             with open(logo_path, "rb") as f:
                 return base64.b64encode(f.read()).decode()
 
-        # Fallback: fetch from GitHub raw URL (for HuggingFace Spaces)
+        # Fallback: fetch from GitHub assets branch (for HuggingFace Spaces)
+        # Logo.png is hosted on assets branch to avoid binary file issues on HF
         import urllib.request
-        github_logo_url = "https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/main/Logo.png"
+        github_logo_url = "https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png"
         with urllib.request.urlopen(github_logo_url, timeout=5) as response:
             return base64.b64encode(response.read()).decode()
 
