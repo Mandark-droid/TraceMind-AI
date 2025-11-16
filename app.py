@@ -488,7 +488,7 @@ def apply_drilldown_filters(agent_type, provider, sort_by_col, sort_order):
 
 
 def apply_sidebar_filters(selected_model, selected_agent_type):
-    """Apply sidebar filters to both leaderboard tabs"""
+    """Apply sidebar filters to leaderboard (DrillDown tab removed)"""
     global leaderboard_df_cache
 
     df = leaderboard_df_cache.copy() if leaderboard_df_cache is not None else data_loader.load_leaderboard()
@@ -505,13 +505,6 @@ def apply_sidebar_filters(selected_model, selected_agent_type):
     sorted_df = df.sort_values(by='success_rate', ascending=False).reset_index(drop=True)
     html = generate_leaderboard_html(sorted_df, 'success_rate', False)
 
-    # For drilldown table (DataFrame)
-    display_df = df[[
-        'run_id', 'model', 'agent_type', 'provider', 'success_rate',
-        'total_tests', 'avg_duration_ms', 'total_cost_usd', 'submitted_by'
-    ]].copy()
-    display_df.columns = ['Run ID', 'Model', 'Agent Type', 'Provider', 'Success Rate', 'Tests', 'Duration (ms)', 'Cost (USD)', 'Submitted By']
-
     # Update trends
     trends_fig = create_trends_plot(df)
 
@@ -526,7 +519,7 @@ def apply_sidebar_filters(selected_model, selected_agent_type):
 
     return {
         leaderboard_by_model: gr.update(value=html),
-        leaderboard_table: gr.update(value=display_df),
+        # leaderboard_table removed (DrillDown tab is commented out)
         trends_plot: gr.update(value=trends_fig),
         compare_components['compare_run_a_dropdown']: gr.update(choices=compare_choices),
         compare_components['compare_run_b_dropdown']: gr.update(choices=compare_choices)
@@ -1515,81 +1508,82 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         value="<p>Loading leaderboard...</p>",
                         selectable_elements=["tr"]  # Make table rows clickable
                     )
-    
-                with gr.TabItem("📋 DrillDown"):
-                    gr.Markdown("*Click any row to view detailed run information*")
 
-                    # User Guide Accordion
-                    with gr.Accordion("📖 How to Use DrillDown", open=False):
-                        gr.Markdown("""
-                        ### 📋 Data Table View
+                # COMMENTED OUT: DrillDown tab (replaced by clickable HTML table in By Model tab)
+                # with gr.TabItem("📋 DrillDown"):
+                #     gr.Markdown("*Click any row to view detailed run information*")
 
-                        **What is this tab?**
-                        The DrillDown tab provides a raw, sortable table view of all evaluation runs with full details.
+                #     # User Guide Accordion
+                #     with gr.Accordion("📖 How to Use DrillDown", open=False):
+                #         gr.Markdown("""
+                #         ### 📋 Data Table View
 
-                        **How to use it:**
-                        - 📊 **Table Format**: Clean, spreadsheet-like view of all runs
-                        - 🔍 **Filters**: Apply agent type, provider, and sorting controls
-                        - 📥 **Export Ready**: Easy to copy/paste data for reports
-                        - 👆 **Click Rows**: Click any row to navigate to detailed run view
-                        - 🔢 **All Metrics**: Shows run ID, model, success rate, cost, duration, and more
+                #         **What is this tab?**
+                #         The DrillDown tab provides a raw, sortable table view of all evaluation runs with full details.
 
-                        **Columns Explained:**
-                        - **Run ID**: Unique identifier for each evaluation
-                        - **Model**: AI model that was evaluated
-                        - **Agent Type**: tool (function calling), code (code execution), or both
-                        - **Provider**: litellm (API models) or transformers (local models)
-                        - **Success Rate**: Percentage of test cases passed
-                        - **Tests**: Number of test cases executed
-                        - **Duration**: Average execution time in milliseconds
-                        - **Cost**: Total cost in USD for this run
-                        - **Submitted By**: HuggingFace username of evaluator
+                #         **How to use it:**
+                #         - 📊 **Table Format**: Clean, spreadsheet-like view of all runs
+                #         - 🔍 **Filters**: Apply agent type, provider, and sorting controls
+                #         - 📥 **Export Ready**: Easy to copy/paste data for reports
+                #         - 👆 **Click Rows**: Click any row to navigate to detailed run view
+                #         - 🔢 **All Metrics**: Shows run ID, model, success rate, cost, duration, and more
 
-                        **Tips:**
-                        - Use this for detailed data analysis
-                        - Combine with sidebar filters for focused views
-                        - Sort by any column to find best/worst performers
-                        """)
+                #         **Columns Explained:**
+                #         - **Run ID**: Unique identifier for each evaluation
+                #         - **Model**: AI model that was evaluated
+                #         - **Agent Type**: tool (function calling), code (code execution), or both
+                #         - **Provider**: litellm (API models) or transformers (local models)
+                #         - **Success Rate**: Percentage of test cases passed
+                #         - **Tests**: Number of test cases executed
+                #         - **Duration**: Average execution time in milliseconds
+                #         - **Cost**: Total cost in USD for this run
+                #         - **Submitted By**: HuggingFace username of evaluator
 
-                    # Inline filters for drilldown table
-                    with gr.Row():
-                        with gr.Column(scale=1):
-                            drilldown_agent_type_filter = gr.Radio(
-                                choices=["All", "tool", "code", "both"],
-                                value="All",
-                                label="Agent Type",
-                                info="Filter by agent type"
-                            )
-                        with gr.Column(scale=1):
-                            drilldown_provider_filter = gr.Dropdown(
-                                choices=["All"],
-                                value="All",
-                                label="Provider",
-                                info="Filter by provider"
-                            )
-                        with gr.Column(scale=1):
-                            drilldown_sort_by_dropdown = gr.Dropdown(
-                                choices=["success_rate", "total_cost_usd", "avg_duration_ms", "total_tokens"],
-                                value="success_rate",
-                                label="Sort By"
-                            )
-                        with gr.Column(scale=1):
-                            drilldown_sort_order = gr.Radio(
-                                choices=["Descending", "Ascending"],
-                                value="Descending",
-                                label="Sort Order"
-                            )
+                #         **Tips:**
+                #         - Use this for detailed data analysis
+                #         - Combine with sidebar filters for focused views
+                #         - Sort by any column to find best/worst performers
+                #         """)
 
-                    with gr.Row():
-                        apply_drilldown_filters_btn = gr.Button("🔍 Apply Filters", variant="primary", size="sm")
+                #     # Inline filters for drilldown table
+                #     with gr.Row():
+                #         with gr.Column(scale=1):
+                #             drilldown_agent_type_filter = gr.Radio(
+                #                 choices=["All", "tool", "code", "both"],
+                #                 value="All",
+                #                 label="Agent Type",
+                #                 info="Filter by agent type"
+                #             )
+                #         with gr.Column(scale=1):
+                #             drilldown_provider_filter = gr.Dropdown(
+                #                 choices=["All"],
+                #                 value="All",
+                #                 label="Provider",
+                #                 info="Filter by provider"
+                #             )
+                #         with gr.Column(scale=1):
+                #             drilldown_sort_by_dropdown = gr.Dropdown(
+                #                 choices=["success_rate", "total_cost_usd", "avg_duration_ms", "total_tokens"],
+                #                 value="success_rate",
+                #                 label="Sort By"
+                #             )
+                #         with gr.Column(scale=1):
+                #             drilldown_sort_order = gr.Radio(
+                #                 choices=["Descending", "Ascending"],
+                #                 value="Descending",
+                #                 label="Sort Order"
+                #             )
 
-                    # Simple table controlled by inline filters
-                    leaderboard_table = gr.Dataframe(
-                        headers=["Run ID", "Model", "Agent Type", "Provider", "Success Rate", "Tests", "Duration (ms)", "Cost (USD)", "Submitted By"],
-                        interactive=False,
-                        wrap=True
-                    )
-    
+                #     with gr.Row():
+                #         apply_drilldown_filters_btn = gr.Button("🔍 Apply Filters", variant="primary", size="sm")
+
+                #     # Simple table controlled by inline filters
+                #     leaderboard_table = gr.Dataframe(
+                #         headers=["Run ID", "Model", "Agent Type", "Provider", "Success Rate", "Tests", "Duration (ms)", "Cost (USD)", "Submitted By"],
+                #         interactive=False,
+                #         wrap=True
+                #     )
+
                 with gr.TabItem("📈 Trends"):
                     # User Guide Accordion
                     with gr.Accordion("📖 How to Read Trends", open=False):
@@ -2016,24 +2010,24 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         ]
         )
 
-        # DrillDown tab inline filters
-        apply_drilldown_filters_btn.click(
-        fn=apply_drilldown_filters,
-        inputs=[drilldown_agent_type_filter, drilldown_provider_filter, drilldown_sort_by_dropdown, drilldown_sort_order],
-        outputs=[leaderboard_table]
-        )
+        # COMMENTED OUT: DrillDown tab inline filters
+        # apply_drilldown_filters_btn.click(
+        # fn=apply_drilldown_filters,
+        # inputs=[drilldown_agent_type_filter, drilldown_provider_filter, drilldown_sort_by_dropdown, drilldown_sort_order],
+        # outputs=[leaderboard_table]
+        # )
 
-        # Sidebar filters (apply to all tabs)
+        # Sidebar filters (apply to remaining tabs - removed leaderboard_table)
         model_filter.change(
         fn=apply_sidebar_filters,
         inputs=[model_filter, sidebar_agent_type_filter],
-        outputs=[leaderboard_by_model, leaderboard_table, trends_plot, compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']]
+        outputs=[leaderboard_by_model, trends_plot, compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']]
         )
 
         sidebar_agent_type_filter.change(
         fn=apply_sidebar_filters,
         inputs=[model_filter, sidebar_agent_type_filter],
-        outputs=[leaderboard_by_model, leaderboard_table, trends_plot, compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']]
+        outputs=[leaderboard_by_model, trends_plot, compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']]
         )
 
 
@@ -2175,21 +2169,22 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             js=download_card_as_png_js(element_id="comparison-card-html")
         )
 
-        leaderboard_table.select(
-        fn=on_drilldown_select,
-        inputs=[leaderboard_table],  # Pass dataframe to handler (like MockTraceMind)
-        outputs=[
-            leaderboard_screen,
-            run_detail_screen,
-            run_metadata_html,
-            test_cases_table,
-            performance_charts,
-            run_card_html,
-            run_gpu_summary_cards_html,
-            run_gpu_metrics_plot,
-            run_gpu_metrics_json
-        ]
-        )
+        # COMMENTED OUT: DrillDown table select event handler
+        # leaderboard_table.select(
+        # fn=on_drilldown_select,
+        # inputs=[leaderboard_table],  # Pass dataframe to handler (like MockTraceMind)
+        # outputs=[
+        #     leaderboard_screen,
+        #     run_detail_screen,
+        #     run_metadata_html,
+        #     test_cases_table,
+        #     performance_charts,
+        #     run_card_html,
+        #     run_gpu_summary_cards_html,
+        #     run_gpu_metrics_plot,
+        #     run_gpu_metrics_json
+        # ]
+        # )
 
         back_to_leaderboard_btn.click(
         fn=go_back_to_leaderboard,
