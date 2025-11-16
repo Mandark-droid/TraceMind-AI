@@ -7,7 +7,7 @@ sdk: gradio
 sdk_version: 5.49.1
 app_file: app.py
 short_description: AI agent evaluation with MCP-powered intelligence
-pinned: false
+pinned: true
 tags:
   - mcp-in-action-track-enterprise
   - agent-evaluation

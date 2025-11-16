@@ -1142,6 +1142,12 @@ def on_html_leaderboard_select(evt: gr.SelectData):
         # evt.index = CSS selector that was matched (e.g., "tr")
         # evt.value = dictionary of data-* attributes from the HTML element
 
+        print(f"[DEBUG] HTMLPlus event triggered")
+        print(f"[DEBUG] evt.index: {evt.index}")
+        print(f"[DEBUG] evt.value type: {type(evt.value)}")
+        print(f"[DEBUG] evt.value keys: {list(evt.value.keys()) if isinstance(evt.value, dict) else 'Not a dict'}")
+        print(f"[DEBUG] evt.value: {evt.value}")
+
         if evt.index != "tr":
             gr.Warning("Invalid selection")
             return {

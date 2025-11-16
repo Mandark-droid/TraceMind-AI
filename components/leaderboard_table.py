@@ -272,7 +272,24 @@ def generate_leaderboard_html(
     for idx, row in df_sorted.iterrows():
         rank = idx + 1
 
-        # Get values with safe defaults
+        # Convert row to dictionary for data attributes (like reference implementation)
+        row_dict = row.to_dict()
+
+        # Generate data attributes dynamically from all row data
+        data_attrs_dict = {}
+        for key, value in row_dict.items():
+            # Convert underscores to hyphens for HTML data attributes
+            attr_name = f"data-{key.replace('_', '-')}"
+            # Handle None/NaN values
+            if pd.isna(value):
+                data_attrs_dict[attr_name] = "None"
+            else:
+                data_attrs_dict[attr_name] = str(value)
+
+        # Create the data attributes string
+        data_attrs = " ".join([f'{key}="{value}"' for key, value in data_attrs_dict.items()])
+
+        # Get values with safe defaults for display
         model = row.get('model', 'Unknown')
         agent_type = row.get('agent_type', 'unknown')
         provider = row.get('provider', 'unknown')
@@ -346,40 +363,8 @@ def generate_leaderboard_html(
         run_id = row.get('run_id', 'N/A')
         run_id_short = run_id[:8] + '...' if len(run_id) > 8 else run_id
 
-        # Get dataset references
-        results_dataset = row.get('results_dataset', '')
-        traces_dataset = row.get('traces_dataset', '')
-        metrics_dataset = row.get('metrics_dataset', '')
-
         html += f"""
-            <tr
-                data-run-id="{run_id}"
-                data-rank="{rank}"
-                data-model="{model}"
-                data-agent-type="{agent_type}"
-                data-provider="{provider}"
-                data-success-rate="{success_rate}"
-                data-total-tests="{total_tests}"
-                data-successful-tests="{successful_tests}"
-                data-failed-tests="{failed_tests}"
-                data-avg-steps="{avg_steps}"
-                data-avg-duration-ms="{avg_duration_ms}"
-                data-total-tokens="{total_tokens}"
-                data-total-cost-usd="{total_cost_usd}"
-                data-co2-emissions-g="{co2_emissions_g}"
-                data-gpu-utilization-avg="{gpu_utilization_avg if pd.notna(gpu_utilization_avg) else 'None'}"
-                data-gpu-memory-avg-mib="{gpu_memory_avg_mib if pd.notna(gpu_memory_avg_mib) else 'None'}"
-                data-gpu-memory-max-mib="{gpu_memory_max_mib if pd.notna(gpu_memory_max_mib) else 'None'}"
-                data-gpu-temperature-avg="{gpu_temperature_avg if pd.notna(gpu_temperature_avg) else 'None'}"
-                data-gpu-temperature-max="{gpu_temperature_max if pd.notna(gpu_temperature_max) else 'None'}"
-                data-gpu-power-avg-w="{gpu_power_avg_w if pd.notna(gpu_power_avg_w) else 'None'}"
-                data-timestamp="{timestamp}"
-                data-submitted-by="{submitted_by}"
-                data-results-dataset="{results_dataset}"
-                data-traces-dataset="{traces_dataset}"
-                data-metrics-dataset="{metrics_dataset}"
-                class="tm-clickable-row"
-            >
+            <tr {data_attrs} class="tm-clickable-row">
                 <td>{get_rank_badge(rank)}</td>
                 <td class="tm-run-id" title="{run_id}">{run_id_short}</td>
                 <td class="tm-model-name">{model}</td>
