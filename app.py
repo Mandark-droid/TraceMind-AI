@@ -177,7 +177,36 @@ def on_test_case_select(evt: gr.SelectData, df):
 
         # Create visualizations
         span_viz_plot = create_span_visualization(spans, trace_id)
-        span_details_json = create_span_table(spans).value
+        # Process spans for JSON display (create_span_table returns gr.JSON component, we need the data)
+        simplified_spans = []
+        for span in spans:
+            # Helper to get timestamp
+            def get_timestamp(s, field_name):
+                variations = [field_name, field_name.lower(), field_name.replace('Time', 'TimeUnixNano')]
+                for var in variations:
+                    if var in s:
+                        value = s[var]
+                        return int(value) if isinstance(value, str) else value
+                return 0
+
+            start_time = get_timestamp(span, 'startTime')
+            end_time = get_timestamp(span, 'endTime')
+            duration_ms = (end_time - start_time) / 1000000 if (end_time and start_time) else 0
+
+            span_id = span.get('spanId') or span.get('span_id') or 'N/A'
+            parent_id = span.get('parentSpanId') or span.get('parent_span_id') or 'root'
+
+            simplified_spans.append({
+                "Span ID": span_id,
+                "Parent": parent_id,
+                "Name": span.get('name', 'N/A'),
+                "Kind": span.get('kind', 'N/A'),
+                "Duration (ms)": round(duration_ms, 2),
+                "Attributes": span.get('attributes', {}),
+                "Status": span.get('status', {}).get('code', 'UNKNOWN')
+            })
+
+        span_details_json = simplified_spans
 
         # Create thought graph
         from components.thought_graph import create_thought_graph as create_network_graph
