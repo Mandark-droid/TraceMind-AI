@@ -206,7 +206,7 @@ def on_test_case_select(evt: gr.SelectData, df):
                 "Status": span.get('status', {}).get('code', 'UNKNOWN')
             })
 
-        span_details_json = simplified_spans
+        span_details_data = simplified_spans
 
         # Create thought graph
         from components.thought_graph import create_thought_graph as create_network_graph
@@ -241,7 +241,7 @@ def on_test_case_select(evt: gr.SelectData, df):
             trace_thought_graph: gr.update(value=thought_graph_plot),
             span_visualization: gr.update(value=span_viz_plot),
             span_details_table: gr.update(value=span_table_df),
-            span_details_json: gr.update(value=span_details_json),
+            span_details_json: gr.update(value=span_details_data),
             gpu_summary_cards_html: gr.update(value=gpu_summary_html),
             gpu_metrics_plot: gr.update(value=gpu_plot),
             gpu_metrics_json: gr.update(value=gpu_json_data)
@@ -895,7 +895,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             Agent Evaluation Platform
         </p>
         <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0 0; font-size: 0.9em;">
-            Powered by Gradio 6 🚀 | HuggingFace Jobs | MCP Integration
+            Powered by Gradio 6 🚀 | HuggingFace Jobs | TraceVerde | SmolTrace | MCP | Gemini | Modal
         </p>
     </div>
     """)
