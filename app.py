@@ -1163,11 +1163,13 @@ def on_html_leaderboard_select(evt: gr.SelectData):
             }
 
         # Get the run_id from the data attributes
+        # Note: HTML data-run-id becomes runId in JavaScript (camelCase conversion)
         row_data = evt.value
-        run_id = row_data.get('run-id')  # Note: HTML data attributes use hyphens
+        run_id = row_data.get('runId')  # JavaScript converts data-run-id to runId
 
         if not run_id:
             gr.Warning("No run ID found in selection")
+            print(f"[ERROR] No run_id found. Available keys: {list(row_data.keys())}")
             return {
                 leaderboard_screen: gr.update(visible=True),
                 run_detail_screen: gr.update(visible=False),
