@@ -196,8 +196,8 @@ def create_thought_graph(spans: List[Dict[str, Any]], trace_id: str = "Unknown")
         if 'tool_name' in node_data:
             hover += f"Tool: {node_data['tool_name']}<br>"
         if 'prompt_tokens' in node_data or 'completion_tokens' in node_data:
-            prompt = node_data.get('prompt_tokens', 0)
-            completion = node_data.get('completion_tokens', 0)
+            prompt = node_data.get('prompt_tokens', 0) or 0  # Handle None values
+            completion = node_data.get('completion_tokens', 0) or 0  # Handle None values
             hover += f"Tokens: {prompt + completion} (p:{prompt}, c:{completion})<br>"
         if 'cost' in node_data and node_data['cost'] is not None:
             hover += f"Cost: ${node_data['cost']:.6f}<br>"
