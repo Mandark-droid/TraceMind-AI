@@ -1,4 +1,4 @@
-# Gradio for UI
+# Core UI
 gradio>=5.0.0
 
 # HuggingFace for dataset loading
@@ -13,8 +13,17 @@ numpy>=1.24.0
 python-dotenv>=1.0.0
 aiohttp>=3.9.0
 requests>=2.31.0
+python-dateutil>=2.8.0
+pyyaml>=6.0
 
-# Optional: For enhanced visualizations
+# Visualizations
 plotly>=5.18.0
 matplotlib>=3.8.0
+networkx>=3.0  # For thought graph visualization
+
+# OpenTelemetry (for trace parsing)
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+
+# HuggingFace Xet (optional)
 hf_xet
