@@ -13,10 +13,18 @@ from pathlib import Path
 def _get_logo_base64():
     """Load and encode TraceMind logo as base64"""
     try:
+        # Try local file first (for development and GitHub)
         logo_path = Path(__file__).parent.parent / "Logo.png"
         if logo_path.exists():
             with open(logo_path, "rb") as f:
                 return base64.b64encode(f.read()).decode()
+
+        # Fallback: fetch from GitHub raw URL (for HuggingFace Spaces)
+        import urllib.request
+        github_logo_url = "https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/main/Logo.png"
+        with urllib.request.urlopen(github_logo_url, timeout=5) as response:
+            return base64.b64encode(response.read()).decode()
+
     except Exception as e:
         print(f"Warning: Could not load logo: {e}")
     return None
