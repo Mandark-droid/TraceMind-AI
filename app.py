@@ -31,6 +31,10 @@ from screens.dashboard import (
     create_dashboard_ui,
     update_dashboard_data
 )
+from screens.compare import (
+    create_compare_ui,
+    on_compare_runs
+)
 from utils.navigation import Navigator, Screen
 
 
@@ -1114,6 +1118,9 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 trace_ask_btn = gr.Button("Ask", variant="primary")
                 trace_answer = gr.Markdown("*Ask a question to get AI-powered insights*")
 
+        # Screen 5: Compare Screen
+        compare_screen, compare_components = create_compare_ui()
+
         # Navigation handlers (define before use)
         def navigate_to_dashboard():
             """Navigate to dashboard screen and load dashboard data"""
@@ -1130,6 +1137,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 leaderboard_screen: gr.update(visible=False),
                 run_detail_screen: gr.update(visible=False),
                 trace_detail_screen: gr.update(visible=False),
+                compare_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="primary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
@@ -1145,18 +1153,59 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 leaderboard_screen: gr.update(visible=True),
                 run_detail_screen: gr.update(visible=False),
                 trace_detail_screen: gr.update(visible=False),
+                compare_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="primary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
             }
 
+        def navigate_to_compare():
+            """Navigate to compare screen and populate dropdown choices"""
+            try:
+                leaderboard_df = data_loader.load_leaderboard()
+
+                # Create run choices for dropdowns (model name with run_id)
+                run_choices = []
+                for _, row in leaderboard_df.iterrows():
+                    label = f"{row.get('model', 'Unknown')} - {row.get('timestamp', 'N/A')}"
+                    value = row.get('run_id', '')
+                    if value:
+                        run_choices.append((label, value))
+
+                return {
+                    dashboard_screen: gr.update(visible=False),
+                    leaderboard_screen: gr.update(visible=False),
+                    run_detail_screen: gr.update(visible=False),
+                    trace_detail_screen: gr.update(visible=False),
+                    compare_screen: gr.update(visible=True),
+                    dashboard_nav_btn: gr.update(variant="secondary"),
+                    leaderboard_nav_btn: gr.update(variant="secondary"),
+                    compare_nav_btn: gr.update(variant="primary"),
+                    docs_nav_btn: gr.update(variant="secondary"),
+                    compare_components['compare_run_a_dropdown']: gr.update(choices=run_choices),
+                    compare_components['compare_run_b_dropdown']: gr.update(choices=run_choices),
+                }
+            except Exception as e:
+                print(f"[ERROR] Navigating to compare: {e}")
+                return {
+                    dashboard_screen: gr.update(visible=False),
+                    leaderboard_screen: gr.update(visible=False),
+                    run_detail_screen: gr.update(visible=False),
+                    trace_detail_screen: gr.update(visible=False),
+                    compare_screen: gr.update(visible=True),
+                    dashboard_nav_btn: gr.update(variant="secondary"),
+                    leaderboard_nav_btn: gr.update(variant="secondary"),
+                    compare_nav_btn: gr.update(variant="primary"),
+                    docs_nav_btn: gr.update(variant="secondary"),
+                }
+
         # Event handlers
         # Load dashboard on app start
         app.load(
             fn=navigate_to_dashboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen,
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
                 dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
             ] + list(dashboard_components.values())
         )
@@ -1249,7 +1298,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         dashboard_nav_btn.click(
             fn=navigate_to_dashboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen,
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
                 dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
             ] + list(dashboard_components.values())
         )
@@ -1257,7 +1306,42 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         leaderboard_nav_btn.click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen,
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
+            ]
+        )
+
+        compare_nav_btn.click(
+            fn=navigate_to_compare,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn,
+                compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']
+            ]
+        )
+
+        # Compare button handler
+        compare_components['compare_button'].click(
+            fn=lambda run_a, run_b: on_compare_runs(run_a, run_b, leaderboard_df_cache, compare_components),
+            inputs=[
+                compare_components['compare_run_a_dropdown'],
+                compare_components['compare_run_b_dropdown']
+            ],
+            outputs=[
+                compare_components['comparison_output'],
+                compare_components['run_a_card'],
+                compare_components['run_b_card'],
+                compare_components['comparison_charts'],
+                compare_components['winner_summary'],
+                compare_components['radar_comparison_chart']
+            ]
+        )
+
+        # Back to leaderboard from compare
+        compare_components['back_to_leaderboard_btn'].click(
+            fn=navigate_to_leaderboard,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
                 dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
             ]
         )
