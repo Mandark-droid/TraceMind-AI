@@ -1,6 +1,7 @@
 # Core UI
 gradio>=5.0.0
 gradio_client>=1.0.0  # For calling MCP server from chat screen
+gradio_htmlplus  # For clickable HTML table rows
 
 # HuggingFace for dataset loading
 datasets>=2.14.0

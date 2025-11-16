@@ -6,6 +6,7 @@ Enterprise-grade AI agent evaluation with MCP integration
 import os
 import pandas as pd
 import gradio as gr
+from gradio_htmlplus import HTMLPlus
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -504,7 +505,7 @@ def apply_sidebar_filters(selected_model, selected_agent_type):
     sorted_df = df.sort_values(by='success_rate', ascending=False).reset_index(drop=True)
     html = generate_leaderboard_html(sorted_df, 'success_rate', False)
 
-    # For drilldown table
+    # For drilldown table (DataFrame)
     display_df = df[[
         'run_id', 'model', 'agent_type', 'provider', 'success_rate',
         'total_tests', 'avg_duration_ms', 'total_cost_usd', 'submitted_by'
@@ -1132,6 +1133,214 @@ def on_drilldown_select(evt: gr.SelectData, df):
 
 
 
+def on_html_leaderboard_select(evt: gr.SelectData):
+    """Handle row selection from HTMLPlus leaderboard (By Model tab)"""
+    global current_selected_run, leaderboard_df_cache
+
+    try:
+        # HTMLPlus returns data attributes from the selected row
+        # evt.index = CSS selector that was matched (e.g., "tr")
+        # evt.value = dictionary of data-* attributes from the HTML element
+
+        if evt.index != "tr":
+            gr.Warning("Invalid selection")
+            return {
+                leaderboard_screen: gr.update(visible=True),
+                run_detail_screen: gr.update(visible=False),
+                run_metadata_html: gr.update(value="<h3>Invalid selection</h3>"),
+                test_cases_table: gr.update(value=pd.DataFrame()),
+                performance_charts: gr.update(),
+                run_card_html: gr.update(),
+                run_gpu_summary_cards_html: gr.update(),
+                run_gpu_metrics_plot: gr.update(),
+                run_gpu_metrics_json: gr.update()
+            }
+
+        # Get the run_id from the data attributes
+        row_data = evt.value
+        run_id = row_data.get('run-id')  # Note: HTML data attributes use hyphens
+
+        if not run_id:
+            gr.Warning("No run ID found in selection")
+            return {
+                leaderboard_screen: gr.update(visible=True),
+                run_detail_screen: gr.update(visible=False),
+                run_metadata_html: gr.update(value="<h3>No run ID found</h3>"),
+                test_cases_table: gr.update(value=pd.DataFrame()),
+                performance_charts: gr.update(),
+                run_card_html: gr.update(),
+                run_gpu_summary_cards_html: gr.update(),
+                run_gpu_metrics_plot: gr.update(),
+                run_gpu_metrics_json: gr.update()
+            }
+
+        print(f"[DEBUG] HTMLPlus selected row with run_id: {run_id[:8]}...")
+
+        # Find the full run data from the cached leaderboard dataframe using run_id
+        if leaderboard_df_cache is not None and not leaderboard_df_cache.empty:
+            matching_rows = leaderboard_df_cache[leaderboard_df_cache['run_id'] == run_id]
+            if not matching_rows.empty:
+                run_data = matching_rows.iloc[0].to_dict()
+            else:
+                gr.Warning(f"Run ID {run_id[:8]}... not found in leaderboard data")
+                return {
+                    leaderboard_screen: gr.update(visible=True),
+                    run_detail_screen: gr.update(visible=False),
+                    run_metadata_html: gr.update(value="<h3>Run not found</h3>"),
+                    test_cases_table: gr.update(value=pd.DataFrame()),
+                    performance_charts: gr.update(),
+                    run_card_html: gr.update(),
+                    run_gpu_summary_cards_html: gr.update(),
+                    run_gpu_metrics_plot: gr.update(),
+                    run_gpu_metrics_json: gr.update()
+                }
+        else:
+            gr.Warning("Leaderboard data not available")
+            return {
+                leaderboard_screen: gr.update(visible=True),
+                run_detail_screen: gr.update(visible=False),
+                run_metadata_html: gr.update(value="<h3>Leaderboard data not available</h3>"),
+                test_cases_table: gr.update(value=pd.DataFrame()),
+                performance_charts: gr.update(),
+                run_card_html: gr.update(),
+                run_gpu_summary_cards_html: gr.update(),
+                run_gpu_metrics_plot: gr.update(),
+                run_gpu_metrics_json: gr.update()
+            }
+
+        # IMPORTANT: Set global FIRST before any operations that might fail
+        current_selected_run = run_data
+
+        print(f"[DEBUG] Selected run: {run_data.get('model', 'Unknown')} (run_id: {run_data.get('run_id', 'N/A')[:8]}...)")
+
+        # Load results for this run
+        results_dataset = run_data.get('results_dataset')
+        if not results_dataset:
+            gr.Warning("No results dataset found for this run")
+            return {
+                leaderboard_screen: gr.update(visible=True),
+                run_detail_screen: gr.update(visible=False),
+                run_metadata_html: gr.update(value="<h3>No results dataset found</h3>"),
+                test_cases_table: gr.update(value=pd.DataFrame()),
+                performance_charts: gr.update(),
+                run_card_html: gr.update(),
+                run_gpu_summary_cards_html: gr.update(),
+                run_gpu_metrics_plot: gr.update(),
+                run_gpu_metrics_json: gr.update()
+            }
+
+        results_df = data_loader.load_results(results_dataset)
+
+        # Generate performance chart
+        perf_chart = create_performance_charts(results_df)
+
+        # Create metadata HTML
+        metadata_html = f"""
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px;">
+            <h2 style="margin: 0 0 10px 0;">📊 Run Detail: {run_data.get('model', 'Unknown')}</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div>
+                    <strong>Agent Type:</strong> {run_data.get('agent_type', 'N/A')}<br>
+                    <strong>Provider:</strong> {run_data.get('provider', 'N/A')}<br>
+                    <strong>Success Rate:</strong> {run_data.get('success_rate', 0):.1f}%
+                </div>
+                <div>
+                    <strong>Total Tests:</strong> {run_data.get('total_tests', 0)}<br>
+                    <strong>Successful:</strong> {run_data.get('successful_tests', 0)}<br>
+                    <strong>Failed:</strong> {run_data.get('failed_tests', 0)}
+                </div>
+                <div>
+                    <strong>Total Cost:</strong> ${run_data.get('total_cost_usd', 0):.4f}<br>
+                    <strong>Avg Duration:</strong> {run_data.get('avg_duration_ms', 0):.0f}ms<br>
+                    <strong>Submitted By:</strong> {run_data.get('submitted_by', 'Unknown')}
+                </div>
+            </div>
+        </div>
+        """
+
+        # Generate run report card HTML
+        run_card_html_content = generate_run_report_card(run_data)
+
+        # Format results for display
+        display_df = results_df.copy()
+
+        # Select and format columns if they exist
+        display_columns = []
+        if 'task_id' in display_df.columns:
+            display_columns.append('task_id')
+        if 'success' in display_df.columns:
+            display_df['success'] = display_df['success'].apply(lambda x: "✅" if x else "❌")
+            display_columns.append('success')
+        if 'tool_called' in display_df.columns:
+            display_columns.append('tool_called')
+        if 'execution_time_ms' in display_df.columns:
+            display_df['execution_time_ms'] = display_df['execution_time_ms'].apply(lambda x: f"{x:.0f}ms")
+            display_columns.append('execution_time_ms')
+        if 'total_tokens' in display_df.columns:
+            display_columns.append('total_tokens')
+        if 'cost_usd' in display_df.columns:
+            display_df['cost_usd'] = display_df['cost_usd'].apply(lambda x: f"${x:.4f}")
+            display_columns.append('cost_usd')
+        if 'trace_id' in display_df.columns:
+            display_columns.append('trace_id')
+
+        if display_columns:
+            display_df = display_df[display_columns]
+
+        # Load GPU metrics (if available)
+        gpu_summary_html = "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
+        gpu_plot = None
+        gpu_json_data = {}
+
+        try:
+            if 'metrics_dataset' in run_data and run_data.get('metrics_dataset'):
+                metrics_dataset = run_data['metrics_dataset']
+                gpu_metrics_data = data_loader.load_metrics(metrics_dataset)
+
+                if gpu_metrics_data is not None and not gpu_metrics_data.empty:
+                    from screens.trace_detail import create_gpu_metrics_dashboard, create_gpu_summary_cards
+                    gpu_plot = create_gpu_metrics_dashboard(gpu_metrics_data)
+                    gpu_summary_html = create_gpu_summary_cards(gpu_metrics_data)
+                    gpu_json_data = gpu_metrics_data.to_dict('records')
+        except Exception as e:
+            print(f"[WARNING] Could not load GPU metrics for run: {e}")
+
+        print(f"[DEBUG] Successfully loaded run detail for: {run_data.get('model', 'Unknown')}")
+
+        return {
+            # Hide leaderboard, show run detail
+            leaderboard_screen: gr.update(visible=False),
+            run_detail_screen: gr.update(visible=True),
+            run_metadata_html: gr.update(value=metadata_html),
+            test_cases_table: gr.update(value=display_df),
+            performance_charts: gr.update(value=perf_chart),
+            run_card_html: gr.update(value=run_card_html_content),
+            run_gpu_summary_cards_html: gr.update(value=gpu_summary_html),
+            run_gpu_metrics_plot: gr.update(value=gpu_plot),
+            run_gpu_metrics_json: gr.update(value=gpu_json_data)
+        }
+
+    except Exception as e:
+        print(f"[ERROR] Loading run details from HTMLPlus: {e}")
+        import traceback
+        traceback.print_exc()
+        gr.Warning(f"Error loading run details: {e}")
+
+        # Return updates for all output components to avoid Gradio error
+        return {
+            leaderboard_screen: gr.update(visible=True),  # Stay on leaderboard
+            run_detail_screen: gr.update(visible=False),
+            run_metadata_html: gr.update(value="<h3>Error loading run detail</h3>"),
+            test_cases_table: gr.update(value=pd.DataFrame()),
+            performance_charts: gr.update(),
+            run_card_html: gr.update(),
+            run_gpu_summary_cards_html: gr.update(),
+            run_gpu_metrics_plot: gr.update(),
+            run_gpu_metrics_json: gr.update()
+        }
+
+
 def go_back_to_leaderboard():
     """Navigate back to leaderboard screen"""
     return {
@@ -1292,8 +1501,12 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     with gr.Row():
                         apply_filters_btn = gr.Button("🔍 Apply Filters", variant="primary", size="sm")
 
-                    # Styled HTML leaderboard
-                    leaderboard_by_model = gr.HTML(label="Styled Leaderboard")
+                    # Styled HTML leaderboard with clickable rows
+                    leaderboard_by_model = HTMLPlus(
+                        label="Styled Leaderboard",
+                        value="<p>Loading leaderboard...</p>",
+                        selectable_elements=["tr"]  # Make table rows clickable
+                    )
     
                 with gr.TabItem("📋 DrillDown"):
                     gr.Markdown("*Click any row to view detailed run information*")
@@ -1776,6 +1989,23 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         fn=apply_leaderboard_filters,
         inputs=[agent_type_filter, provider_filter, sort_by_dropdown, sort_order],
         outputs=[leaderboard_by_model]
+        )
+
+        # HTML Plus leaderboard row selection
+        leaderboard_by_model.select(
+        fn=on_html_leaderboard_select,
+        inputs=None,  # HTMLPlus passes data via evt.value
+        outputs=[
+            leaderboard_screen,
+            run_detail_screen,
+            run_metadata_html,
+            test_cases_table,
+            performance_charts,
+            run_card_html,
+            run_gpu_summary_cards_html,
+            run_gpu_metrics_plot,
+            run_gpu_metrics_json
+        ]
         )
 
         # DrillDown tab inline filters

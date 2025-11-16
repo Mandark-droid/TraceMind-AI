@@ -346,8 +346,40 @@ def generate_leaderboard_html(
         run_id = row.get('run_id', 'N/A')
         run_id_short = run_id[:8] + '...' if len(run_id) > 8 else run_id
 
+        # Get dataset references
+        results_dataset = row.get('results_dataset', '')
+        traces_dataset = row.get('traces_dataset', '')
+        metrics_dataset = row.get('metrics_dataset', '')
+
         html += f"""
-            <tr data-run-id="{run_id}" data-rank="{rank}" class="tm-clickable-row">
+            <tr
+                data-run-id="{run_id}"
+                data-rank="{rank}"
+                data-model="{model}"
+                data-agent-type="{agent_type}"
+                data-provider="{provider}"
+                data-success-rate="{success_rate}"
+                data-total-tests="{total_tests}"
+                data-successful-tests="{successful_tests}"
+                data-failed-tests="{failed_tests}"
+                data-avg-steps="{avg_steps}"
+                data-avg-duration-ms="{avg_duration_ms}"
+                data-total-tokens="{total_tokens}"
+                data-total-cost-usd="{total_cost_usd}"
+                data-co2-emissions-g="{co2_emissions_g}"
+                data-gpu-utilization-avg="{gpu_utilization_avg if pd.notna(gpu_utilization_avg) else 'None'}"
+                data-gpu-memory-avg-mib="{gpu_memory_avg_mib if pd.notna(gpu_memory_avg_mib) else 'None'}"
+                data-gpu-memory-max-mib="{gpu_memory_max_mib if pd.notna(gpu_memory_max_mib) else 'None'}"
+                data-gpu-temperature-avg="{gpu_temperature_avg if pd.notna(gpu_temperature_avg) else 'None'}"
+                data-gpu-temperature-max="{gpu_temperature_max if pd.notna(gpu_temperature_max) else 'None'}"
+                data-gpu-power-avg-w="{gpu_power_avg_w if pd.notna(gpu_power_avg_w) else 'None'}"
+                data-timestamp="{timestamp}"
+                data-submitted-by="{submitted_by}"
+                data-results-dataset="{results_dataset}"
+                data-traces-dataset="{traces_dataset}"
+                data-metrics-dataset="{metrics_dataset}"
+                class="tm-clickable-row"
+            >
                 <td>{get_rank_badge(rank)}</td>
                 <td class="tm-run-id" title="{run_id}">{run_id_short}</td>
                 <td class="tm-model-name">{model}</td>
@@ -382,85 +414,6 @@ def generate_leaderboard_html(
             </tbody>
         </table>
     </div>
-
-    <script>
-    // Add click handler for Run ID cells - runs on each table render
-    (function() {
-        // Function to attach handlers
-        function attachRowClickHandlers() {
-            const cells = document.querySelectorAll('.tm-run-id');
-            console.log('Found', cells.length, 'Run ID cells');
-
-            cells.forEach(function(cell) {
-                // Remove existing listener to avoid duplicates
-                cell.replaceWith(cell.cloneNode(true));
-            });
-
-            // Re-select after cloning
-            document.querySelectorAll('.tm-run-id').forEach(function(cell) {
-                cell.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const row = this.closest('tr');
-                    const rowIndex = Array.from(row.parentNode.children).indexOf(row);
-
-                    console.log('Run ID clicked, row index:', rowIndex);
-
-                    // Try multiple ways to find the textbox
-                    let textbox = null;
-
-                    // Method 1: By elem_id
-                    const container1 = document.getElementById('selected_row_index');
-                    if (container1) {
-                        textbox = container1.querySelector('textarea, input[type="text"]');
-                        console.log('Method 1 (elem_id):', textbox ? 'Found' : 'Not found');
-                    }
-
-                    // Method 2: By data-testid
-                    if (!textbox) {
-                        const containers = document.querySelectorAll('[data-testid="textbox"]');
-                        console.log('Method 2: Found', containers.length, 'textbox containers');
-                        for (let container of containers) {
-                            const input = container.querySelector('textarea, input[type="text"]');
-                            if (input && !container.closest('.label-wrap')) {
-                                textbox = input;
-                                console.log('Method 2: Using hidden textbox');
-                                break;
-                            }
-                        }
-                    }
-
-                    if (textbox) {
-                        // Set the row index
-                        textbox.value = rowIndex.toString();
-
-                        // Trigger multiple events to ensure Gradio picks it up
-                        textbox.dispatchEvent(new Event('input', { bubbles: true }));
-                        textbox.dispatchEvent(new Event('change', { bubbles: true }));
-                        textbox.dispatchEvent(new Event('blur', { bubbles: true }));
-
-                        // Also try triggering on the container
-                        const container = textbox.closest('[data-testid="textbox"]');
-                        if (container) {
-                            container.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-
-                        console.log('Textbox updated to:', rowIndex);
-                    } else {
-                        console.error('Could not find hidden textbox!');
-                    }
-                });
-            });
-        }
-
-        // Attach immediately
-        attachRowClickHandlers();
-
-        // Also attach after a short delay (in case table loads async)
-        setTimeout(attachRowClickHandlers, 500);
-        setTimeout(attachRowClickHandlers, 1000);
-        setTimeout(attachRowClickHandlers, 2000);
-    })();
-    </script>
     """
 
     return html
