@@ -1053,6 +1053,32 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 with gr.TabItem("🏆 Leaderboard"):
                     gr.Markdown("*Styled leaderboard with inline filters*")
 
+                    # User Guide Accordion
+                    with gr.Accordion("📖 How to Use the Leaderboard", open=False):
+                        gr.Markdown("""
+                        ### 🏆 Interactive Leaderboard View
+
+                        **What is this tab?**
+                        The main leaderboard displays all evaluation runs in a styled HTML table with color-coded performance indicators.
+
+                        **How to use it:**
+                        - 🎨 **Visual Design**: Gradient cards with model logos and performance metrics
+                        - 🔍 **Filters**: Use agent type, provider, and sorting controls above
+                        - 📊 **Sort Options**: Click "Sort By" to order by success rate, cost, duration, or tokens
+                        - 👆 **Click to Drill Down**: Click any model card to view detailed run information
+                        - 🎯 **Quick Comparison**: Select 2+ runs and click "Compare" button
+
+                        **Performance Indicators:**
+                        - 🟢 Green metrics = Excellent performance
+                        - 🟡 Yellow metrics = Average performance
+                        - 🔴 Red metrics = Needs improvement
+
+                        **Tips:**
+                        - Use sidebar filters to narrow down by model
+                        - Apply inline filters for more granular control
+                        - Switch to "DrillDown" tab for a raw table view
+                        """)
+
                     # Inline filters for styled leaderboard
                     with gr.Row():
                         with gr.Column(scale=1):
@@ -1090,6 +1116,38 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
     
                 with gr.TabItem("📋 DrillDown"):
                     gr.Markdown("*Click any row to view detailed run information*")
+
+                    # User Guide Accordion
+                    with gr.Accordion("📖 How to Use DrillDown", open=False):
+                        gr.Markdown("""
+                        ### 📋 Data Table View
+
+                        **What is this tab?**
+                        The DrillDown tab provides a raw, sortable table view of all evaluation runs with full details.
+
+                        **How to use it:**
+                        - 📊 **Table Format**: Clean, spreadsheet-like view of all runs
+                        - 🔍 **Filters**: Apply agent type, provider, and sorting controls
+                        - 📥 **Export Ready**: Easy to copy/paste data for reports
+                        - 👆 **Click Rows**: Click any row to navigate to detailed run view
+                        - 🔢 **All Metrics**: Shows run ID, model, success rate, cost, duration, and more
+
+                        **Columns Explained:**
+                        - **Run ID**: Unique identifier for each evaluation
+                        - **Model**: AI model that was evaluated
+                        - **Agent Type**: tool (function calling), code (code execution), or both
+                        - **Provider**: litellm (API models) or transformers (local models)
+                        - **Success Rate**: Percentage of test cases passed
+                        - **Tests**: Number of test cases executed
+                        - **Duration**: Average execution time in milliseconds
+                        - **Cost**: Total cost in USD for this run
+                        - **Submitted By**: HuggingFace username of evaluator
+
+                        **Tips:**
+                        - Use this for detailed data analysis
+                        - Combine with sidebar filters for focused views
+                        - Sort by any column to find best/worst performers
+                        """)
 
                     # Inline filters for drilldown table
                     with gr.Row():
@@ -1131,6 +1189,41 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     )
     
                 with gr.TabItem("📈 Trends"):
+                    # User Guide Accordion
+                    with gr.Accordion("📖 How to Read Trends", open=False):
+                        gr.Markdown("""
+                        ### 📈 Temporal Performance Analysis
+
+                        **What is this tab?**
+                        The Trends tab visualizes how model performance evolves over time, helping you identify patterns and improvements.
+
+                        **How to read it:**
+                        - 📅 **X-axis**: Timeline showing when evaluations were run
+                        - 📊 **Y-axis**: Performance metrics (success rate, cost, duration, etc.)
+                        - 📈 **Line Charts**: Each line represents a different model
+                        - 🎨 **Color Coding**: Different colors for different models
+                        - 🔍 **Interactive**: Hover over points to see exact values
+
+                        **What to look for:**
+                        - **Upward trends** = Model improvements over time
+                        - **Downward trends** = Performance degradation (needs investigation)
+                        - **Flat lines** = Consistent performance
+                        - **Spikes** = Anomalies or special test conditions
+                        - **Gaps** = Periods without evaluations
+
+                        **Use cases:**
+                        - Track model version improvements
+                        - Identify when performance degraded
+                        - Compare model evolution over time
+                        - Spot patterns in cost or latency changes
+                        - Validate optimization efforts
+
+                        **Tips:**
+                        - Use sidebar filters to focus on specific models
+                        - Look for correlation between cost and accuracy
+                        - Identify best time periods for each model
+                        """)
+
                     trends_plot = gr.Plot()
     
                 with gr.TabItem("📊 Analytics"):
@@ -1190,19 +1283,39 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         """, elem_id="viz-explanation")
 
                 with gr.TabItem("📥 Summary Card"):
-                    gr.Markdown("""
-                    ### 📥 Downloadable Leaderboard Summary Card
+                    # User Guide Accordion
+                    with gr.Accordion("📖 How to Create Summary Cards", open=False):
+                        gr.Markdown("""
+                        ### 📥 Downloadable Leaderboard Summary Card
 
-                    Generate a professional, shareable summary card with top performers and key statistics.
-                    Perfect for presentations, reports, and sharing results with your team!
+                        **What is this tab?**
+                        Generate professional, shareable summary cards with top performers and key statistics.
+                        Perfect for presentations, reports, and sharing results with your team!
 
-                    **Features:**
-                    - 🏆 Top N performers with medals
-                    - 📊 Key metrics per model
-                    - 📈 Aggregate leaderboard statistics
-                    - 🎨 TraceMind branding with logo
-                    - 📥 One-click download as high-quality PNG
-                    """)
+                        **How to use it:**
+                        1. **Select Top N**: Use the slider to choose how many top models to include (1-5)
+                        2. **Generate Preview**: Click "Generate Card Preview" to see the card
+                        3. **Download**: Click "Download as PNG" to save as high-quality image
+                        4. **Share**: Use the downloaded image in presentations, reports, or social media
+
+                        **Card Features:**
+                        - 🏆 **Medal Indicators**: Gold, silver, bronze for top 3 performers
+                        - 📊 **Key Metrics**: Success rate, cost, duration, and tokens per model
+                        - 📈 **Aggregate Stats**: Overall leaderboard statistics at a glance
+                        - 🎨 **TraceMind Branding**: Professional design with logo
+                        - 📥 **High Quality**: PNG format suitable for presentations
+
+                        **Best Practices:**
+                        - Use 3-5 models for balanced card density
+                        - Include metric context in your presentations
+                        - Update cards regularly to reflect latest results
+                        - Combine with detailed reports for stakeholders
+
+                        **Tips:**
+                        - Cards are automatically sized for readability
+                        - All current sidebar filters are applied
+                        - Cards update dynamically as data changes
+                        """)
 
                     with gr.Row():
                         with gr.Column(scale=1):
@@ -1223,6 +1336,43 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                             card_preview = gr.HTML(label="Card Preview", value="<p style='text-align: center; color: #666; padding: 40px;'>Click 'Generate Card Preview' to see your summary card</p>")
     
                 with gr.TabItem("🤖 AI Insights"):
+                    # User Guide Accordion
+                    with gr.Accordion("📖 About AI Insights", open=False):
+                        gr.Markdown("""
+                        ### 🤖 LLM-Powered Leaderboard Analysis
+
+                        **What is this tab?**
+                        AI Insights provides intelligent, natural language analysis of your leaderboard data using advanced language models.
+                        Get instant insights, trends, and recommendations powered by AI.
+
+                        **How it works:**
+                        - 📊 **Automatic Analysis**: AI analyzes all leaderboard data automatically
+                        - 🔄 **Streaming Responses**: Watch insights generate in real-time (Gradio 6)
+                        - 🎯 **Smart Recommendations**: Get actionable advice for model selection
+                        - 📈 **Trend Detection**: AI identifies patterns and anomalies
+                        - 💡 **Context-Aware**: Insights adapt to current filters and data
+
+                        **What insights you'll get:**
+                        - **Top Performers**: Which models lead in accuracy, speed, cost
+                        - **Trade-offs**: Cost vs accuracy, speed vs quality analysis
+                        - **Recommendations**: Best model for different use cases
+                        - **Trends**: Performance changes over time
+                        - **Anomalies**: Unusual results that need attention
+                        - **Optimization Tips**: How to improve evaluation strategies
+
+                        **Powered by:**
+                        - 🤖 **MCP Servers**: Model Context Protocol for intelligent data access
+                        - 🧠 **Advanced LLMs**: Google Gemini 1.5 Pro for analysis
+                        - 📡 **Real-time Streaming**: Gradio 6 for live response generation
+                        - 🔗 **Context Integration**: Understands your full leaderboard context
+
+                        **Tips:**
+                        - Click "Regenerate" for updated insights after data changes
+                        - Insights respect your sidebar and inline filters
+                        - Use insights to guide model selection decisions
+                        - Share AI insights in team discussions
+                        """)
+
                     with gr.Row():
                         regenerate_btn = gr.Button("🔄 Regenerate Insights (Streaming)", size="sm", variant="secondary")
                         gr.Markdown("*Real-time AI analysis powered by Gradio 6 streaming*", elem_classes=["text-sm"])
