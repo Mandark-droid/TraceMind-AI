@@ -31,5 +31,6 @@ hf_xet
 
 # Agentic Framework (for Chat screen - Track 2)
 smolagents>=1.22.0
+smolagents[mcp]>=1.22.0  # MCP client support
 google-generativeai>=0.3.0  # For Gemini integration
 litellm>=1.0.0  # For LiteLLM model support
