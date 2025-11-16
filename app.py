@@ -1973,12 +1973,12 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         outputs=[trends_plot]
         )
 
-        # Load drilldown data on page load
-        app.load(
-        fn=load_drilldown,
-        inputs=[drilldown_agent_type_filter, drilldown_provider_filter],
-        outputs=[leaderboard_table]
-        )
+        # COMMENTED OUT: Load drilldown data on page load (DrillDown tab removed)
+        # app.load(
+        # fn=load_drilldown,
+        # inputs=[drilldown_agent_type_filter, drilldown_provider_filter],
+        # outputs=[leaderboard_table]
+        # )
 
         # Refresh button handler
         refresh_leaderboard_btn.click(
