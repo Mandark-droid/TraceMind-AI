@@ -307,6 +307,27 @@ def create_compare_ui():
                                 elem_id="comparison-card-html"
                             )
 
+                with gr.TabItem("🤖 AI Insights"):
+                    gr.Markdown("### AI-Powered Comparison Analysis")
+                    gr.Markdown("*Get intelligent insights about the differences between these runs using the MCP server*")
+
+                    with gr.Row():
+                        components['comparison_focus'] = gr.Dropdown(
+                            label="Analysis Focus",
+                            choices=["comprehensive", "cost", "performance", "eco_friendly"],
+                            value="comprehensive",
+                            info="Choose what aspect to focus on in the AI analysis"
+                        )
+                        components['generate_ai_comparison_btn'] = gr.Button(
+                            "🤖 Generate AI Insights",
+                            variant="primary",
+                            size="lg"
+                        )
+
+                    components['ai_comparison_insights'] = gr.Markdown(
+                        "*Click 'Generate AI Insights' to get intelligent analysis powered by the MCP server*"
+                    )
+
         components['comparison_output'] = comparison_output
 
     return compare_screen, components

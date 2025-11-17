@@ -59,6 +59,12 @@ from screens.chat import (
     on_clear_chat,
     on_quick_action
 )
+from screens.mcp_helpers import (
+    call_analyze_leaderboard_sync,
+    call_debug_trace_sync,
+    call_compare_runs_sync,
+    call_analyze_results_sync
+)
 from utils.navigation import Navigator, Screen
 
 
@@ -162,7 +168,7 @@ def create_trace_metadata_html(trace_data: dict) -> str:
 
 def on_test_case_select(evt: gr.SelectData, df):
     """Handle test case selection in run detail - navigate to trace detail"""
-    global current_selected_run, current_selected_trace
+    global current_selected_run, current_selected_trace, _current_trace_info
 
     print(f"[DEBUG] on_test_case_select called with index: {evt.index}")
 
@@ -189,6 +195,11 @@ def on_test_case_select(evt: gr.SelectData, df):
         if not traces_dataset:
             gr.Warning("No traces dataset found in current run")
             return {}
+
+        # Update global trace info for MCP debug_trace tool
+        _current_trace_info["trace_id"] = trace_id
+        _current_trace_info["traces_repo"] = traces_dataset
+        print(f"[MCP] Updated trace info for debug_trace: trace_id={trace_id}, traces_repo={traces_dataset}")
 
         trace_data = data_loader.get_trace_by_id(traces_dataset, trace_id)
 
@@ -690,48 +701,187 @@ def generate_card(top_n):
 
 
 def generate_insights():
-    """Generate AI insights summary"""
+    """Generate AI insights summary using MCP server"""
     try:
+        # Load leaderboard to check if data exists
         df = data_loader.load_leaderboard()
 
-        if df.empty or 'success_rate' not in df.columns:
-            return "## 📊 Leaderboard Summary\n\nNo data available for insights."
+        if df is None or df.empty:
+            return "## 📊 AI Insights\n\nNo leaderboard data available. Please refresh the data."
 
-        top_model = df.loc[df['success_rate'].idxmax()]
-        most_cost_effective = df.loc[(df['success_rate'] / (df['total_cost_usd'] + 0.0001)).idxmax()]
-        fastest = df.loc[df['avg_duration_ms'].idxmin()]
-
-        insights = f"""
-## 📊 Leaderboard Summary
-
-**Total Runs:** {len(df)}
-
-**Top Performers:**
-- 🥇 **Best Accuracy:** {top_model['model']} ({top_model['success_rate']:.1f}%)
-- 💰 **Most Cost-Effective:** {most_cost_effective['model']} ({most_cost_effective['success_rate']:.1f}% @ ${most_cost_effective['total_cost_usd']:.4f})
-- ⚡ **Fastest:** {fastest['model']} ({fastest['avg_duration_ms']:.0f}ms avg)
-
-**Key Trends:**
-- Average Success Rate: {df['success_rate'].mean():.1f}%
-- Average Cost: ${df['total_cost_usd'].mean():.4f}
-- Average Duration: {df['avg_duration_ms'].mean():.0f}ms
-
----
-
-*Note: AI-powered insights will be available via MCP integration in the full version.*
-        """
+        # Call MCP server's analyze_leaderboard tool
+        print("[MCP] Calling analyze_leaderboard MCP tool...")
+        insights = call_analyze_leaderboard_sync(
+            leaderboard_repo="kshitijthakkar/smoltrace-leaderboard",
+            metric_focus="overall",
+            time_range="last_week",
+            top_n=5
+        )
 
         return insights
+
     except Exception as e:
         print(f"[ERROR] generate_insights: {e}")
         import traceback
         traceback.print_exc()
-        return f"## 📊 Leaderboard Summary\n\nError generating insights: {str(e)}"
+        return f"## 📊 AI Insights\n\n❌ **Error generating insights**: {str(e)}\n\nPlease check:\n- MCP server is running\n- Network connectivity\n- Leaderboard dataset is accessible"
+
+
+# Global variable to store current trace info for debug_trace MCP tool
+_current_trace_info = {"trace_id": None, "traces_repo": None}
+
+
+def ask_about_trace(question: str) -> str:
+    """
+    Call debug_trace MCP tool to answer questions about current trace
+
+    Args:
+        question: User's question about the trace
+
+    Returns:
+        AI-powered answer from MCP server
+    """
+    global _current_trace_info
+
+    try:
+        if not _current_trace_info["trace_id"] or not _current_trace_info["traces_repo"]:
+            return "❌ **No trace selected**\n\nPlease navigate to a trace first by clicking on a test case from the Run Detail screen."
+
+        if not question or question.strip() == "":
+            return "❌ **Please enter a question**\n\nFor example:\n- Why was the tool called twice?\n- Which step took the most time?\n- Why did this test fail?"
+
+        print(f"[MCP] Calling debug_trace MCP tool for trace_id: {_current_trace_info['trace_id']}")
+
+        # Call MCP server's debug_trace tool
+        answer = call_debug_trace_sync(
+            trace_id=_current_trace_info["trace_id"],
+            traces_repo=_current_trace_info["traces_repo"],
+            question=question
+        )
+
+        return answer
+
+    except Exception as e:
+        print(f"[ERROR] ask_about_trace: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"❌ **Error asking about trace**: {str(e)}\n\nPlease check:\n- MCP server is running\n- Network connectivity\n- Trace data is accessible"
+
+
+# Global variable to store current comparison for compare_runs MCP tool
+_current_comparison = {"run_id_1": None, "run_id_2": None}
+
+
+def handle_compare_runs(run_a_id: str, run_b_id: str, leaderboard_df, components):
+    """
+    Wrapper function to handle run comparison and update global state
+
+    Args:
+        run_a_id: ID of first run (composite key: run_id|timestamp)
+        run_b_id: ID of second run (composite key: run_id|timestamp)
+        leaderboard_df: Full leaderboard dataframe
+        components: Dictionary of Gradio components
+
+    Returns:
+        Dictionary of component updates from on_compare_runs
+    """
+    global _current_comparison
+
+    # Parse composite keys (run_id|timestamp) to extract just the run_id
+    run_a_parts = run_a_id.split('|') if run_a_id else []
+    run_b_parts = run_b_id.split('|') if run_b_id else []
+
+    # Extract just the run_id portion for MCP server
+    run_a_id_parsed = run_a_parts[0] if len(run_a_parts) >= 1 else run_a_id
+    run_b_id_parsed = run_b_parts[0] if len(run_b_parts) >= 1 else run_b_id
+
+    # Update global state for MCP compare_runs tool
+    _current_comparison["run_id_1"] = run_a_id_parsed
+    _current_comparison["run_id_2"] = run_b_id_parsed
+    print(f"[MCP] Updated comparison state: {run_a_id_parsed} vs {run_b_id_parsed}")
+
+    # Call the original compare function (with original composite keys)
+    from screens.compare import on_compare_runs
+    return on_compare_runs(run_a_id, run_b_id, leaderboard_df, components)
+
+
+def generate_ai_comparison(comparison_focus: str) -> str:
+    """
+    Call compare_runs MCP tool to generate AI insights about run comparison
+
+    Args:
+        comparison_focus: Focus area - "comprehensive", "cost", "performance", or "eco_friendly"
+
+    Returns:
+        AI-powered comparison analysis from MCP server
+    """
+    global _current_comparison
+
+    try:
+        if not _current_comparison["run_id_1"] or not _current_comparison["run_id_2"]:
+            return "❌ **No runs selected for comparison**\n\nPlease select two runs and click 'Compare Selected Runs' first."
+
+        print(f"[MCP] Calling compare_runs MCP tool: {_current_comparison['run_id_1']} vs {_current_comparison['run_id_2']}")
+
+        # Call MCP server's compare_runs tool
+        insights = call_compare_runs_sync(
+            run_id_1=_current_comparison["run_id_1"],
+            run_id_2=_current_comparison["run_id_2"],
+            leaderboard_repo="kshitijthakkar/smoltrace-leaderboard",
+            comparison_focus=comparison_focus
+        )
+
+        return insights
+
+    except Exception as e:
+        print(f"[ERROR] generate_ai_comparison: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"❌ **Error generating AI comparison**: {str(e)}\n\nPlease check:\n- MCP server is running\n- Network connectivity\n- Leaderboard dataset is accessible"
+
+
+# Global variable to store current run's results dataset for analyze_results MCP tool
+_current_run_results_repo = None
+
+
+def generate_run_ai_insights(focus_area: str, max_rows: int) -> str:
+    """
+    Call analyze_results MCP tool to generate AI insights about run results
+
+    Args:
+        focus_area: Focus area - "overall", "failures", "performance", or "tools"
+        max_rows: Maximum number of test cases to analyze
+
+    Returns:
+        AI-powered results analysis from MCP server
+    """
+    global _current_run_results_repo
+
+    try:
+        if not _current_run_results_repo:
+            return "❌ **No run selected**\n\nPlease navigate to a run detail first by clicking on a run from the Leaderboard screen."
+
+        print(f"[MCP] Calling analyze_results MCP tool for: {_current_run_results_repo}")
+
+        # Call MCP server's analyze_results tool
+        insights = call_analyze_results_sync(
+            results_repo=_current_run_results_repo,
+            focus_area=focus_area,
+            max_rows=max_rows
+        )
+
+        return insights
+
+    except Exception as e:
+        print(f"[ERROR] generate_run_ai_insights: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"❌ **Error generating run insights**: {str(e)}\n\nPlease check:\n- MCP server is running\n- Network connectivity\n- Results dataset is accessible"
 
 
 def on_html_table_row_click(row_index_str):
     """Handle row click from HTML table via JavaScript (hidden textbox bridge)"""
-    global current_selected_run, leaderboard_df_cache
+    global current_selected_run, leaderboard_df_cache, _current_run_results_repo
 
     print(f"[DEBUG] on_html_table_row_click called with: '{row_index_str}'")
 
@@ -794,6 +944,10 @@ def on_html_table_row_click(row_index_str):
                 test_cases_table: gr.update(value=pd.DataFrame()),
                 selected_row_index: gr.update(value="")
             }
+
+        # Update global state for MCP analyze_results tool
+        _current_run_results_repo = results_dataset
+        print(f"[MCP] Updated results repo for analyze_results: {results_dataset}")
 
         results_df = data_loader.load_results(results_dataset)
 
@@ -909,7 +1063,7 @@ def on_html_table_row_click(row_index_str):
 
 def load_run_detail(run_id):
     """Load run detail data including results dataset"""
-    global current_selected_run, leaderboard_df_cache
+    global current_selected_run, leaderboard_df_cache, _current_run_results_repo
 
     try:
         # Find run in cache
@@ -921,6 +1075,10 @@ def load_run_detail(run_id):
         results_dataset = run_data.get('results_dataset')
         if not results_dataset:
             return pd.DataFrame(), f"# Error\n\nNo results dataset found for this run", ""
+
+        # Update global state for MCP analyze_results tool
+        _current_run_results_repo = results_dataset
+        print(f"[MCP] Updated results repo for analyze_results (load_run_detail): {results_dataset}")
 
         results_df = data_loader.load_results(results_dataset)
 
@@ -994,7 +1152,7 @@ def load_run_detail(run_id):
 # Screen 3 (Run Detail) event handlers
 def on_drilldown_select(evt: gr.SelectData, df):
     """Handle row selection from DrillDown table - EXACT COPY from MockTraceMind"""
-    global current_selected_run, current_drilldown_df
+    global current_selected_run, current_drilldown_df, _current_run_results_repo
 
     try:
         # Get selected run - use currently displayed dataframe (filtered/sorted)
@@ -1029,6 +1187,10 @@ def on_drilldown_select(evt: gr.SelectData, df):
                 performance_charts: gr.update(),
                 run_card_html: gr.update()
             }
+
+        # Update global state for MCP analyze_results tool
+        _current_run_results_repo = results_dataset
+        print(f"[MCP] Updated results repo for analyze_results (on_drilldown_select): {results_dataset}")
 
         results_df = data_loader.load_results(results_dataset)
 
@@ -1145,7 +1307,7 @@ def on_drilldown_select(evt: gr.SelectData, df):
 
 def on_html_leaderboard_select(evt: gr.SelectData):
     """Handle row selection from HTMLPlus leaderboard (By Model tab)"""
-    global current_selected_run, leaderboard_df_cache
+    global current_selected_run, leaderboard_df_cache, _current_run_results_repo
 
     try:
         # HTMLPlus returns data attributes from the selected row
@@ -1246,6 +1408,10 @@ def on_html_leaderboard_select(evt: gr.SelectData):
                 run_gpu_metrics_plot: gr.update(),
                 run_gpu_metrics_json: gr.update()
             }
+
+        # Update global state for MCP analyze_results tool
+        _current_run_results_repo = results_dataset
+        print(f"[MCP] Updated results repo for analyze_results (on_html_leaderboard_select): {results_dataset}")
 
         results_df = data_loader.load_results(results_dataset)
 
@@ -1813,6 +1979,37 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         with gr.TabItem("📋 Raw Metrics Data"):
                             run_gpu_metrics_json = gr.JSON(label="GPU Metrics Data")
 
+                with gr.TabItem("🤖 AI Insights"):
+                    gr.Markdown("### AI-Powered Results Analysis")
+                    gr.Markdown("*Get intelligent insights about test results and optimization recommendations using the MCP server*")
+
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            run_analysis_focus = gr.Dropdown(
+                                label="Analysis Focus",
+                                choices=["overall", "failures", "performance", "tools"],
+                                value="overall",
+                                info="Choose what aspect to focus on in the AI analysis"
+                            )
+                            run_max_rows = gr.Slider(
+                                label="Max Test Cases to Analyze",
+                                minimum=10,
+                                maximum=200,
+                                value=100,
+                                step=10,
+                                info="Limit analysis to reduce processing time"
+                            )
+                        with gr.Column(scale=1):
+                            generate_run_ai_insights_btn = gr.Button(
+                                "🤖 Generate AI Insights",
+                                variant="primary",
+                                size="lg"
+                            )
+
+                    run_ai_insights = gr.Markdown(
+                        "*Click 'Generate AI Insights' to get intelligent analysis powered by the MCP server*"
+                    )
+
         # Screen 4: Trace Detail with Sub-tabs
         with gr.Column(visible=False) as trace_detail_screen:
             with gr.Row():
@@ -2161,7 +2358,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
 
         # Compare button handler
         compare_components['compare_button'].click(
-            fn=lambda run_a, run_b: on_compare_runs(run_a, run_b, leaderboard_df_cache, compare_components),
+            fn=lambda run_a, run_b: handle_compare_runs(run_a, run_b, leaderboard_df_cache, compare_components),
             inputs=[
                 compare_components['compare_run_a_dropdown'],
                 compare_components['compare_run_b_dropdown']
@@ -2175,6 +2372,20 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 compare_components['radar_comparison_chart'],
                 compare_components['comparison_card_html']
             ]
+        )
+
+        # Wire up AI comparison insights button (MCP compare_runs tool)
+        compare_components['generate_ai_comparison_btn'].click(
+            fn=generate_ai_comparison,
+            inputs=[compare_components['comparison_focus']],
+            outputs=[compare_components['ai_comparison_insights']]
+        )
+
+        # Wire up run AI insights button (MCP analyze_results tool)
+        generate_run_ai_insights_btn.click(
+            fn=generate_run_ai_insights,
+            inputs=[run_analysis_focus, run_max_rows],
+            outputs=[run_ai_insights]
         )
 
         # Back to leaderboard from compare
@@ -2236,6 +2447,12 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             outputs=[run_detail_screen, trace_detail_screen]
         )
 
+        # Wire up trace AI question button (MCP debug_trace tool)
+        trace_ask_btn.click(
+            fn=ask_about_trace,
+            inputs=[trace_question],
+            outputs=[trace_answer]
+        )
 
         # HTML table row click handler (JavaScript bridge via hidden textbox)
         selected_row_index.change(
