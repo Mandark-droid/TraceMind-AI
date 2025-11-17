@@ -15,14 +15,39 @@ MCP_SERVER_URL = os.getenv(
     "https://mcp-1st-birthday-tracemind-mcp-server.hf.space/"
 )
 
+# Cache the client to avoid recreating it every time
+_mcp_client_cache = None
+
 
 def get_mcp_client() -> Client:
     """
-    Get Gradio client for MCP server
+    Get Gradio client for MCP server (cached)
 
     Returns:
         gradio_client.Client instance
     """
+    global _mcp_client_cache
+
+    # Return cached client if available
+    if _mcp_client_cache is not None:
+        return _mcp_client_cache
+
+    # Create new client with retry logic
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            print(f"[MCP] Connecting to MCP server (attempt {attempt + 1}/{max_retries})...")
+            client = Client(MCP_SERVER_URL)
+            _mcp_client_cache = client
+            print(f"[MCP] Successfully connected to MCP server")
+            return client
+        except Exception as e:
+            print(f"[MCP] Connection attempt {attempt + 1} failed: {e}")
+            if attempt == max_retries - 1:
+                raise
+            import time
+            time.sleep(1)  # Wait 1 second before retry
+
     return Client(MCP_SERVER_URL)
 
 
@@ -211,7 +236,9 @@ def call_compare_runs_sync(
     Synchronous version of call_compare_runs for Gradio event handlers
     """
     try:
+        print(f"[MCP] Calling compare_runs with run_id_1={run_id_1}, run_id_2={run_id_2}")
         client = get_mcp_client()
+        print(f"[MCP] Client obtained, calling predict...")
         result = client.predict(
             run_id_1=run_id_1,
             run_id_2=run_id_2,
@@ -219,9 +246,18 @@ def call_compare_runs_sync(
             repo=leaderboard_repo,
             api_name="/run_compare_runs"
         )
+        print(f"[MCP] Predict completed, result length: {len(result) if isinstance(result, str) else 'N/A'}")
         return result
     except Exception as e:
-        return f"❌ **Error calling compare_runs**: {str(e)}"
+        error_msg = str(e)
+        print(f"[MCP ERROR] compare_runs failed: {error_msg}")
+        import traceback
+        traceback.print_exc()
+
+        # Provide helpful error message
+        if "Could not fetch config" in error_msg or "SSE" in error_msg:
+            return f"❌ **MCP Server Connection Error**\n\nCould not connect to the MCP server at:\n`{MCP_SERVER_URL}`\n\n**Possible causes:**\n- The HuggingFace Space may be sleeping (first request can take 30-60 seconds)\n- Network connectivity issues\n- Server is rebuilding after recent changes\n\n**Try:**\n1. Wait a moment and try again\n2. Visit {MCP_SERVER_URL} in your browser to wake up the space\n3. Contact support if the issue persists\n\n**Technical details:** {error_msg}"
+        return f"❌ **Error calling compare_runs**: {error_msg}"
 
 
 def call_analyze_results_sync(
