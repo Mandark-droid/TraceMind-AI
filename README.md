@@ -24,6 +24,24 @@ Agent Evaluation Platform with MCP-Powered Intelligence
 
 TraceMind-AI is a comprehensive platform for evaluating AI agent performance across different models, providers, and configurations. It provides real-time insights, cost analysis, and detailed trace visualization powered by the Model Context Protocol (MCP).
 
+### 🏗️ **Built on Open Source Foundation**
+
+This platform is part of a complete agent evaluation ecosystem built on two foundational open-source projects:
+
+**🔭 TraceVerde (genai_otel_instrument)** - Automatic OpenTelemetry Instrumentation
+- **What**: Zero-code OTEL instrumentation for LLM frameworks (LiteLLM, Transformers, LangChain, etc.)
+- **Why**: Captures every LLM call, tool usage, and agent step automatically
+- **Links**: [GitHub](https://github.com/Mandark-droid/genai_otel_instrument) | [PyPI](https://pypi.org/project/genai-otel-instrument)
+
+**📊 SMOLTRACE** - Agent Evaluation Engine
+- **What**: Lightweight, production-ready evaluation framework with OTEL tracing built-in
+- **Why**: Generates structured datasets (leaderboard, results, traces, metrics) displayed in this UI
+- **Links**: [GitHub](https://github.com/Mandark-droid/SMOLTRACE) | [PyPI](https://pypi.org/project/smoltrace/)
+
+**The Flow**: `TraceVerde` instruments your agents → `SMOLTRACE` evaluates them → `TraceMind-AI` visualizes results with MCP-powered intelligence
+
+---
+
 ## Features
 
 - **📊 Real-time Leaderboard**: Live evaluation data from HuggingFace datasets
