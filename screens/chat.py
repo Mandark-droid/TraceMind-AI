@@ -14,6 +14,10 @@ import yaml
 try:
     from smolagents import CodeAgent, InferenceClientModel, LiteLLMModel
     from smolagents.mcp_client import MCPClient
+    from smolagents.agent_types import AgentAudio, AgentImage, AgentText
+    from smolagents.agents import MultiStepAgent, PlanningStep
+    from smolagents.memory import ActionStep, FinalAnswerStep
+    from smolagents.models import ChatMessageStreamDelta
     SMOLAGENTS_AVAILABLE = True
 except ImportError:
     SMOLAGENTS_AVAILABLE = False
@@ -30,6 +34,235 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # Global agent and MCP client (reused across requests)
 _global_agent = None
 _global_mcp_client = None
+
+
+# ============================================================================
+# Helper Functions for Agent Step Processing
+# ============================================================================
+
+def get_step_footnote_content(step_log: ActionStep | PlanningStep, step_name: str) -> str:
+    """Get a footnote string for a step log with duration and token information"""
+    step_footnote = f"**{step_name}**"
+
+    # Check if token_usage attribute exists and is not None
+    if hasattr(step_log, 'token_usage') and step_log.token_usage is not None:
+        step_footnote += f" | Input tokens: {step_log.token_usage.input_tokens:,} | Output tokens: {step_log.token_usage.output_tokens:,}"
+
+    # Add duration information if available
+    if hasattr(step_log, 'timing') and step_log.timing and step_log.timing.duration:
+        step_footnote += f" | Duration: {round(float(step_log.timing.duration), 2)}s"
+
+    step_footnote_content = f"""<span style="color: #bbbbc2; font-size: 12px;">{step_footnote}</span> """
+    return step_footnote_content
+
+
+def _clean_model_output(model_output: str) -> str:
+    """Clean up model output by removing trailing tags and extra backticks."""
+    if not model_output:
+        return ""
+    model_output = model_output.strip()
+    # Remove any trailing <end_code> and extra backticks, handling multiple possible formats
+    import re
+    model_output = re.sub(r"```\s*<end_code>", "```", model_output)
+    model_output = re.sub(r"<end_code>\s*```", "```", model_output)
+    model_output = re.sub(r"```\s*\n\s*<end_code>", "```", model_output)
+    return model_output.strip()
+
+
+def _format_code_content(content: str) -> str:
+    """Format code content as Python code block if it's not already formatted."""
+    import re
+    content = content.strip()
+    # Remove existing code blocks and end_code tags
+    content = re.sub(r"```.*?\n", "", content)
+    content = re.sub(r"\s*<end_code>\s*", "", content)
+    content = content.strip()
+    # Add Python code block formatting if not already present
+    if not content.startswith("```python"):
+        content = f"```python\n{content}\n```"
+    return content
+
+
+def _process_action_step(step_log: ActionStep, skip_model_outputs: bool = False):
+    """Process an ActionStep and yield appropriate Gradio ChatMessage objects."""
+    import re
+
+    # Output the step number
+    step_number = f"🔧 Step {step_log.step_number}"
+    if not skip_model_outputs:
+        yield gr.ChatMessage(role="assistant", content=f"**{step_number}**", metadata={"status": "done"})
+
+    # First yield the thought/reasoning from the LLM
+    if not skip_model_outputs and getattr(step_log, "model_output", ""):
+        model_output = _clean_model_output(step_log.model_output)
+        # Format as thinking/reasoning
+        formatted_output = f"💭 **Reasoning:**\n{model_output}"
+        yield gr.ChatMessage(role="assistant", content=formatted_output, metadata={"status": "done"})
+
+    # For tool calls, create a parent message
+    if getattr(step_log, "tool_calls", []):
+        first_tool_call = step_log.tool_calls[0]
+        used_code = first_tool_call.name in ["python_interpreter", "execute_code", "final_answer"]
+
+        # Process arguments based on type
+        args = first_tool_call.arguments
+        if isinstance(args, dict):
+            content = str(args.get("answer", str(args)))
+        else:
+            content = str(args).strip()
+
+        # Format code content if needed
+        if used_code and "```" not in content:
+            content = _format_code_content(content)
+
+        # Choose appropriate emoji and title based on tool
+        tool_emoji = "🛠️"
+        tool_title = f"Used tool: {first_tool_call.name}"
+
+        # Specific tool icons for TraceMind MCP tools
+        if "leaderboard" in first_tool_call.name.lower():
+            tool_emoji = "📊"
+            tool_title = f"Analyzed Leaderboard using {first_tool_call.name}"
+        elif "trace" in first_tool_call.name.lower() or "debug" in first_tool_call.name.lower():
+            tool_emoji = "🔍"
+            tool_title = f"Debugged Trace using {first_tool_call.name}"
+        elif "cost" in first_tool_call.name.lower() or "estimate" in first_tool_call.name.lower():
+            tool_emoji = "💰"
+            tool_title = f"Estimated Cost using {first_tool_call.name}"
+        elif used_code:
+            tool_emoji = "💻"
+            tool_title = f"Executed Code using {first_tool_call.name}"
+
+        # Create the tool call message
+        parent_message_tool = gr.ChatMessage(
+            role="assistant",
+            content=content,
+            metadata={
+                "title": f"{tool_emoji} {tool_title}",
+                "status": "done",
+            },
+        )
+        yield parent_message_tool
+
+    # Display execution logs if they exist
+    if getattr(step_log, "observations", "") and step_log.observations.strip():
+        import re
+        log_content = step_log.observations.strip()
+        if log_content:
+            log_content = re.sub(r"^Execution logs:\s*", "", log_content)
+            yield gr.ChatMessage(
+                role="assistant",
+                content=f"```bash\n{log_content}\n```",
+                metadata={"title": "📋 Execution Logs", "status": "done"},
+            )
+
+    # Handle errors
+    if getattr(step_log, "error", None):
+        error_msg = f"⚠️ **Error:** {str(step_log.error)}"
+        yield gr.ChatMessage(
+            role="assistant", content=error_msg, metadata={"title": "🚫 Error", "status": "done"}
+        )
+
+    # Add step footnote and separator
+    yield gr.ChatMessage(
+        role="assistant", content=get_step_footnote_content(step_log, step_number), metadata={"status": "done"}
+    )
+    yield gr.ChatMessage(role="assistant", content="---", metadata={"status": "done"})
+
+
+def _process_planning_step(step_log: PlanningStep, skip_model_outputs: bool = False):
+    """Process a PlanningStep and yield appropriate gradio.ChatMessage objects."""
+    if not skip_model_outputs:
+        yield gr.ChatMessage(role="assistant", content="🧠 **Planning Phase**", metadata={"status": "done"})
+        yield gr.ChatMessage(role="assistant", content=step_log.plan, metadata={"status": "done"})
+    yield gr.ChatMessage(
+        role="assistant", content=get_step_footnote_content(step_log, "Planning Phase"), metadata={"status": "done"}
+    )
+    yield gr.ChatMessage(role="assistant", content="---", metadata={"status": "done"})
+
+
+def _process_final_answer_step(step_log: FinalAnswerStep):
+    """Process a FinalAnswerStep and yield appropriate gradio.ChatMessage objects."""
+    # Try different possible attribute names for the final answer
+    final_answer = None
+    possible_attrs = ['output', 'answer', 'result', 'content', 'final_answer']
+
+    for attr in possible_attrs:
+        if hasattr(step_log, attr):
+            final_answer = getattr(step_log, attr)
+            break
+
+    # If no known attribute found, use string representation of the step
+    if final_answer is None:
+        yield gr.ChatMessage(
+            role="assistant",
+            content=f"**Final answer:** {str(step_log)}",
+            metadata={"status": "done"}
+        )
+        return
+
+    # Process the final answer based on its type
+    if isinstance(final_answer, AgentText):
+        yield gr.ChatMessage(
+            role="assistant",
+            content=final_answer.to_string(),
+            metadata={"status": "done", "title": "📜 Final Answer"},
+        )
+    elif isinstance(final_answer, AgentImage):
+        # Handle image if needed
+        yield gr.ChatMessage(
+            role="assistant",
+            content=f"![Image]({final_answer.to_string()})",
+            metadata={"status": "done", "title": "🎨 Image Result"},
+        )
+    elif isinstance(final_answer, AgentAudio):
+        yield gr.ChatMessage(
+            role="assistant",
+            content={"path": final_answer.to_string(), "mime_type": "audio/wav"},
+            metadata={"status": "done", "title": "🔊 Audio Result"},
+        )
+    else:
+        # Assume markdown content and render as-is
+        yield gr.ChatMessage(
+            role="assistant",
+            content=str(final_answer),
+            metadata={"status": "done", "title": "📜 Final Answer"},
+        )
+
+
+def pull_messages_from_step(step_log: ActionStep | PlanningStep | FinalAnswerStep, skip_model_outputs: bool = False):
+    """Extract Gradio ChatMessage objects from agent steps with proper nesting."""
+    if isinstance(step_log, ActionStep):
+        yield from _process_action_step(step_log, skip_model_outputs)
+    elif isinstance(step_log, PlanningStep):
+        yield from _process_planning_step(step_log, skip_model_outputs)
+    elif isinstance(step_log, FinalAnswerStep):
+        yield from _process_final_answer_step(step_log)
+    else:
+        raise ValueError(f"Unsupported step type: {type(step_log)}")
+
+
+def stream_to_gradio(
+        agent,
+        task: str,
+        reset_agent_memory: bool = False,
+):
+    """Runs an agent with the given task and streams the messages from the agent as gradio ChatMessages."""
+    intermediate_text = ""
+
+    for event in agent.run(
+            task, stream=True, max_steps=20, reset=reset_agent_memory
+    ):
+        if isinstance(event, ActionStep | PlanningStep | FinalAnswerStep):
+            intermediate_text = ""
+            for message in pull_messages_from_step(
+                    event,
+                    skip_model_outputs=getattr(agent, "stream_outputs", False),
+            ):
+                yield message
+        elif isinstance(event, ChatMessageStreamDelta):
+            intermediate_text += event.content or ""
+            yield intermediate_text
 
 
 def create_agent():
@@ -146,52 +379,74 @@ def cleanup_agent():
             _global_agent = None
 
 
-def chat_with_agent(
-    message: str,
-    history: List[Tuple[str, str]],
-    show_reasoning: bool = True
-) -> Tuple[List[Tuple[str, str]], str]:
+def chat_with_agent(message: str, history: list):
     """
-    Process user message with agent
+    Process user message with agent using streaming
 
     Args:
         message: User's input message
-        history: Chat history
-        show_reasoning: Whether to show agent's reasoning steps
+        history: Chat history (list of ChatMessage objects)
 
-    Returns:
-        Updated history and reasoning log
+    Yields:
+        Updated history with streaming agent responses
     """
 
     if not SMOLAGENTS_AVAILABLE:
         # Mock response for when smolagents isn't available
-        history.append((message, "🤖 Agent not available (smolagents not installed). Install with: pip install smolagents"))
-        return history, "No reasoning available"
+        history.append(gr.ChatMessage(role="user", content=message, metadata={"status": "done"}))
+        history.append(gr.ChatMessage(
+            role="assistant",
+            content="🤖 Agent not available (smolagents not installed). Install with: pip install smolagents",
+            metadata={"status": "done"}
+        ))
+        yield history
+        return
 
     try:
         agent = create_agent()
         if agent is None:
-            history.append((message, "❌ Failed to initialize agent"))
-            return history, "Agent initialization failed"
+            history.append(gr.ChatMessage(role="user", content=message, metadata={"status": "done"}))
+            history.append(gr.ChatMessage(
+                role="assistant",
+                content="❌ Failed to initialize agent",
+                metadata={"status": "done"}
+            ))
+            yield history
+            return
 
-        # Run agent
-        response = agent.run(message)
+        # Add user message
+        history.append(gr.ChatMessage(role="user", content=message, metadata={"status": "done"}))
+        yield history
 
-        # Extract reasoning steps
-        reasoning_log = ""
-        if hasattr(agent, 'logs') and show_reasoning:
-            for log in agent.logs:
-                reasoning_log += f"**{log['role']}**: {log['content']}\n\n"
+        # Stream agent responses
+        for msg in stream_to_gradio(agent, task=message, reset_agent_memory=False):
+            if isinstance(msg, gr.ChatMessage):
+                # Mark previous message as done if it was pending
+                if history and history[-1].metadata.get("status") == "pending":
+                    history[-1].metadata["status"] = "done"
+                history.append(msg)
+            elif isinstance(msg, str):  # Streaming text delta
+                msg = msg.replace("<", r"\<").replace(">", r"\>")  # HTML tags seem to break Gradio Chatbot
+                if history and history[-1].metadata.get("status") == "pending":
+                    history[-1].content = msg
+                else:
+                    history.append(gr.ChatMessage(role="assistant", content=msg, metadata={"status": "pending"}))
+            yield history
 
-        # Add to history
-        history.append((message, str(response)))
-
-        return history, reasoning_log
+        # Mark final message as done
+        if history and history[-1].metadata.get("status") == "pending":
+            history[-1].metadata["status"] = "done"
+        yield history
 
     except Exception as e:
-        error_msg = f"❌ Error: {str(e)}"
-        history.append((message, error_msg))
-        return history, f"Error during execution: {str(e)}"
+        import traceback
+        error_msg = f"❌ Error: {str(e)}\n\n```\n{traceback.format_exc()}\n```"
+        history.append(gr.ChatMessage(
+            role="assistant",
+            content=error_msg,
+            metadata={"title": "🚫 Error", "status": "done"}
+        ))
+        yield history
 
 
 def create_chat_ui():
@@ -240,12 +495,17 @@ def create_chat_ui():
 
         with gr.Row():
             with gr.Column(scale=2):
-                # Chat interface
+                # Chat interface (using type="messages" for rich ChatMessage display)
                 components['chatbot'] = gr.Chatbot(
                     label="Agent Conversation",
+                    type="messages",
                     height=500,
                     show_label=True,
-                    avatar_images=(None, "https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png")
+                    show_copy_button=True,
+                    avatar_images=(
+                        "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/smolagents/mascot_smol.png",
+                        "https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png"
+                    )
                 )
 
                 with gr.Row():
@@ -260,19 +520,19 @@ def create_chat_ui():
 
                 with gr.Row():
                     components['clear_btn'] = gr.Button("🗑️ Clear Chat")
-                    components['show_reasoning'] = gr.Checkbox(
-                        label="Show Agent Reasoning",
-                        value=True,
-                        info="Display the agent's planning and tool usage steps"
-                    )
 
             with gr.Column(scale=1):
-                # Reasoning panel
-                gr.Markdown("### 🧠 Agent Reasoning")
-                components['reasoning_display'] = gr.Markdown(
-                    "*Agent's reasoning steps will appear here...*",
-                    label="Reasoning Log"
-                )
+                # Info panel
+                gr.Markdown("### ℹ️ Agent Status")
+                gr.Markdown("""
+                The agent's reasoning, tool calls, and execution logs are displayed inline in the chat.
+
+                **Look for:**
+                - 💭 **Reasoning** - Agent's thought process
+                - 🛠️ **Tool Calls** - MCP server invocations
+                - 📋 **Execution Logs** - Tool outputs
+                - 📜 **Final Answer** - Agent's response
+                """)
 
                 # Quick actions
                 gr.Markdown("### ⚡ Quick Actions")
@@ -283,20 +543,22 @@ def create_chat_ui():
     return chat_screen, components
 
 
-def on_send_message(message, history, show_reasoning):
-    """Handle send button click"""
+def on_send_message(message, history):
+    """Handle send button click - now uses streaming"""
     if not message.strip():
-        return history, "", "Please enter a message"
+        yield history, ""
+        return
 
-    updated_history, reasoning = chat_with_agent(message, history, show_reasoning)
-    return updated_history, "", reasoning
+    # Stream agent responses
+    for updated_history in chat_with_agent(message, history):
+        yield updated_history, ""
 
 
 def on_clear_chat():
     """Handle clear button click and cleanup agent connection"""
     # Cleanup agent and MCP client connection
     cleanup_agent()
-    return [], "", "*Agent's reasoning steps will appear here...*"
+    return []
 
 
 def on_quick_action(action_type):

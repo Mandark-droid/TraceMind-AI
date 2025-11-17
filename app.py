@@ -2122,23 +2122,23 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             ]
         )
 
-        # Chat screen event handlers
+        # Chat screen event handlers (with streaming)
         chat_components['send_btn'].click(
             fn=on_send_message,
-            inputs=[chat_components['message'], chat_components['chatbot'], chat_components['show_reasoning']],
-            outputs=[chat_components['chatbot'], chat_components['message'], chat_components['reasoning_display']]
+            inputs=[chat_components['message'], chat_components['chatbot']],
+            outputs=[chat_components['chatbot'], chat_components['message']]
         )
 
         chat_components['message'].submit(
             fn=on_send_message,
-            inputs=[chat_components['message'], chat_components['chatbot'], chat_components['show_reasoning']],
-            outputs=[chat_components['chatbot'], chat_components['message'], chat_components['reasoning_display']]
+            inputs=[chat_components['message'], chat_components['chatbot']],
+            outputs=[chat_components['chatbot'], chat_components['message']]
         )
 
         chat_components['clear_btn'].click(
             fn=on_clear_chat,
             inputs=[],
-            outputs=[chat_components['chatbot'], chat_components['message'], chat_components['reasoning_display']]
+            outputs=[chat_components['chatbot']]
         )
 
         chat_components['quick_analyze'].click(
