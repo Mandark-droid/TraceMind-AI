@@ -92,12 +92,14 @@ def _process_action_step(step_log: ActionStep, skip_model_outputs: bool = False)
     if not skip_model_outputs:
         yield gr.ChatMessage(role="assistant", content=f"**{step_number}**", metadata={"status": "done"})
 
-    # First yield the thought/reasoning from the LLM
+    # First yield the thought/reasoning from the LLM (collapsed)
     if not skip_model_outputs and getattr(step_log, "model_output", ""):
         model_output = _clean_model_output(step_log.model_output)
-        # Format as thinking/reasoning
-        formatted_output = f"💭 **Reasoning:**\n{model_output}"
-        yield gr.ChatMessage(role="assistant", content=formatted_output, metadata={"status": "done"})
+        yield gr.ChatMessage(
+            role="assistant",
+            content=model_output,
+            metadata={"title": "💭 Reasoning", "status": "done"}
+        )
 
     # For tool calls, create a parent message
     if getattr(step_log, "tool_calls", []):
@@ -173,8 +175,12 @@ def _process_action_step(step_log: ActionStep, skip_model_outputs: bool = False)
 def _process_planning_step(step_log: PlanningStep, skip_model_outputs: bool = False):
     """Process a PlanningStep and yield appropriate gradio.ChatMessage objects."""
     if not skip_model_outputs:
-        yield gr.ChatMessage(role="assistant", content="🧠 **Planning Phase**", metadata={"status": "done"})
-        yield gr.ChatMessage(role="assistant", content=step_log.plan, metadata={"status": "done"})
+        # Show planning phase as collapsible section
+        yield gr.ChatMessage(
+            role="assistant",
+            content=step_log.plan,
+            metadata={"title": "🧠 Planning Phase", "status": "done"}
+        )
     yield gr.ChatMessage(
         role="assistant", content=get_step_footnote_content(step_log, "Planning Phase"), metadata={"status": "done"}
     )
@@ -201,32 +207,32 @@ def _process_final_answer_step(step_log: FinalAnswerStep):
         )
         return
 
-    # Process the final answer based on its type
+    # Process the final answer based on its type (NOT collapsed - visible by default)
     if isinstance(final_answer, AgentText):
         yield gr.ChatMessage(
             role="assistant",
-            content=final_answer.to_string(),
-            metadata={"status": "done", "title": "📜 Final Answer"},
+            content=f"📜 **Final Answer:**\n\n{final_answer.to_string()}",
+            metadata={"status": "done"},
         )
     elif isinstance(final_answer, AgentImage):
         # Handle image if needed
         yield gr.ChatMessage(
             role="assistant",
-            content=f"![Image]({final_answer.to_string()})",
-            metadata={"status": "done", "title": "🎨 Image Result"},
+            content=f"🎨 **Image Result:**\n\n![Image]({final_answer.to_string()})",
+            metadata={"status": "done"},
         )
     elif isinstance(final_answer, AgentAudio):
         yield gr.ChatMessage(
             role="assistant",
             content={"path": final_answer.to_string(), "mime_type": "audio/wav"},
-            metadata={"status": "done", "title": "🔊 Audio Result"},
+            metadata={"status": "done"},
         )
     else:
         # Assume markdown content and render as-is
         yield gr.ChatMessage(
             role="assistant",
-            content=str(final_answer),
-            metadata={"status": "done", "title": "📜 Final Answer"},
+            content=f"📜 **Final Answer:**\n\n{str(final_answer)}",
+            metadata={"status": "done"},
         )
 
 
