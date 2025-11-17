@@ -120,7 +120,7 @@ async def call_compare_runs(
 
 async def call_analyze_results(
     results_repo: str,
-    focus_area: str = "overall",
+    focus_area: str = "comprehensive",
     max_rows: int = 100
 ) -> str:
     """
@@ -128,7 +128,7 @@ async def call_analyze_results(
 
     Args:
         results_repo: HuggingFace dataset repository with results data
-        focus_area: Focus area - "overall", "failures", "performance", or "tools"
+        focus_area: Focus area - "comprehensive", "failures", "performance", or "cost"
         max_rows: Maximum number of test cases to analyze
 
     Returns:
@@ -225,11 +225,19 @@ def call_compare_runs_sync(
 
 def call_analyze_results_sync(
     results_repo: str,
-    focus_area: str = "overall",
+    focus_area: str = "comprehensive",
     max_rows: int = 100
 ) -> str:
     """
     Synchronous version of call_analyze_results for Gradio event handlers
+
+    Args:
+        results_repo: HuggingFace dataset repository with results data
+        focus_area: Focus area - "comprehensive", "failures", "performance", or "cost"
+        max_rows: Maximum number of test cases to analyze
+
+    Returns:
+        Markdown-formatted results analysis from Gemini
     """
     try:
         client = get_mcp_client()

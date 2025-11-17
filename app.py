@@ -1987,8 +1987,8 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         with gr.Column(scale=1):
                             run_analysis_focus = gr.Dropdown(
                                 label="Analysis Focus",
-                                choices=["overall", "failures", "performance", "tools"],
-                                value="overall",
+                                choices=["comprehensive", "failures", "performance", "cost"],
+                                value="comprehensive",
                                 info="Choose what aspect to focus on in the AI analysis"
                             )
                             run_max_rows = gr.Slider(
@@ -2487,6 +2487,5 @@ if __name__ == "__main__":
     app.launch(
         server_name="0.0.0.0",
         server_port=7860,
-        share=False,
-        ssr_mode=False  # Disable SSR to fix MCP client compatibility
+        share=False
     )
