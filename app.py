@@ -1457,16 +1457,22 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         - 🎨 **Visual Design**: Gradient cards with model logos and performance metrics
                         - 🔍 **Filters**: Use agent type, provider, and sorting controls above
                         - 📊 **Sort Options**: Click "Sort By" to order by success rate, cost, duration, or tokens
+                        - 👆 **Clickable Rows**: Click on any row to navigate to the detailed run view
 
                         **Performance Indicators:**
                         - 🟢 Green metrics = Excellent performance
                         - 🟡 Yellow metrics = Average performance
                         - 🔴 Red metrics = Needs improvement
 
+                        **Navigation:**
+                        - 🖱️ Click any leaderboard row to view detailed run results
+                        - See test-by-test breakdown, cost analysis, and execution traces
+                        - Use the sidebar filters to narrow down by model before drilling down
+
                         **Tips:**
                         - Use sidebar filters to narrow down by model
                         - Apply inline filters for more granular control
-                        - Switch to "DrillDown" tab for a raw table view
+                        - Click any row to explore detailed results and traces
                         """)
 
                     # Inline filters for styled leaderboard
