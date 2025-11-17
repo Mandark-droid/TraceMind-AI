@@ -7,6 +7,7 @@ sdk: gradio
 sdk_version: 5.49.1
 app_file: app.py
 short_description: AI agent evaluation with MCP-powered intelligence
+license: agpl-3.0
 pinned: true
 tags:
   - mcp-in-action-track-enterprise
@@ -287,7 +288,9 @@ For detailed implementation documentation, see:
 
 ## License
 
-MIT License - See LICENSE file for details
+AGPL-3.0 License
+
+This project is licensed under the GNU Affero General Public License v3.0. See the LICENSE file for details.
 
 ## Contributing
 
