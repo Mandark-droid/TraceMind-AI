@@ -24,7 +24,7 @@ class MCPClient:
         """
         self.server_url = server_url or os.getenv(
             'MCP_SERVER_URL',
-            'https://kshitijthakkar-tracemind-mcp-server.hf.space/gradio_api/mcp/'
+            'https://mcp-1st-birthday-tracemind-mcp-server.hf.space/gradio_api/mcp/'
         )
         self.session: Optional[ClientSession] = None
         self._initialized = False

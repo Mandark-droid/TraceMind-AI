@@ -36,7 +36,7 @@ TraceMind-AI is a comprehensive platform for evaluating AI agent performance acr
 
 ## MCP Integration
 
-TraceMind-AI demonstrates enterprise MCP client usage by connecting to [TraceMind-mcp-server](https://huggingface.co/spaces/kshitijthakkar/TraceMind-mcp-server) via the Model Context Protocol.
+TraceMind demonstrates enterprise MCP client usage by connecting to [TraceMind-mcp-server](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server) via the Model Context Protocol.
 
 **MCP Tools Used:**
 - `analyze_leaderboard` - AI-generated insights about evaluation trends
@@ -95,7 +95,7 @@ AGENT_MODEL_TYPE=hfapi
 GEMINI_API_KEY=your_gemini_api_key_here
 
 # MCP Server URL (note: /sse endpoint for smolagents integration)
-MCP_SERVER_URL=https://kshitijthakkar-tracemind-mcp-server.hf.space/gradio_api/mcp/sse
+MCP_SERVER_URL=https://mcp-1st-birthday-tracemind-mcp-server.hf.space/gradio_api/mcp/sse
 
 # Dataset Configuration
 LEADERBOARD_REPO=kshitijthakkar/smoltrace-leaderboard
@@ -273,8 +273,8 @@ Contributions are welcome! Please open an issue or submit a pull request.
 
 ## Links
 
-- **Live Demo**: https://huggingface.co/spaces/kshitijthakkar/TraceMind-AI
-- **MCP Server**: https://huggingface.co/spaces/kshitijthakkar/TraceMind-mcp-server
+- **Live Demo**: https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind
+- **MCP Server**: https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server
 - **GitHub**: https://github.com/Mandark-droid/TraceMind-AI
 - **MCP Specification**: https://modelcontextprotocol.io
 

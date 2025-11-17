@@ -20,7 +20,7 @@ except ImportError:
     print("[WARNING] smolagents not installed - Chat screen will use mock agent")
 
 # TraceMind MCP Server endpoint
-MCP_SERVER_URL = "https://kshitijthakkar-tracemind-mcp-server.hf.space/gradio_api/mcp/sse"
+MCP_SERVER_URL = "https://mcp-1st-birthday-tracemind-mcp-server.hf.space/gradio_api/mcp/sse"
 
 # Model configuration - can be set via environment variables
 MODEL_TYPE = os.getenv("AGENT_MODEL_TYPE", "hfapi")  # Options: "hfapi", "inference_client", "litellm"
