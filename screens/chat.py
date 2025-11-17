@@ -245,7 +245,7 @@ def create_chat_ui():
                     label="Agent Conversation",
                     height=500,
                     show_label=True,
-                    avatar_images=(None, "🤖")
+                    avatar_images=(None, "https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png")
                 )
 
                 with gr.Row():

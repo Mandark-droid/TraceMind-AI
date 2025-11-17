@@ -1,6 +1,6 @@
 ---
 title: TraceMind AI
-emoji: 🔍
+emoji: 🧠
 colorFrom: indigo
 colorTo: purple
 sdk: gradio
@@ -16,7 +16,7 @@ tags:
   - gradio
 ---
 
-# 🔍 TraceMind-AI
+# 🧠 TraceMind-AI
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png" alt="TraceMind-AI Logo" width="200"/>
