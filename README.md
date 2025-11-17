@@ -293,6 +293,15 @@ MIT License - See LICENSE file for details
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
+## Built By
+
+**Track**: MCP in Action (Enterprise)
+**Author**: Kshitij Thakkar
+**Powered by**: MCP Servers (TraceMind-mcp-server) + Gradio
+**Built with**: Gradio 5.49.1 (MCP client integration)
+
+---
+
 ## Acknowledgments
 
 - **MCP Team** - For the Model Context Protocol specification
