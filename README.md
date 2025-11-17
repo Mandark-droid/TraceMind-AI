@@ -18,7 +18,18 @@ tags:
 
 # 🔍 TraceMind-AI
 
-Agent Evaluation Platform with MCP-Powered Intelligence
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png" alt="TraceMind-AI Logo" width="200"/>
+</p>
+
+**Agent Evaluation Platform with MCP-Powered Intelligence**
+
+[![MCP's 1st Birthday Hackathon](https://img.shields.io/badge/MCP%27s%201st%20Birthday-Hackathon-blue)](https://github.com/modelcontextprotocol)
+[![Track](https://img.shields.io/badge/Track-MCP%20in%20Action%20(Enterprise)-purple)](https://github.com/modelcontextprotocol/hackathon)
+[![Powered by Gradio](https://img.shields.io/badge/Powered%20by-Gradio-orange)](https://gradio.app/)
+
+> **🎯 Track 2 Submission**: MCP in Action (Enterprise)
+> **📅 MCP's 1st Birthday Hackathon**: November 14-30, 2025
 
 ## Overview
 
