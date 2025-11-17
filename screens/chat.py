@@ -352,7 +352,7 @@ def create_agent():
             additional_authorized_imports=[
                 'time', 'math', 'queue', 're', 'stat', 'collections', 'datetime',
                 'statistics', 'itertools', 'unicodedata', 'random',
-                'pandas', 'numpy', 'json', 'yaml', 'plotly'
+                'pandas', 'numpy', 'json', 'yaml', 'plotly', 'ast'
             ]
         )
 
