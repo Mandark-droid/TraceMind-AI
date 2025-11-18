@@ -11,13 +11,41 @@ def create_about_tab():
     return gr.Markdown("""
 # 🧠 TraceMind Ecosystem
 
+<div align="center">
+  <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png" alt="TraceMind Logo" width="300"/>
+</div>
+
+<br/>
+
 **The Complete AI Agent Evaluation Platform**
+
+[![MCP's 1st Birthday Hackathon](https://img.shields.io/badge/MCP%27s%201st%20Birthday-Hackathon-blue)](https://github.com/modelcontextprotocol)
+[![Track 2](https://img.shields.io/badge/Track-MCP%20in%20Action%20(Enterprise)-purple)](https://github.com/modelcontextprotocol/hackathon)
+[![Powered by Gradio](https://img.shields.io/badge/Powered%20by-Gradio-orange)](https://gradio.app/)
+
+> **🎯 Track 2 Submission**: MCP in Action (Enterprise)
+> **📅 MCP's 1st Birthday Hackathon**: November 14-30, 2025
 
 TraceMind is a comprehensive ecosystem for evaluating, monitoring, and optimizing AI agents. Built on open-source foundations and powered by the Model Context Protocol (MCP), TraceMind provides everything you need for production-grade agent evaluation.
 
 ---
 
-## 🏗️ Architecture Overview
+## 📖 Table of Contents
+
+- [Architecture Overview](#️-architecture-overview)
+- [The Complete Flow](#-the-complete-flow)
+- [Key Features](#-key-features)
+- [Built for MCP's 1st Birthday Hackathon](#-built-for-mcps-1st-birthday-hackathon)
+- [Quick Links](#-quick-links)
+- [Documentation Navigation](#-documentation-navigation)
+- [Getting Started](#-getting-started)
+- [Contributing](#-contributing)
+- [Acknowledgments](#-acknowledgments)
+
+---
+
+<details open>
+<summary><h2>🏗️ Architecture Overview</h2></summary>
 
 The TraceMind ecosystem consists of four integrated components:
 
@@ -45,16 +73,19 @@ The TraceMind ecosystem consists of four integrated components:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+</details>
+
 ---
 
-## 🔄 The Complete Flow
+<details open>
+<summary><h2>🔄 The Complete Flow</h2></summary>
 
 ### 1. **Instrument Your Agents** (TraceVerde)
 ```python
-from genai_otel_instrument import instrument_llm
+import genai_otel
 
 # Zero-code instrumentation
-instrument_llm(enable_content_capture=True)
+genai_otel.instrument()
 
 # Your agent code runs normally, but now traced!
 agent.run("What's the weather in Tokyo?")
@@ -75,9 +106,12 @@ smoltrace-eval \\
 - Explore detailed traces
 - Ask questions with MCP-powered chat
 
+</details>
+
 ---
 
-## 🎯 Key Features
+<details open>
+<summary><h2>🎯 Key Features</h2></summary>
 
 ### For Developers
 - ✅ **Zero-code Instrumentation**: Just import and go
@@ -96,6 +130,8 @@ smoltrace-eval \\
 - ✅ **Sustainability**: CO2 emissions monitoring (TraceVerde)
 - ✅ **MCP Integration**: Connect to intelligent analysis tools
 - ✅ **HuggingFace Native**: Seamless dataset integration
+
+</details>
 
 ---
 
@@ -133,7 +169,8 @@ Use the tabs above to explore detailed documentation for each component:
 
 ---
 
-## 💡 Getting Started
+<details open>
+<summary><h2>💡 Getting Started</h2></summary>
 
 ### Quick Start (5 minutes)
 ```bash
@@ -154,6 +191,8 @@ smoltrace-eval --model openai/gpt-4 --agent-type tool
 - Try the **Agent Chat** for interactive queries
 - Explore the **Leaderboard** to see real evaluation data
 - Check the **Trace Detail** screen for deep inspection
+
+</details>
 
 ---
 
@@ -189,10 +228,46 @@ def create_traceverde_tab():
     return gr.Markdown("""
 # 🔭 TraceVerde (genai_otel_instrument)
 
+<div align="center">
+  <img src="https://raw.githubusercontent.com/Mandark-droid/genai_otel_instrument/main/.github/images/Logo.jpg" alt="TraceVerde Logo" width="400"/>
+</div>
+
+<br/>
+
+[![PyPI version](https://badge.fury.io/py/genai-otel-instrument.svg)](https://badge.fury.io/py/genai-otel-instrument)
+[![Python Versions](https://img.shields.io/pypi/pyversions/genai-otel-instrument.svg)](https://pypi.org/project/genai-otel-instrument/)
+[![License](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Downloads](https://static.pepy.tech/badge/genai-otel-instrument)](https://pepy.tech/project/genai-otel-instrument)
+[![Downloads/Month](https://static.pepy.tech/badge/genai-otel-instrument/month)](https://pepy.tech/project/genai-otel-instrument)
+
+[![GitHub Stars](https://img.shields.io/github/stars/Mandark-droid/genai_otel_instrument?style=social)](https://github.com/Mandark-droid/genai_otel_instrument)
+[![GitHub Forks](https://img.shields.io/github/forks/Mandark-droid/genai_otel_instrument?style=social)](https://github.com/Mandark-droid/genai_otel_instrument)
+[![GitHub Issues](https://img.shields.io/github/issues/Mandark-droid/genai_otel_instrument)](https://github.com/Mandark-droid/genai_otel_instrument/issues)
+
+[![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-1.20%2B-blueviolet)](https://opentelemetry.io/)
+[![Semantic Conventions](https://img.shields.io/badge/OTel%20Semconv-GenAI%20v1.28-orange)](https://opentelemetry.io/docs/specs/semconv/gen-ai/)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 **Automatic OpenTelemetry Instrumentation for LLM Applications**
 
-[![GitHub](https://img.shields.io/badge/GitHub-genai__otel__instrument-black?logo=github)](https://github.com/Mandark-droid/genai_otel_instrument)
-[![PyPI](https://img.shields.io/badge/PyPI-genai--otel--instrument-blue?logo=pypi)](https://pypi.org/project/genai-otel-instrument)
+---
+
+## 📖 Table of Contents
+
+- [What is TraceVerde?](#what-is-traceverde)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Supported Frameworks](#-supported-frameworks)
+- [What Gets Captured?](#-what-gets-captured)
+- [CO2 Emissions Tracking](#-co2-emissions-tracking)
+- [Advanced Configuration](#-advanced-configuration)
+- [Integration with SMOLTRACE](#-integration-with-smoltrace)
+- [Use Cases](#-use-cases)
+- [OpenTelemetry Standards](#-opentelemetry-standards)
+- [Resources](#-resources)
+- [Troubleshooting](#-troubleshooting)
+- [License](#-license)
+- [Contributing](#-contributing)
 
 ---
 
@@ -227,12 +302,39 @@ pip install genai-otel-instrument[all]
 
 ---
 
-## 🚀 Quick Start
+<details open>
+<summary><h2>🚀 Quick Start</h2></summary>
 
 ### Basic Usage
 
+**Option 1: Environment Variables (No code changes)**
+
+```bash
+export OTEL_SERVICE_NAME=my-llm-app
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+python your_app.py
+```
+
+**Option 2: One line of code**
+
 ```python
-from genai_otel_instrument import instrument_llm
+import genai_otel
+genai_otel.instrument()
+
+# Your existing code works unchanged
+import openai
+client = openai.OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+# Traces are automatically captured and exported!
+```
+
+**Option 3: With OpenTelemetry Setup**
+
+```python
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
@@ -243,7 +345,8 @@ span_processor = SimpleSpanProcessor(ConsoleSpanExporter())
 trace.get_tracer_provider().add_span_processor(span_processor)
 
 # 2. Instrument all LLM frameworks (one line!)
-instrument_llm(enable_content_capture=True)
+import genai_otel
+genai_otel.instrument()
 
 # 3. Use your LLM framework normally - it's now traced!
 from litellm import completion
@@ -255,6 +358,8 @@ response = completion(
 
 # Traces are automatically captured and exported!
 ```
+
+</details>
 
 ---
 
@@ -275,7 +380,8 @@ TraceVerde automatically instruments:
 
 ---
 
-## 📊 What Gets Captured?
+<details>
+<summary><h2>📊 What Gets Captured?</h2></summary>
 
 ### LLM Spans
 
@@ -336,6 +442,8 @@ When enabled, captures real-time GPU data:
 }
 ```
 
+</details>
+
 ---
 
 ## 🌱 CO2 Emissions Tracking
@@ -343,13 +451,10 @@ When enabled, captures real-time GPU data:
 TraceVerde integrates with CodeCarbon for sustainability monitoring:
 
 ```python
-from genai_otel_instrument import instrument_llm
+import genai_otel
 
 # Enable CO2 tracking
-instrument_llm(
-    enable_content_capture=True,
-    enable_carbon_tracking=True
-)
+genai_otel.instrument(enable_carbon_tracking=True)
 
 # Your LLM calls now track carbon emissions!
 ```
@@ -375,25 +480,16 @@ otlp_exporter = OTLPSpanExporter(endpoint="http://localhost:4317")
 span_processor = BatchSpanProcessor(otlp_exporter)
 trace.get_tracer_provider().add_span_processor(span_processor)
 
-instrument_llm(enable_content_capture=True)
-```
-
-### Content Capture Control
-
-```python
-# Capture full prompts and responses (default: True)
-instrument_llm(enable_content_capture=True)
-
-# Disable for privacy/compliance
-instrument_llm(enable_content_capture=False)
+import genai_otel
+genai_otel.instrument()
 ```
 
 ### GPU Metrics
 
 ```python
 # Enable GPU monitoring (requires pynvml)
-instrument_llm(
-    enable_content_capture=True,
+import genai_otel
+genai_otel.instrument(
     enable_gpu_metrics=True,
     gpu_poll_interval=1.0  # seconds
 )
@@ -423,7 +519,8 @@ results = evaluate_agent(
 ### 1. Development & Debugging
 ```python
 # See exactly what your agent is doing
-instrument_llm(enable_content_capture=True)
+import genai_otel
+genai_otel.instrument()
 
 # Run your agent
 agent.run("Complex task")
@@ -439,13 +536,15 @@ from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExport
 otlp_exporter = OTLPSpanExporter(endpoint="https://your-otel-collector")
 # ... setup processor ...
 
-instrument_llm(enable_content_capture=False)  # Privacy mode
+import genai_otel
+genai_otel.instrument()
 ```
 
 ### 3. Cost Analysis
 ```python
 # Track costs across all LLM calls
-instrument_llm(enable_content_capture=True)
+import genai_otel
+genai_otel.instrument()
 
 # Analyze cost per user/session/feature
 # All costs automatically captured in span attributes
@@ -454,7 +553,8 @@ instrument_llm(enable_content_capture=True)
 ### 4. Sustainability Reporting
 ```python
 # Monitor environmental impact
-instrument_llm(
+import genai_otel
+genai_otel.instrument(
     enable_carbon_tracking=True,
     enable_gpu_metrics=True
 )
@@ -505,10 +605,11 @@ pip install genai-otel-instrument[gpu]
 nvidia-smi
 ```
 
-**Q: Content capture not working?**
+**Q: How to configure different options?**
 ```python
-# Explicitly enable content capture
-instrument_llm(enable_content_capture=True)
+# Use environment variables or pass options to instrument()
+import genai_otel
+genai_otel.instrument(enable_gpu_metrics=True)
 ```
 
 ---
@@ -539,8 +640,35 @@ def create_smoltrace_tab():
 
 **Lightweight Agent Evaluation Engine with Built-in OpenTelemetry Tracing**
 
-[![GitHub](https://img.shields.io/badge/GitHub-SMOLTRACE-black?logo=github)](https://github.com/Mandark-droid/SMOLTRACE)
-[![PyPI](https://img.shields.io/badge/PyPI-smoltrace-blue?logo=pypi)](https://pypi.org/project/smoltrace/)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://github.com/Mandark-droid/SMOLTRACE/blob/main/LICENSE)
+[![PyPI version](https://badge.fury.io/py/smoltrace.svg)](https://badge.fury.io/py/smoltrace)
+[![Downloads](https://static.pepy.tech/badge/smoltrace)](https://pepy.tech/project/smoltrace)
+[![Downloads/Month](https://static.pepy.tech/badge/smoltrace/month)](https://pepy.tech/project/smoltrace)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
+[![Tests](https://img.shields.io/github/actions/workflow/status/Mandark-droid/SMOLTRACE/test.yml?branch=main&label=tests)](https://github.com/Mandark-droid/SMOLTRACE/actions?query=workflow%3Atest)
+[![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://huggingface.co/docs/smoltrace/en/index)
+
+---
+
+## 📖 Table of Contents
+
+- [What is SMOLTRACE?](#what-is-smoltrace)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Evaluation Types](#-evaluation-types)
+- [What Gets Generated?](#-what-gets-generated)
+- [Configuration Options](#-configuration-options)
+- [Integration with HuggingFace Jobs](#️-integration-with-huggingface-jobs)
+- [Integration with TraceMind-AI](#-integration-with-tracemind-ai)
+- [Best Practices](#-best-practices)
+- [Cost Estimation](#-cost-estimation)
+- [Architecture](#-architecture)
+- [Resources](#-resources)
+- [Troubleshooting](#-troubleshooting)
+- [License](#-license)
+- [Contributing](#-contributing)
 
 ---
 
@@ -576,7 +704,8 @@ pip install smoltrace[all]
 
 ---
 
-## 🚀 Quick Start
+<details open>
+<summary><h2>🚀 Quick Start</h2></summary>
 
 ### Command Line
 
@@ -624,6 +753,8 @@ results.upload_to_hf(
 )
 ```
 
+</details>
+
 ---
 
 ## 🎯 Evaluation Types
@@ -660,7 +791,8 @@ smoltrace-eval --model gpt-4 --agent-type both
 
 ---
 
-## 📊 What Gets Generated?
+<details>
+<summary><h2>📊 What Gets Generated?</h2></summary>
 
 SMOLTRACE creates **4 structured datasets** on HuggingFace:
 
@@ -770,6 +902,8 @@ GPU metrics and performance data:
     ]
 }
 ```
+
+</details>
 
 ---
 
@@ -977,8 +1111,7 @@ print(f"Estimated time: {gpu_cost.duration_minutes} minutes")
 
 - **GitHub**: [github.com/Mandark-droid/SMOLTRACE](https://github.com/Mandark-droid/SMOLTRACE)
 - **PyPI**: [pypi.org/project/smoltrace](https://pypi.org/project/smoltrace/)
-- **Examples**: [github.com/Mandark-droid/SMOLTRACE/examples](https://github.com/Mandark-droid/SMOLTRACE/tree/main/examples)
-- **Dataset Schema**: [github.com/Mandark-droid/SMOLTRACE/docs/schema.md](https://github.com/Mandark-droid/SMOLTRACE/blob/main/docs/schema.md)
+- **Documentation**: [SMOLTRACE README](https://github.com/Mandark-droid/SMOLTRACE#readme)
 
 ---
 
@@ -1036,10 +1169,44 @@ def create_mcp_server_tab():
     return gr.Markdown("""
 # 🔌 TraceMind-MCP-Server
 
+<div align="center">
+  <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-mcp-server/assets/Logo.png" alt="TraceMind MCP Server Logo" width="300"/>
+</div>
+
+<br/>
+
 **Building MCP: Intelligent Analysis Tools for Agent Evaluation**
 
-[![HF Space](https://img.shields.io/badge/HuggingFace-TraceMind--MCP--Server-yellow?logo=huggingface)](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server)
+[![MCP's 1st Birthday Hackathon](https://img.shields.io/badge/MCP%27s%201st%20Birthday-Hackathon-blue)](https://github.com/modelcontextprotocol)
 [![Track 1](https://img.shields.io/badge/Track-Building%20MCP%20(Enterprise)-blue)](https://github.com/modelcontextprotocol/hackathon)
+[![HF Space](https://img.shields.io/badge/HuggingFace-TraceMind--MCP--Server-yellow?logo=huggingface)](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server)
+[![Google Gemini](https://img.shields.io/badge/Powered%20by-Google%20Gemini%202.5%20Pro-orange)](https://ai.google.dev/)
+
+> **🎯 Track 1 Submission**: Building MCP (Enterprise)
+> **📅 MCP's 1st Birthday Hackathon**: November 14-30, 2025
+
+---
+
+## 📖 Table of Contents
+
+- [What is TraceMind-MCP-Server?](#what-is-tracemind-mcp-server)
+- [MCP Tools Provided](#️-mcp-tools-provided)
+  - [analyze_leaderboard](#1-analyze_leaderboard)
+  - [estimate_cost](#2-estimate_cost)
+  - [debug_trace](#3-debug_trace)
+  - [compare_runs](#4-compare_runs)
+  - [analyze_results](#5-analyze_results)
+- [Accessing the MCP Server](#-accessing-the-mcp-server)
+- [Use Cases](#-use-cases)
+- [Architecture](#️-architecture)
+- [Configuration](#-configuration)
+- [Dataset Requirements](#-dataset-requirements)
+- [Learning Resources](#-learning-resources)
+- [Troubleshooting](#-troubleshooting)
+- [Links](#-links)
+- [License](#-license)
+- [Contributing](#-contributing)
+- [MCP's 1st Birthday Hackathon](#-mcps-1st-birthday-hackathon)
 
 ---
 
@@ -1056,7 +1223,8 @@ TraceMind-MCP-Server is a **Track 1 (Building MCP)** submission that provides MC
 
 ---
 
-## 🛠️ MCP Tools Provided
+<details>
+<summary><h2>🛠️ MCP Tools Provided</h2></summary>
 
 ### 1. `analyze_leaderboard`
 
@@ -1267,6 +1435,8 @@ Consider hybrid approach: Llama for routine tasks, GPT-4 for complex ones.
 2. Filters by success/failure
 3. Identifies patterns
 4. Suggests optimizations
+
+</details>
 
 ---
 
