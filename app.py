@@ -1587,6 +1587,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             # Navigation buttons
             dashboard_nav_btn = gr.Button("📊 Dashboard", variant="primary", size="lg")
             leaderboard_nav_btn = gr.Button("🏆 Leaderboard", variant="secondary", size="lg")
+            new_eval_nav_btn = gr.Button("▶️ New Evaluation", variant="secondary", size="lg")
             compare_nav_btn = gr.Button("⚖️ Compare", variant="secondary", size="lg")
             chat_nav_btn = gr.Button("🤖 Agent Chat", variant="secondary", size="lg")
             synthetic_data_nav_btn = gr.Button("🔬 Synthetic Data", variant="secondary", size="lg")
@@ -2193,6 +2194,489 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
 
                 push_btn = gr.Button("📤 Push to HuggingFace Hub", variant="secondary", size="lg", visible=False)
                 push_status = gr.Markdown("")
+
+        # ============================================================================
+        # Screen 8: New Evaluation (Comprehensive Form)
+        # ============================================================================
+        with gr.Column(visible=False) as new_evaluation_screen:
+            gr.Markdown("## ▶️ New Evaluation")
+            gr.Markdown("*Configure and submit a new agent evaluation job*")
+
+            with gr.Row():
+                back_to_leaderboard_from_eval_btn = gr.Button("⬅️ Back to Leaderboard", variant="secondary", size="sm")
+
+            gr.Markdown("---")
+
+            # Section 1: Infrastructure Configuration
+            with gr.Accordion("🏗️ Infrastructure Configuration", open=True):
+                gr.Markdown("*Choose where and how to run the evaluation*")
+
+                with gr.Row():
+                    eval_infra_provider = gr.Dropdown(
+                        choices=["HuggingFace Jobs", "Modal"],
+                        value="HuggingFace Jobs",
+                        label="Infrastructure Provider",
+                        info="Select the platform to run the evaluation"
+                    )
+
+                    eval_hardware = gr.Radio(
+                        choices=["auto", "cpu", "gpu_a10", "gpu_h200"],
+                        value="auto",
+                        label="Hardware",
+                        info="CPU for API models, GPU for local models (H200 for best performance)"
+                    )
+
+            # Section 2: Model Configuration
+            with gr.Accordion("🤖 Model Configuration", open=True):
+                gr.Markdown("*Configure the model and provider settings*")
+
+                with gr.Row():
+                    eval_model = gr.Textbox(
+                        value="openai/gpt-4",
+                        label="Model",
+                        info="Model ID (e.g., openai/gpt-4, meta-llama/Llama-3.1-8B-Instruct)",
+                        placeholder="openai/gpt-4"
+                    )
+
+                    eval_provider = gr.Dropdown(
+                        choices=["litellm", "inference", "transformers", "ollama"],
+                        value="litellm",
+                        label="Provider",
+                        info="Model inference provider"
+                    )
+
+                with gr.Row():
+                    eval_hf_inference_provider = gr.Textbox(
+                        label="HF Inference Provider",
+                        info="For HuggingFace Inference API (optional)",
+                        placeholder="Leave empty for default"
+                    )
+
+                    eval_hf_token = gr.Textbox(
+                        label="HuggingFace Token",
+                        type="password",
+                        info="Your HF token for private models (optional)",
+                        placeholder="hf_..."
+                    )
+
+            # Section 3: Agent Configuration
+            with gr.Accordion("🤖 Agent Configuration", open=True):
+                gr.Markdown("*Configure agent type and capabilities*")
+
+                with gr.Row():
+                    eval_agent_type = gr.Radio(
+                        choices=["tool", "code", "both"],
+                        value="both",
+                        label="Agent Type",
+                        info="Tool: Function calling | Code: Code execution | Both: Hybrid"
+                    )
+
+                    eval_search_provider = gr.Dropdown(
+                        choices=["duckduckgo", "serper", "brave"],
+                        value="duckduckgo",
+                        label="Search Provider",
+                        info="Web search provider for agents"
+                    )
+
+                with gr.Row():
+                    eval_enable_tools = gr.CheckboxGroup(
+                        choices=[
+                            "google_search",
+                            "duckduckgo_search",
+                            "visit_webpage",
+                            "python_interpreter",
+                            "wikipedia_search",
+                            "user_input"
+                        ],
+                        label="Enable Optional Tools",
+                        info="Select additional tools to enable for the agent"
+                    )
+
+                with gr.Row():
+                    eval_prompt_yml = gr.Textbox(
+                        label="Prompt Configuration (YAML)",
+                        info="Path to prompt configuration file (optional)",
+                        placeholder="path/to/prompt.yml"
+                    )
+
+                    eval_mcp_server_url = gr.Textbox(
+                        label="MCP Server URL",
+                        info="Model Context Protocol server URL (optional)",
+                        placeholder="http://localhost:8080"
+                    )
+
+                eval_additional_imports = gr.Textbox(
+                    label="Additional Imports",
+                    info="Comma-separated list of Python modules for CodeAgent (optional)",
+                    placeholder="numpy,pandas,requests"
+                )
+
+            # Section 4: Test Configuration
+            with gr.Accordion("🧪 Test Configuration", open=True):
+                gr.Markdown("*Configure test dataset and execution parameters*")
+
+                with gr.Row():
+                    eval_dataset_name = gr.Textbox(
+                        value="kshitijthakkar/smoltrace-tasks",
+                        label="Dataset Name",
+                        info="HuggingFace dataset for evaluation tasks"
+                    )
+
+                    eval_split = gr.Textbox(
+                        value="train",
+                        label="Dataset Split",
+                        info="Which split to use from the dataset"
+                    )
+
+                with gr.Row():
+                    eval_difficulty = gr.Dropdown(
+                        choices=["all", "easy", "medium", "hard"],
+                        value="all",
+                        label="Difficulty Filter",
+                        info="Filter tests by difficulty level"
+                    )
+
+                    eval_parallel_workers = gr.Number(
+                        value=1,
+                        label="Parallel Workers",
+                        info="Number of parallel workers for execution",
+                        minimum=1,
+                        maximum=10
+                    )
+
+                eval_working_directory = gr.Textbox(
+                    label="Working Directory",
+                    info="Working directory for file tools (optional)",
+                    placeholder="/tmp/agent_workspace"
+                )
+
+            # Section 5: Output & Monitoring Configuration
+            with gr.Accordion("📊 Output & Monitoring", open=True):
+                gr.Markdown("*Configure output format and monitoring options*")
+
+                with gr.Row():
+                    eval_output_format = gr.Radio(
+                        choices=["hub", "json"],
+                        value="hub",
+                        label="Output Format",
+                        info="Hub: Push to HuggingFace | JSON: Save locally"
+                    )
+
+                    eval_output_dir = gr.Textbox(
+                        label="Output Directory",
+                        info="Directory for JSON output (if format=json)",
+                        placeholder="./evaluation_results"
+                    )
+
+                with gr.Row():
+                    eval_enable_otel = gr.Checkbox(
+                        value=True,
+                        label="Enable OpenTelemetry Tracing",
+                        info="Collect detailed execution traces"
+                    )
+
+                    eval_enable_gpu_metrics = gr.Checkbox(
+                        value=True,
+                        label="Enable GPU Metrics",
+                        info="Collect GPU utilization, memory, and CO2 emissions (GPU jobs only)"
+                    )
+
+                with gr.Row():
+                    eval_private = gr.Checkbox(
+                        value=False,
+                        label="Private Datasets",
+                        info="Make result datasets private on HuggingFace"
+                    )
+
+                    eval_debug = gr.Checkbox(
+                        value=False,
+                        label="Debug Mode",
+                        info="Enable debug output for troubleshooting"
+                    )
+
+                    eval_quiet = gr.Checkbox(
+                        value=False,
+                        label="Quiet Mode",
+                        info="Reduce verbosity of output"
+                    )
+
+                eval_run_id = gr.Textbox(
+                    label="Run ID (Optional)",
+                    info="Unique identifier for this run (auto-generated if empty)",
+                    placeholder="UUID will be auto-generated"
+                )
+
+            gr.Markdown("---")
+
+            # Cost Estimate Section
+            with gr.Row():
+                eval_estimate_btn = gr.Button("💰 Estimate Cost", variant="secondary", size="lg")
+
+            eval_cost_estimate = gr.HTML(label="Cost Estimate")
+
+            gr.Markdown("---")
+
+            # Submit Section
+            with gr.Row():
+                eval_submit_btn = gr.Button("🚀 Submit Evaluation", variant="primary", size="lg")
+
+            eval_success_message = gr.HTML(visible=False)
+
+        # ============================================================================
+        # Evaluation Helper Functions
+        # ============================================================================
+
+        def estimate_job_cost_with_mcp_fallback(model, hardware):
+            """
+            Estimate cost using historical leaderboard data first,
+            then fall back to MCP server if model not found
+            """
+            try:
+                # Try to get historical data from leaderboard
+                df = data_loader.load_leaderboard()
+
+                # Filter for this model
+                model_runs = df[df['model'] == model]
+
+                if len(model_runs) > 0:
+                    # We have historical data - use it!
+                    avg_cost = model_runs['total_cost_usd'].mean()
+                    avg_duration = model_runs['avg_duration_ms'].mean()
+                    has_cost_data = model_runs['total_cost_usd'].sum() > 0
+
+                    return {
+                        'source': 'historical',
+                        'total_cost_usd': f"{avg_cost:.4f}",
+                        'estimated_duration_minutes': f"{(avg_duration / 1000 / 60):.1f}",
+                        'historical_runs': len(model_runs),
+                        'has_cost_data': has_cost_data
+                    }
+                else:
+                    # No historical data - use MCP tool
+                    print(f"[INFO] No historical data for {model}, using MCP cost estimator")
+                    from gradio_client import Client
+
+                    mcp_client = Client("https://mcp-1st-birthday-tracemind-mcp-server.hf.space/")
+                    result = mcp_client.predict(
+                        model=model,
+                        agent_type="both",
+                        num_tests=100,
+                        hardware=hardware,
+                        api_name="/run_estimate_cost"
+                    )
+
+                    # Parse MCP result
+                    return {
+                        'source': 'mcp',
+                        'total_cost_usd': result.get('estimated_cost', 'N/A'),
+                        'estimated_duration_minutes': result.get('estimated_duration', 'N/A'),
+                        'historical_runs': 0,
+                        'has_cost_data': True
+                    }
+
+            except Exception as e:
+                print(f"[ERROR] Cost estimation failed: {e}")
+                return None
+
+        def on_hardware_change(model, hardware):
+            """Update cost estimate when hardware selection changes"""
+            cost_est = estimate_job_cost_with_mcp_fallback(model, hardware)
+
+            if cost_est is None:
+                # Error occurred
+                info_html = f"""
+                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                            padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
+                    <h3 style="margin-top: 0;">⚠️ Cost Estimation Failed</h3>
+                    <div style="font-size: 1em; margin-top: 15px; line-height: 1.6;">
+                        <p>Unable to estimate cost for <strong>{model}</strong>.</p>
+                        <p style="margin-top: 10px;">Please check your model ID and try again, or proceed without cost estimation.</p>
+                    </div>
+                </div>
+                """
+                return info_html
+
+            # Format based on source
+            if cost_est['source'] == 'historical':
+                source_label = f"📊 Historical Data ({cost_est['historical_runs']} past runs)"
+                cost_display = f"${cost_est['total_cost_usd']}" if cost_est['has_cost_data'] else "N/A (cost tracking not enabled)"
+            else:
+                source_label = "🤖 MCP Cost Estimator (no historical data)"
+                cost_display = f"${cost_est['total_cost_usd']}"
+
+            info_html = f"""
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
+                <h3 style="margin-top: 0;">💰 Cost Estimate</h3>
+                <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">{source_label}</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Model</div>
+                        <div style="font-weight: bold;">{model}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Hardware</div>
+                        <div style="font-weight: bold;">{hardware.upper()}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Estimated Cost</div>
+                        <div style="font-weight: bold;">{cost_display}</div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.15); border-radius: 5px;">
+                    <div style="font-size: 0.9em;">
+                        ⏱️ Estimated completion: {cost_est['estimated_duration_minutes']} minutes
+                    </div>
+                </div>
+            </div>
+            """
+            return info_html
+
+        def on_submit_evaluation_comprehensive(
+            # Infrastructure
+            infra_provider, hardware,
+            # Model Configuration
+            model, provider, hf_inference_provider, hf_token,
+            # Agent Configuration
+            agent_type, search_provider, enable_tools, prompt_yml, mcp_server_url, additional_imports,
+            # Test Configuration
+            dataset_name, split, difficulty, parallel_workers, working_directory,
+            # Output & Monitoring
+            output_format, output_dir, enable_otel, enable_gpu_metrics, private, debug, quiet, run_id
+        ):
+            """Submit a new evaluation job with comprehensive configuration"""
+            import uuid
+            import datetime
+
+            # Generate job ID and timestamp
+            job_id = f"job_{uuid.uuid4().hex[:8]}" if not run_id else run_id
+            timestamp = datetime.datetime.now().isoformat()
+
+            # Estimate cost
+            cost_est = estimate_job_cost_with_mcp_fallback(model, hardware)
+            has_cost_estimate = cost_est is not None
+
+            # Build CLI command preview
+            cli_command_parts = ["smoltrace-eval"]
+            cli_command_parts.append(f"--model {model}")
+            cli_command_parts.append(f"--provider {provider}")
+            if hf_inference_provider:
+                cli_command_parts.append(f"--hf-inference-provider {hf_inference_provider}")
+            cli_command_parts.append(f"--search-provider {search_provider}")
+            if enable_tools:
+                cli_command_parts.append(f"--enable-tools {','.join(enable_tools)}")
+            if hf_token:
+                cli_command_parts.append("--hf-token $HF_TOKEN")
+
+            cli_command_parts.append(f"--agent-type {agent_type}")
+            if prompt_yml:
+                cli_command_parts.append(f"--prompt-yml {prompt_yml}")
+            if mcp_server_url:
+                cli_command_parts.append(f"--mcp-server-url {mcp_server_url}")
+            if additional_imports:
+                cli_command_parts.append(f"--additional-imports {additional_imports}")
+
+            cli_command_parts.append(f"--dataset-name {dataset_name}")
+            cli_command_parts.append(f"--split {split}")
+            if difficulty != "all":
+                cli_command_parts.append(f"--difficulty {difficulty}")
+            if parallel_workers > 1:
+                cli_command_parts.append(f"--parallel-workers {parallel_workers}")
+            if working_directory:
+                cli_command_parts.append(f"--working-directory {working_directory}")
+
+            cli_command_parts.append(f"--output-format {output_format}")
+            if output_dir and output_format == "json":
+                cli_command_parts.append(f"--output-dir {output_dir}")
+            if enable_otel:
+                cli_command_parts.append("--enable-otel")
+            if not enable_gpu_metrics:
+                cli_command_parts.append("--disable-gpu-metrics")
+            if private:
+                cli_command_parts.append("--private")
+            if debug:
+                cli_command_parts.append("--debug")
+            if quiet:
+                cli_command_parts.append("--quiet")
+            if run_id:
+                cli_command_parts.append(f"--run-id {run_id}")
+
+            cli_command = " \\\n    ".join(cli_command_parts)
+
+            # Build success message
+            cost_info_html = ""
+            if has_cost_estimate:
+                source_label = "📊 Historical" if cost_est['source'] == 'historical' else "🤖 MCP Estimate"
+                if cost_est.get('has_cost_data', False):
+                    cost_info_html = f"""
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Estimated Cost ({source_label})</div>
+                            <div style="font-weight: bold;">${cost_est['total_cost_usd']}</div>
+                        </div>
+                    """
+                else:
+                    cost_info_html = """
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Estimated Cost</div>
+                            <div style="font-weight: bold;">N/A</div>
+                        </div>
+                    """
+                duration_info = f"Estimated completion: {cost_est['estimated_duration_minutes']} minutes"
+            else:
+                cost_info_html = """
+                    <div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Estimated Cost</div>
+                        <div style="font-weight: bold;">N/A</div>
+                    </div>
+                """
+                duration_info = "Estimated completion: Will be tracked in leaderboard once job completes"
+
+            success_html = f"""
+            <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                        padding: 25px; border-radius: 10px; color: white; margin: 15px 0;">
+                <h2 style="margin-top: 0;">✅ Evaluation Job Submitted!</h2>
+
+                <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Job ID</div>
+                    <div style="font-family: monospace; font-size: 1.1em; font-weight: bold;">{job_id}</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px;">
+                    <div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Infrastructure</div>
+                        <div style="font-weight: bold;">{infra_provider}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Model</div>
+                        <div style="font-weight: bold;">{model}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Hardware</div>
+                        <div style="font-weight: bold;">{hardware.upper()}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Agent Type</div>
+                        <div style="font-weight: bold;">{agent_type}</div>
+                    </div>
+                    {cost_info_html}
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.15); border-radius: 5px;">
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">📋 Command Preview</div>
+                    <div style="font-family: monospace; font-size: 0.8em; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 3px; overflow-x: auto;">
+                        {cli_command}
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.15); border-radius: 5px;">
+                    <div style="font-size: 0.9em;">
+                        ⏱️ {duration_info}
+                    </div>
+                </div>
+            </div>
+            """
+
+            return gr.update(value=success_html, visible=True)
 
         # Navigation handlers (define before use)
         def navigate_to_dashboard():
