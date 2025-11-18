@@ -2429,28 +2429,54 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 else:
                     # No historical data - use MCP tool
                     print(f"[INFO] No historical data for {model}, using MCP cost estimator")
-                    from gradio_client import Client
+                    try:
+                        from gradio_client import Client
 
-                    mcp_client = Client("https://mcp-1st-birthday-tracemind-mcp-server.hf.space/")
-                    result = mcp_client.predict(
-                        model=model,
-                        agent_type="both",
-                        num_tests=100,
-                        hardware=hardware,
-                        api_name="/run_estimate_cost"
-                    )
+                        mcp_client = Client("https://mcp-1st-birthday-tracemind-mcp-server.hf.space/")
+                        result = mcp_client.predict(
+                            model=model,
+                            agent_type="both",
+                            num_tests=100,
+                            hardware=hardware,
+                            api_name="/run_estimate_cost"
+                        )
 
-                    # Parse MCP result
-                    return {
-                        'source': 'mcp',
-                        'total_cost_usd': result.get('estimated_cost', 'N/A'),
-                        'estimated_duration_minutes': result.get('estimated_duration', 'N/A'),
-                        'historical_runs': 0,
-                        'has_cost_data': True
-                    }
+                        # Parse MCP result
+                        print(f"[INFO] MCP result: {result}")
+
+                        # Handle case where MCP returns error or None
+                        if result is None or isinstance(result, str):
+                            print(f"[WARNING] MCP returned unexpected result: {result}")
+                            return {
+                                'source': 'mcp',
+                                'total_cost_usd': 'N/A',
+                                'estimated_duration_minutes': 'N/A',
+                                'historical_runs': 0,
+                                'has_cost_data': False,
+                                'error': 'MCP server returned invalid response'
+                            }
+
+                        return {
+                            'source': 'mcp',
+                            'total_cost_usd': result.get('estimated_cost', 'N/A'),
+                            'estimated_duration_minutes': result.get('estimated_duration', 'N/A'),
+                            'historical_runs': 0,
+                            'has_cost_data': True
+                        }
+                    except Exception as mcp_error:
+                        print(f"[ERROR] MCP cost estimation failed: {mcp_error}")
+                        # Return a result indicating MCP is unavailable
+                        return {
+                            'source': 'mcp',
+                            'total_cost_usd': 'N/A',
+                            'estimated_duration_minutes': 'N/A',
+                            'historical_runs': 0,
+                            'has_cost_data': False,
+                            'error': str(mcp_error)
+                        }
 
             except Exception as e:
-                print(f"[ERROR] Cost estimation failed: {e}")
+                print(f"[ERROR] Cost estimation failed (leaderboard load): {e}")
                 return None
 
         def on_hardware_change(model, hardware):
@@ -2466,6 +2492,23 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     <div style="font-size: 1em; margin-top: 15px; line-height: 1.6;">
                         <p>Unable to estimate cost for <strong>{model}</strong>.</p>
                         <p style="margin-top: 10px;">Please check your model ID and try again, or proceed without cost estimation.</p>
+                    </div>
+                </div>
+                """
+                return info_html
+
+            # Check if MCP returned an error
+            if cost_est.get('error'):
+                info_html = f"""
+                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                            padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
+                    <h3 style="margin-top: 0;">⚠️ MCP Cost Estimator Unavailable</h3>
+                    <div style="font-size: 1em; margin-top: 15px; line-height: 1.6;">
+                        <p>No historical data available for <strong>{model}</strong>.</p>
+                        <p style="margin-top: 10px;">MCP cost estimator failed: {cost_est.get('error', 'Unknown error')}</p>
+                        <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.9;">
+                            💡 You can still proceed with the evaluation. Actual costs will be tracked and displayed after completion.
+                        </p>
                     </div>
                 </div>
                 """
