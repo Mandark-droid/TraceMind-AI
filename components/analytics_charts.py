@@ -432,6 +432,10 @@ def create_cost_efficiency_scatter(df: pd.DataFrame) -> go.Figure:
             font=dict(size=20)
         )
 
+    # Calculate axis ranges for proper log scale display
+    min_cost = model_stats['total_cost_usd_display'].min()
+    max_cost = model_stats['total_cost_usd_display'].max()
+
     fig.update_layout(
         title={
             'text': '💰 Cost-Performance Efficiency',
@@ -442,6 +446,12 @@ def create_cost_efficiency_scatter(df: pd.DataFrame) -> go.Figure:
         xaxis_title='Total Cost (USD)',
         yaxis_title='Success Rate (%)',
         xaxis_type='log',  # Log scale for cost
+        xaxis=dict(
+            range=[np.log10(min_cost * 0.5), np.log10(max_cost * 2)],  # Explicit log range
+            showgrid=True,
+            gridwidth=1,
+            gridcolor='lightgray'
+        ),
         height=600,
         plot_bgcolor='white',
         paper_bgcolor='#f8f9fa',
@@ -458,7 +468,6 @@ def create_cost_efficiency_scatter(df: pd.DataFrame) -> go.Figure:
     )
 
     # Add grid for better readability
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
     return fig
