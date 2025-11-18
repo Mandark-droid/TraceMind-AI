@@ -32,12 +32,14 @@ class DataLoader:
         data_source: DataSource = "both",
         json_data_path: Optional[str] = None,
         leaderboard_dataset: Optional[str] = None,
-        hf_token: Optional[str] = None
+        hf_token: Optional[str] = None,
+        use_streaming: bool = True
     ):
         self.data_source = data_source
         self.json_data_path = Path(json_data_path or os.getenv("JSON_DATA_PATH", "./sample_data"))
         self.leaderboard_dataset = leaderboard_dataset or os.getenv("LEADERBOARD_DATASET", "kshitijthakkar/smoltrace-leaderboard")
         self.hf_token = hf_token or os.getenv("HF_TOKEN")
+        self.use_streaming = use_streaming
 
         # Cache
         self._cache: Dict[str, Any] = {}
@@ -79,11 +81,26 @@ class DataLoader:
         raise ValueError("No valid data source available")
 
     def _load_leaderboard_from_hf(self) -> pd.DataFrame:
-        """Load leaderboard from HuggingFace dataset"""
+        """Load leaderboard from HuggingFace dataset with optional streaming"""
         try:
-            ds = load_dataset(self.leaderboard_dataset, split="train", token=self.hf_token)
-            df = ds.to_pandas()
-            print(f"[OK] Loaded leaderboard from HuggingFace: {len(df)} rows")
+            if self.use_streaming:
+                print("[INFO] Loading leaderboard with streaming...")
+                # Load with streaming for faster initial response
+                ds = load_dataset(
+                    self.leaderboard_dataset,
+                    split="train",
+                    token=self.hf_token,
+                    streaming=True
+                )
+                # Convert streamed data to list of dicts, then to DataFrame
+                data = list(ds)
+                df = pd.DataFrame(data)
+                print(f"[OK] Streamed leaderboard from HuggingFace: {len(df)} rows")
+            else:
+                # Traditional full download
+                ds = load_dataset(self.leaderboard_dataset, split="train", token=self.hf_token)
+                df = ds.to_pandas()
+                print(f"[OK] Loaded leaderboard from HuggingFace: {len(df)} rows")
             return df
         except Exception as e:
             print(f"[ERROR] Loading from HuggingFace: {e}")
@@ -142,10 +159,17 @@ class DataLoader:
         raise ValueError("No valid data source available")
 
     def _load_results_from_hf(self, dataset_id: str) -> pd.DataFrame:
-        """Load results from HuggingFace dataset"""
-        ds = load_dataset(dataset_id, split="train", token=self.hf_token)
-        df = ds.to_pandas()
-        print(f"[OK] Loaded results from HuggingFace: {len(df)} rows")
+        """Load results from HuggingFace dataset with optional streaming"""
+        if self.use_streaming:
+            print(f"[INFO] Streaming results from {dataset_id}...")
+            ds = load_dataset(dataset_id, split="train", token=self.hf_token, streaming=True)
+            data = list(ds)
+            df = pd.DataFrame(data)
+            print(f"[OK] Streamed results from HuggingFace: {len(df)} rows")
+        else:
+            ds = load_dataset(dataset_id, split="train", token=self.hf_token)
+            df = ds.to_pandas()
+            print(f"[OK] Loaded results from HuggingFace: {len(df)} rows")
         return df
 
     def _load_results_from_json(self, dataset_id: str) -> pd.DataFrame:
@@ -203,10 +227,16 @@ class DataLoader:
         raise ValueError("No valid data source available")
 
     def _load_traces_from_hf(self, dataset_id: str) -> List[Dict[str, Any]]:
-        """Load traces from HuggingFace dataset"""
-        ds = load_dataset(dataset_id, split="train", token=self.hf_token)
-        traces = ds.to_pandas().to_dict("records")
-        print(f"[OK] Loaded traces from HuggingFace: {len(traces)} traces")
+        """Load traces from HuggingFace dataset with optional streaming"""
+        if self.use_streaming:
+            print(f"[INFO] Streaming traces from {dataset_id}...")
+            ds = load_dataset(dataset_id, split="train", token=self.hf_token, streaming=True)
+            traces = list(ds)
+            print(f"[OK] Streamed traces from HuggingFace: {len(traces)} traces")
+        else:
+            ds = load_dataset(dataset_id, split="train", token=self.hf_token)
+            traces = ds.to_pandas().to_dict("records")
+            print(f"[OK] Loaded traces from HuggingFace: {len(traces)} traces")
         return traces
 
     def _load_traces_from_json(self, dataset_id: str) -> List[Dict[str, Any]]:
@@ -264,16 +294,24 @@ class DataLoader:
         return pd.DataFrame()
 
     def _load_metrics_from_hf(self, dataset_id: str) -> pd.DataFrame:
-        """Load metrics from HuggingFace dataset (flat format)"""
-        ds = load_dataset(dataset_id, split="train", token=self.hf_token)
-        df = ds.to_pandas()
+        """Load metrics from HuggingFace dataset (flat format) with optional streaming"""
+        if self.use_streaming:
+            print(f"[INFO] Streaming metrics from {dataset_id}...")
+            ds = load_dataset(dataset_id, split="train", token=self.hf_token, streaming=True)
+            data = list(ds)
+            df = pd.DataFrame(data)
+            print(f"[OK] Streamed metrics from HuggingFace: {len(df)} rows")
+        else:
+            ds = load_dataset(dataset_id, split="train", token=self.hf_token)
+            df = ds.to_pandas()
+            print(f"[OK] Loaded metrics from HuggingFace: {len(df)} rows")
 
         # Convert timestamp strings to datetime if needed
-        if 'timestamp' in df.columns:
+        if 'timestamp' in df.columns and not df.empty:
             df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-        print(f"[OK] Loaded metrics from HuggingFace: {len(df)} rows")
-        print(f"   Columns: {list(df.columns)}")
+        if not df.empty:
+            print(f"   Columns: {list(df.columns)}")
         return df
 
     def _load_metrics_from_json(self, dataset_id: str) -> pd.DataFrame:
@@ -421,10 +459,12 @@ def create_data_loader_from_env() -> DataLoader:
         Configured DataLoader instance
     """
     data_source = os.getenv("DATA_SOURCE", "both")
+    use_streaming = os.getenv("USE_STREAMING", "true").lower() == "true"
 
     return DataLoader(
         data_source=data_source,
         json_data_path=os.getenv("JSON_DATA_PATH"),
         leaderboard_dataset=os.getenv("LEADERBOARD_DATASET"),
-        hf_token=os.getenv("HF_TOKEN")
+        hf_token=os.getenv("HF_TOKEN"),
+        use_streaming=use_streaming
     )
