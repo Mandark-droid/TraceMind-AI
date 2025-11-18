@@ -2431,6 +2431,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     print(f"[INFO] No historical data for {model}, using MCP cost estimator")
                     try:
                         from gradio_client import Client
+                        import re
 
                         mcp_client = Client("https://mcp-1st-birthday-tracemind-mcp-server.hf.space/")
                         result = mcp_client.predict(
@@ -2441,30 +2442,42 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                             api_name="/run_estimate_cost"
                         )
 
-                        # Parse MCP result
-                        print(f"[INFO] MCP result: {result}")
+                        print(f"[INFO] MCP result type: {type(result)}")
+                        print(f"[INFO] MCP result: {result[:200] if isinstance(result, str) else result}")
 
-                        # Handle case where MCP returns error or None
-                        if result is None or isinstance(result, str):
-                            print(f"[WARNING] MCP returned unexpected result: {result}")
+                        # MCP returns markdown text, not a dict
+                        # Parse the markdown to extract cost and duration
+                        if isinstance(result, str):
+                            # Try to extract cost values from markdown
+                            cost_match = re.search(r'\$(\d+\.?\d*)', result)
+                            duration_match = re.search(r'(\d+\.?\d+)\s*(minutes?|hours?)', result, re.IGNORECASE)
+
+                            extracted_cost = cost_match.group(1) if cost_match else 'See details below'
+                            extracted_duration = duration_match.group(0) if duration_match else 'See details below'
+
+                            # Return with markdown content
+                            return {
+                                'source': 'mcp',
+                                'total_cost_usd': extracted_cost,
+                                'estimated_duration_minutes': extracted_duration,
+                                'historical_runs': 0,
+                                'has_cost_data': True,
+                                'markdown_details': result  # Include full markdown response
+                            }
+                        else:
+                            # Unexpected response type
                             return {
                                 'source': 'mcp',
                                 'total_cost_usd': 'N/A',
                                 'estimated_duration_minutes': 'N/A',
                                 'historical_runs': 0,
                                 'has_cost_data': False,
-                                'error': 'MCP server returned invalid response'
+                                'error': f'MCP returned unexpected type: {type(result)}'
                             }
-
-                        return {
-                            'source': 'mcp',
-                            'total_cost_usd': result.get('estimated_cost', 'N/A'),
-                            'estimated_duration_minutes': result.get('estimated_duration', 'N/A'),
-                            'historical_runs': 0,
-                            'has_cost_data': True
-                        }
                     except Exception as mcp_error:
                         print(f"[ERROR] MCP cost estimation failed: {mcp_error}")
+                        import traceback
+                        traceback.print_exc()
                         # Return a result indicating MCP is unavailable
                         return {
                             'source': 'mcp',
@@ -2518,36 +2531,61 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             if cost_est['source'] == 'historical':
                 source_label = f"📊 Historical Data ({cost_est['historical_runs']} past runs)"
                 cost_display = f"${cost_est['total_cost_usd']}" if cost_est['has_cost_data'] else "N/A (cost tracking not enabled)"
-            else:
-                source_label = "🤖 MCP Cost Estimator (no historical data)"
-                cost_display = f"${cost_est['total_cost_usd']}"
 
-            info_html = f"""
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
-                <h3 style="margin-top: 0;">💰 Cost Estimate</h3>
-                <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">{source_label}</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
-                    <div>
-                        <div style="font-size: 0.9em; opacity: 0.9;">Model</div>
-                        <div style="font-weight: bold;">{model}</div>
+                info_html = f"""
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
+                    <h3 style="margin-top: 0;">💰 Cost Estimate</h3>
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">{source_label}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Model</div>
+                            <div style="font-weight: bold;">{model}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Hardware</div>
+                            <div style="font-weight: bold;">{hardware.upper()}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Estimated Cost</div>
+                            <div style="font-weight: bold;">{cost_display}</div>
+                        </div>
                     </div>
-                    <div>
-                        <div style="font-size: 0.9em; opacity: 0.9;">Hardware</div>
-                        <div style="font-weight: bold;">{hardware.upper()}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.9em; opacity: 0.9;">Estimated Cost</div>
-                        <div style="font-weight: bold;">{cost_display}</div>
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.15); border-radius: 5px;">
+                        <div style="font-size: 0.9em;">
+                            ⏱️ Estimated completion: {cost_est['estimated_duration_minutes']} minutes
+                        </div>
                     </div>
                 </div>
-                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.15); border-radius: 5px;">
-                    <div style="font-size: 0.9em;">
-                        ⏱️ Estimated completion: {cost_est['estimated_duration_minutes']} minutes
+                """
+            else:
+                # MCP Cost Estimator - show full markdown analysis
+                source_label = "🤖 MCP Cost Estimator (AI-powered by Gemini 2.5 Pro)"
+                markdown_details = cost_est.get('markdown_details', '')
+
+                # Convert markdown to HTML for better display
+                import markdown
+                try:
+                    html_content = markdown.markdown(markdown_details)
+                except:
+                    # Fallback if markdown library not available
+                    html_content = f"<pre style='white-space: pre-wrap;'>{markdown_details}</pre>"
+
+                info_html = f"""
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
+                    <h3 style="margin-top: 0;">💰 Cost Estimate - MCP Analysis</h3>
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 15px;">{source_label}</div>
+                    <div style="background: rgba(255,255,255,0.95); color: #333; padding: 15px; border-radius: 8px;
+                                max-height: 400px; overflow-y: auto;">
+                        {html_content}
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.85em; opacity: 0.9;">
+                        ℹ️ This estimate was generated by AI analysis since no historical data is available for this model.
                     </div>
                 </div>
-            </div>
-            """
+                """
+
             return info_html
 
         def on_submit_evaluation_comprehensive(
