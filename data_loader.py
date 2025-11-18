@@ -33,7 +33,7 @@ class DataLoader:
         json_data_path: Optional[str] = None,
         leaderboard_dataset: Optional[str] = None,
         hf_token: Optional[str] = None,
-        use_streaming: bool = True
+        use_streaming: bool = False
     ):
         self.data_source = data_source
         self.json_data_path = Path(json_data_path or os.getenv("JSON_DATA_PATH", "./sample_data"))
@@ -459,7 +459,7 @@ def create_data_loader_from_env() -> DataLoader:
         Configured DataLoader instance
     """
     data_source = os.getenv("DATA_SOURCE", "both")
-    use_streaming = os.getenv("USE_STREAMING", "true").lower() == "true"
+    use_streaming = os.getenv("USE_STREAMING", "false").lower() == "true"
 
     return DataLoader(
         data_source=data_source,
