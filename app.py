@@ -2387,7 +2387,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             with gr.Row():
                 eval_estimate_btn = gr.Button("💰 Estimate Cost", variant="secondary", size="lg")
 
-            eval_cost_estimate = gr.HTML(label="Cost Estimate")
+            eval_cost_estimate = gr.Markdown("*Click 'Estimate Cost' to get AI-powered cost analysis*")
 
             gr.Markdown("---")
 
@@ -2498,95 +2498,60 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
 
             if cost_est is None:
                 # Error occurred
-                info_html = f"""
-                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                            padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
-                    <h3 style="margin-top: 0;">⚠️ Cost Estimation Failed</h3>
-                    <div style="font-size: 1em; margin-top: 15px; line-height: 1.6;">
-                        <p>Unable to estimate cost for <strong>{model}</strong>.</p>
-                        <p style="margin-top: 10px;">Please check your model ID and try again, or proceed without cost estimation.</p>
-                    </div>
-                </div>
-                """
-                return info_html
+                return f"""## ⚠️ Cost Estimation Failed
+
+Unable to estimate cost for **{model}**.
+
+Please check your model ID and try again, or proceed without cost estimation.
+"""
 
             # Check if MCP returned an error
             if cost_est.get('error'):
-                info_html = f"""
-                <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-                            padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
-                    <h3 style="margin-top: 0;">⚠️ MCP Cost Estimator Unavailable</h3>
-                    <div style="font-size: 1em; margin-top: 15px; line-height: 1.6;">
-                        <p>No historical data available for <strong>{model}</strong>.</p>
-                        <p style="margin-top: 10px;">MCP cost estimator failed: {cost_est.get('error', 'Unknown error')}</p>
-                        <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.9;">
-                            💡 You can still proceed with the evaluation. Actual costs will be tracked and displayed after completion.
-                        </p>
-                    </div>
-                </div>
-                """
-                return info_html
+                return f"""## ⚠️ MCP Cost Estimator Unavailable
+
+No historical data available for **{model}**.
+
+**Error**: {cost_est.get('error', 'Unknown error')}
+
+💡 You can still proceed with the evaluation. Actual costs will be tracked and displayed after completion.
+"""
 
             # Format based on source
             if cost_est['source'] == 'historical':
                 source_label = f"📊 Historical Data ({cost_est['historical_runs']} past runs)"
                 cost_display = f"${cost_est['total_cost_usd']}" if cost_est['has_cost_data'] else "N/A (cost tracking not enabled)"
+                duration = cost_est['estimated_duration_minutes']
 
-                info_html = f"""
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
-                    <h3 style="margin-top: 0;">💰 Cost Estimate</h3>
-                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">{source_label}</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
-                        <div>
-                            <div style="font-size: 0.9em; opacity: 0.9;">Model</div>
-                            <div style="font-weight: bold;">{model}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.9em; opacity: 0.9;">Hardware</div>
-                            <div style="font-weight: bold;">{hardware.upper()}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.9em; opacity: 0.9;">Estimated Cost</div>
-                            <div style="font-weight: bold;">{cost_display}</div>
-                        </div>
-                    </div>
-                    <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.15); border-radius: 5px;">
-                        <div style="font-size: 0.9em;">
-                            ⏱️ Estimated completion: {cost_est['estimated_duration_minutes']} minutes
-                        </div>
-                    </div>
-                </div>
-                """
+                return f"""## 💰 Cost Estimate
+
+**{source_label}**
+
+| Metric | Value |
+|--------|-------|
+| **Model** | {model} |
+| **Hardware** | {hardware.upper()} |
+| **Estimated Cost** | {cost_display} |
+| **Duration** | {duration} minutes |
+
+---
+
+*Based on {cost_est['historical_runs']} previous evaluation runs in the leaderboard.*
+"""
             else:
-                # MCP Cost Estimator - show full markdown analysis
-                source_label = "🤖 MCP Cost Estimator (AI-powered by Gemini 2.5 Pro)"
+                # MCP Cost Estimator - return the full markdown from MCP
                 markdown_details = cost_est.get('markdown_details', '')
 
-                # Convert markdown to HTML for better display
-                import markdown
-                try:
-                    html_content = markdown.markdown(markdown_details)
-                except:
-                    # Fallback if markdown library not available
-                    html_content = f"<pre style='white-space: pre-wrap;'>{markdown_details}</pre>"
+                # Add header to identify the source
+                header = f"""## 💰 Cost Estimate - AI Analysis
 
-                info_html = f"""
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            padding: 20px; border-radius: 10px; color: white; margin: 10px 0;">
-                    <h3 style="margin-top: 0;">💰 Cost Estimate - MCP Analysis</h3>
-                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 15px;">{source_label}</div>
-                    <div style="background: rgba(255,255,255,0.95); color: #333; padding: 15px; border-radius: 8px;
-                                max-height: 400px; overflow-y: auto;">
-                        {html_content}
-                    </div>
-                    <div style="margin-top: 10px; font-size: 0.85em; opacity: 0.9;">
-                        ℹ️ This estimate was generated by AI analysis since no historical data is available for this model.
-                    </div>
-                </div>
-                """
+**🤖 Powered by MCP Server + Gemini 2.5 Pro**
 
-            return info_html
+*This estimate was generated by AI analysis since no historical data is available for this model.*
+
+---
+
+"""
+                return header + markdown_details
 
         def on_submit_evaluation_comprehensive(
             # Infrastructure
