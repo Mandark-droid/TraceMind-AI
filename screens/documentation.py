@@ -12,6 +12,9 @@ def create_about_tab():
 # 🧠 TraceMind Ecosystem
 
 <div align="center">
+  <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/TraceVerse_Logo.png" alt="TraceVerse Ecosystem" width="400"/>
+  <br/>
+  <br/>
   <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png" alt="TraceMind Logo" width="300"/>
 </div>
 

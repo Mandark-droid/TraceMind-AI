@@ -20,6 +20,9 @@ tags:
 # 🧠 TraceMind-AI
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/TraceVerse_Logo.png" alt="TraceVerse Ecosystem" width="400"/>
+  <br/>
+  <br/>
   <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png" alt="TraceMind-AI Logo" width="200"/>
 </p>
 
