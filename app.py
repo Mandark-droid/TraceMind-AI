@@ -2292,25 +2292,6 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         info="Select additional tools to enable for the agent"
                     )
 
-                with gr.Row():
-                    eval_prompt_yml = gr.Textbox(
-                        label="Prompt Configuration (YAML)",
-                        info="Path to prompt configuration file (optional)",
-                        placeholder="path/to/prompt.yml"
-                    )
-
-                    eval_mcp_server_url = gr.Textbox(
-                        label="MCP Server URL",
-                        info="Model Context Protocol server URL (optional)",
-                        placeholder="http://localhost:8080"
-                    )
-
-                eval_additional_imports = gr.Textbox(
-                    label="Additional Imports",
-                    info="Comma-separated list of Python modules for CodeAgent (optional)",
-                    placeholder="numpy,pandas,requests"
-                )
-
             # Section 4: Test Configuration
             with gr.Accordion("🧪 Test Configuration", open=True):
                 gr.Markdown("*Configure test dataset and execution parameters*")
@@ -2343,12 +2324,6 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         minimum=1,
                         maximum=10
                     )
-
-                eval_working_directory = gr.Textbox(
-                    label="Working Directory",
-                    info="Working directory for file tools (optional)",
-                    placeholder="/tmp/agent_workspace"
-                )
 
             # Section 5: Output & Monitoring Configuration
             with gr.Accordion("📊 Output & Monitoring", open=True):
@@ -2538,9 +2513,9 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             # Model Configuration
             model, provider, hf_inference_provider, hf_token,
             # Agent Configuration
-            agent_type, search_provider, enable_tools, prompt_yml, mcp_server_url, additional_imports,
+            agent_type, search_provider, enable_tools,
             # Test Configuration
-            dataset_name, split, difficulty, parallel_workers, working_directory,
+            dataset_name, split, difficulty, parallel_workers,
             # Output & Monitoring
             output_format, output_dir, enable_otel, enable_gpu_metrics, private, debug, quiet, run_id
         ):
@@ -2569,12 +2544,6 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 cli_command_parts.append("--hf-token $HF_TOKEN")
 
             cli_command_parts.append(f"--agent-type {agent_type}")
-            if prompt_yml:
-                cli_command_parts.append(f"--prompt-yml {prompt_yml}")
-            if mcp_server_url:
-                cli_command_parts.append(f"--mcp-server-url {mcp_server_url}")
-            if additional_imports:
-                cli_command_parts.append(f"--additional-imports {additional_imports}")
 
             cli_command_parts.append(f"--dataset-name {dataset_name}")
             cli_command_parts.append(f"--split {split}")
@@ -2582,8 +2551,6 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 cli_command_parts.append(f"--difficulty {difficulty}")
             if parallel_workers > 1:
                 cli_command_parts.append(f"--parallel-workers {parallel_workers}")
-            if working_directory:
-                cli_command_parts.append(f"--working-directory {working_directory}")
 
             cli_command_parts.append(f"--output-format {output_format}")
             if output_dir and output_format == "json":
@@ -3259,9 +3226,9 @@ Result: {result}
                 # Model Configuration
                 eval_model, eval_provider, eval_hf_inference_provider, eval_hf_token,
                 # Agent Configuration
-                eval_agent_type, eval_search_provider, eval_enable_tools, eval_prompt_yml, eval_mcp_server_url, eval_additional_imports,
+                eval_agent_type, eval_search_provider, eval_enable_tools,
                 # Test Configuration
-                eval_dataset_name, eval_split, eval_difficulty, eval_parallel_workers, eval_working_directory,
+                eval_dataset_name, eval_split, eval_difficulty, eval_parallel_workers,
                 # Output & Monitoring
                 eval_output_format, eval_output_dir, eval_enable_otel, eval_enable_gpu_metrics, eval_private, eval_debug, eval_quiet, eval_run_id
             ],
