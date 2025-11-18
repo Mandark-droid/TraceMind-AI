@@ -1589,8 +1589,9 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             leaderboard_nav_btn = gr.Button("🏆 Leaderboard", variant="secondary", size="lg")
             compare_nav_btn = gr.Button("⚖️ Compare", variant="secondary", size="lg")
             chat_nav_btn = gr.Button("🤖 Agent Chat", variant="secondary", size="lg")
+            synthetic_data_nav_btn = gr.Button("🔬 Synthetic Data", variant="secondary", size="lg")
             docs_nav_btn = gr.Button("📚 Documentation", variant="secondary", size="lg")
-    
+
             gr.Markdown("---")
     
             # Data Controls
@@ -2069,6 +2070,130 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         # Screen 6: Agent Chat Screen
         chat_screen, chat_components = create_chat_ui()
 
+        # Screen 7: Synthetic Data Generator
+        with gr.Column(visible=False) as synthetic_data_screen:
+            gr.Markdown("## 🔬 Synthetic Data Generator")
+
+            # Help/README Accordion
+            with gr.Accordion("📖 How to Use This Screen", open=False):
+                gr.Markdown("""
+                ### Generate Synthetic Evaluation Datasets
+
+                This tool allows you to create custom synthetic evaluation datasets for testing AI agents.
+
+                **Step-by-Step Process:**
+
+                1. **Configure & Generate**:
+                   - Select a **domain** (e.g., travel, finance, healthcare)
+                   - Specify available **tools** (comma-separated)
+                   - Choose **number of tasks** to generate
+                   - Set **difficulty level** (easy/medium/hard/balanced)
+                   - Select **agent type** (tool/code/both)
+                   - Click "Generate" to create the dataset
+
+                2. **Review Dataset**:
+                   - Inspect the generated tasks in JSON format
+                   - Check dataset statistics (task count, difficulty distribution, etc.)
+                   - Verify the quality before pushing to Hub
+
+                3. **Push to HuggingFace Hub** (Optional):
+                   - Enter a **repository name** for your dataset
+                   - Choose visibility (public/private)
+                   - Provide your **HF token** OR leave empty to use environment token
+                   - Click "Push" to upload the dataset
+
+                **Note**: This screen uses the TraceMind MCP Server's synthetic data generation tools.
+                """)
+
+            gr.Markdown("---")
+
+            # Store generated dataset in component state
+            generated_dataset_state = gr.State(None)
+
+            # Step 1: Generate Dataset
+            with gr.Group():
+                gr.Markdown("### 📝 Step 1: Configure & Generate Dataset")
+
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        domain_input = gr.Textbox(
+                            label="Domain",
+                            placeholder="e.g., travel, finance, healthcare",
+                            value="travel",
+                            info="The domain/topic for the synthetic tasks"
+                        )
+                        tools_input = gr.Textbox(
+                            label="Tools (comma-separated)",
+                            placeholder="e.g., get_weather,search_flights,book_hotel",
+                            value="get_weather,search_flights,book_hotel",
+                            info="Available tools the agent can use"
+                        )
+                        num_tasks_input = gr.Slider(
+                            label="Number of Tasks",
+                            minimum=5,
+                            maximum=100,
+                            value=10,
+                            step=5,
+                            info="Total tasks to generate"
+                        )
+
+                    with gr.Column(scale=1):
+                        difficulty_input = gr.Radio(
+                            label="Difficulty Level",
+                            choices=["easy", "medium", "hard", "balanced"],
+                            value="balanced",
+                            info="Task complexity level"
+                        )
+                        agent_type_input = gr.Radio(
+                            label="Agent Type",
+                            choices=["tool", "code", "both"],
+                            value="both",
+                            info="Type of agent to evaluate"
+                        )
+
+                generate_btn = gr.Button("🎲 Generate Synthetic Dataset", variant="primary", size="lg")
+                generation_status = gr.Markdown("")
+
+            # Step 2: Review Dataset
+            with gr.Group():
+                gr.Markdown("### 🔍 Step 2: Review Generated Dataset")
+
+                dataset_preview = gr.JSON(
+                    label="Generated Dataset (Preview)",
+                    visible=False
+                )
+
+                dataset_stats = gr.Markdown("", visible=False)
+
+            # Step 3: Push to Hub
+            with gr.Group():
+                gr.Markdown("### 📤 Step 3: Push to HuggingFace Hub (Optional)")
+                gr.Markdown("*Leave HF Token empty to use the environment token (if configured in your Space/deployment)*")
+
+                with gr.Row():
+                    repo_name_input = gr.Textbox(
+                        label="Repository Name",
+                        placeholder="e.g., username/smoltrace-travel-tasks",
+                        info="Include username prefix (auto-filled after generation)",
+                        scale=2
+                    )
+                    private_checkbox = gr.Checkbox(
+                        label="Private Repository",
+                        value=False,
+                        info="Make dataset private",
+                        scale=1
+                    )
+
+                hf_token_input = gr.Textbox(
+                    label="HuggingFace Token (Optional)",
+                    placeholder="Leave empty to use environment token (HF_TOKEN)",
+                    type="password",
+                    info="Get your token from https://huggingface.co/settings/tokens"
+                )
+
+                push_btn = gr.Button("📤 Push to HuggingFace Hub", variant="secondary", size="lg", visible=False)
+                push_status = gr.Markdown("")
+
         # Navigation handlers (define before use)
         def navigate_to_dashboard():
             """Navigate to dashboard screen and load dashboard data"""
@@ -2087,10 +2212,13 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 trace_detail_screen: gr.update(visible=False),
                 compare_screen: gr.update(visible=False),
                 chat_screen: gr.update(visible=False),
+                synthetic_data_screen: gr.update(visible=False),
+                synthetic_data_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="primary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
+                synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
             }
             result.update(dashboard_updates)
@@ -2105,10 +2233,12 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 trace_detail_screen: gr.update(visible=False),
                 compare_screen: gr.update(visible=False),
                 chat_screen: gr.update(visible=False),
+                synthetic_data_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="primary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
+                synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
             }
 
@@ -2133,10 +2263,12 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     trace_detail_screen: gr.update(visible=False),
                     compare_screen: gr.update(visible=True),
                     chat_screen: gr.update(visible=False),
+                synthetic_data_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
                     compare_nav_btn: gr.update(variant="primary"),
                     chat_nav_btn: gr.update(variant="secondary"),
+                synthetic_data_nav_btn: gr.update(variant="secondary"),
                     docs_nav_btn: gr.update(variant="secondary"),
                     compare_components['compare_run_a_dropdown']: gr.update(choices=run_choices),
                     compare_components['compare_run_b_dropdown']: gr.update(choices=run_choices),
@@ -2150,10 +2282,12 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     trace_detail_screen: gr.update(visible=False),
                     compare_screen: gr.update(visible=True),
                     chat_screen: gr.update(visible=False),
+                synthetic_data_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
                     compare_nav_btn: gr.update(variant="primary"),
                     chat_nav_btn: gr.update(variant="secondary"),
+                synthetic_data_nav_btn: gr.update(variant="secondary"),
                     docs_nav_btn: gr.update(variant="secondary"),
                 }
 
@@ -2166,20 +2300,238 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 trace_detail_screen: gr.update(visible=False),
                 compare_screen: gr.update(visible=False),
                 chat_screen: gr.update(visible=True),
+                synthetic_data_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="primary"),
+                synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
             }
+
+        def navigate_to_synthetic_data():
+            """Navigate to synthetic data generator screen"""
+            return {
+                dashboard_screen: gr.update(visible=False),
+                leaderboard_screen: gr.update(visible=False),
+                run_detail_screen: gr.update(visible=False),
+                trace_detail_screen: gr.update(visible=False),
+                compare_screen: gr.update(visible=False),
+                chat_screen: gr.update(visible=False),
+                synthetic_data_screen: gr.update(visible=True),
+                dashboard_nav_btn: gr.update(variant="secondary"),
+                leaderboard_nav_btn: gr.update(variant="secondary"),
+                compare_nav_btn: gr.update(variant="secondary"),
+                chat_nav_btn: gr.update(variant="secondary"),
+                synthetic_data_nav_btn: gr.update(variant="primary"),
+                docs_nav_btn: gr.update(variant="secondary"),
+            }
+
+        # Synthetic Data Generator Callbacks
+        def on_generate_synthetic_data(domain, tools, num_tasks, difficulty, agent_type):
+            """Generate synthetic dataset using MCP server"""
+            try:
+                from gradio_client import Client
+
+                # Connect to MCP server
+                client = Client("https://mcp-1st-birthday-tracemind-mcp-server.hf.space/")
+
+                # Call the synthetic data generation endpoint
+                result = client.predict(
+                    domain=domain,
+                    tools=tools,
+                    num_tasks=int(num_tasks),
+                    difficulty=difficulty,
+                    agent_type=agent_type,
+                    api_name="/run_generate_synthetic"
+                )
+
+                # Parse the result
+                import json
+                if isinstance(result, str):
+                    try:
+                        dataset = json.loads(result)
+                    except:
+                        dataset = {"raw_result": result}
+                else:
+                    dataset = result
+
+                # Generate stats
+                task_count = len(dataset.get('tasks', [])) if isinstance(dataset.get('tasks'), list) else 0
+
+                # Generate suggested repository name with default username
+                domain_clean = domain.lower().replace(' ', '-').replace('_', '-')
+                default_username = "kshitijthakkar"  # Default username for env HF_TOKEN
+                suggested_repo_name = f"{default_username}/smoltrace-{domain_clean}-tasks"
+
+                stats_md = f"""
+                ### ✅ Dataset Generated Successfully!
+
+                - **Total Tasks**: {task_count}
+                - **Domain**: {dataset.get('domain', domain)}
+                - **Difficulty**: {dataset.get('difficulty', difficulty)}
+                - **Agent Type**: {dataset.get('agent_type', agent_type)}
+                - **Tools Available**: {len(tools.split(','))}
+
+                Review the dataset below and push to HuggingFace Hub when ready.
+
+                **Suggested repo name**: `{suggested_repo_name}`
+
+                💡 **Tip**: Using environment HF token? Keep the default username.
+                Want to push to your own profile? Update repo name to `your-username/smoltrace-{domain_clean}-tasks` and provide your HF token.
+                """
+
+                return {
+                    generated_dataset_state: dataset,
+                    dataset_preview: gr.update(value=dataset, visible=True),
+                    dataset_stats: gr.update(value=stats_md, visible=True),
+                    generation_status: "✅ Dataset generated successfully! Review below.",
+                    push_btn: gr.update(visible=True),
+                    repo_name_input: gr.update(value=suggested_repo_name)
+                }
+
+            except Exception as e:
+                error_msg = f"❌ Error generating dataset: {str(e)}"
+                print(f"[ERROR] Synthetic data generation failed: {e}")
+                import traceback
+                traceback.print_exc()
+
+                return {
+                    generated_dataset_state: None,
+                    dataset_preview: gr.update(visible=False),
+                    dataset_stats: gr.update(visible=False),
+                    generation_status: error_msg,
+                    push_btn: gr.update(visible=False),
+                    repo_name_input: gr.update(value="")
+                }
+
+        def on_push_to_hub(dataset, repo_name, hf_token, private):
+            """Push dataset to HuggingFace Hub"""
+            try:
+                from gradio_client import Client
+                import os
+                import json
+
+                # Validate inputs
+                if not dataset:
+                    return "❌ No dataset to push. Please generate a dataset first."
+
+                if not repo_name:
+                    return "❌ Please provide a repository name."
+
+                # Determine which HF token to use (user-provided or environment)
+                if hf_token and hf_token.strip():
+                    # User provided a token
+                    token_to_use = hf_token.strip()
+                    token_source = "user-provided"
+                    print(f"[INFO] Using user-provided HF token")
+                else:
+                    # Fall back to environment token
+                    token_to_use = os.getenv("HF_TOKEN", "")
+                    token_source = "environment (HF_TOKEN)"
+                    print(f"[INFO] No user token provided, using environment HF_TOKEN")
+
+                # Validate token exists
+                if not token_to_use:
+                    return "❌ No HuggingFace token available. Please either:\n- Provide your HF token in the field above, OR\n- Set HF_TOKEN environment variable"
+
+                print(f"[INFO] Token source: {token_source}")
+                print(f"[INFO] Token length: {len(token_to_use)} characters")
+
+                # Connect to MCP server
+                client = Client("https://mcp-1st-birthday-tracemind-mcp-server.hf.space/")
+
+                # Extract tasks array from dataset (MCP server expects just the tasks array)
+                if isinstance(dataset, dict):
+                    # If dataset has a 'tasks' key, use that array
+                    if 'tasks' in dataset:
+                        tasks_to_push = dataset['tasks']
+                        print(f"[INFO] Extracted {len(tasks_to_push)} tasks from dataset")
+                    else:
+                        # Otherwise, assume the entire dict is the tasks array
+                        tasks_to_push = dataset
+                        print(f"[INFO] Using entire dataset dict (no 'tasks' key found)")
+                elif isinstance(dataset, list):
+                    # If it's already a list, use it directly
+                    tasks_to_push = dataset
+                    print(f"[INFO] Dataset is already a list with {len(tasks_to_push)} items")
+                else:
+                    # Fallback: wrap in a list
+                    tasks_to_push = [dataset]
+                    print(f"[INFO] Wrapped dataset in list")
+
+                # Validate tasks_to_push is a list
+                if not isinstance(tasks_to_push, list):
+                    return f"❌ Error: Expected tasks to be a list, got {type(tasks_to_push).__name__}"
+
+                # Convert tasks array to JSON string
+                dataset_json = json.dumps(tasks_to_push)
+                print(f"[INFO] Sending {len(tasks_to_push)} tasks to MCP server")
+                print(f"[INFO] Repo name: {repo_name}")
+                print(f"[INFO] Private: {private}")
+                print(f"[INFO] Passing HF token to MCP server (source: {token_source})")
+
+                # Call the push dataset endpoint with the token
+                result = client.predict(
+                    dataset_json=dataset_json,
+                    repo_name=repo_name,
+                    hf_token=token_to_use,  # Token from user input OR environment
+                    private=private,
+                    api_name="/run_push_dataset"
+                )
+
+                # Parse result
+                print(f"[INFO] MCP server response: {result}")
+
+                # Handle dict response with error
+                if isinstance(result, dict):
+                    if 'error' in result:
+                        error_msg = result['error']
+                        # Check if it's an authentication error
+                        if 'authentication' in error_msg.lower() or 'unauthorized' in error_msg.lower() or 'token' in error_msg.lower():
+                            return f"❌ Authentication Error: {error_msg}\n\n💡 Check that your HF token has write permissions for datasets."
+                        return f"❌ Error from MCP server: {error_msg}"
+                    elif 'success' in result or 'repo_url' in result:
+                        repo_url = result.get('repo_url', f"https://huggingface.co/datasets/{repo_name}")
+                        return f"""✅ Dataset successfully pushed to HuggingFace Hub!
+
+**Repository**: [{repo_name}]({repo_url})
+
+{result.get('message', 'Dataset uploaded successfully!')}
+"""
+                    else:
+                        return f"✅ Push completed. Result: {result}"
+
+                # Handle string response
+                elif isinstance(result, str):
+                    if "error" in result.lower():
+                        return f"❌ Error: {result}"
+                    elif "success" in result.lower() or "pushed" in result.lower():
+                        return f"""✅ Dataset successfully pushed to HuggingFace Hub!
+
+**Repository**: [{repo_name}](https://huggingface.co/datasets/{repo_name})
+
+Result: {result}
+"""
+                    else:
+                        return f"✅ Push completed. Result: {result}"
+                else:
+                    return f"✅ Push completed. Result: {result}"
+
+            except Exception as e:
+                error_msg = f"❌ Error pushing to Hub: {str(e)}"
+                print(f"[ERROR] Push to Hub failed: {e}")
+                import traceback
+                traceback.print_exc()
+                return error_msg
 
         # Event handlers
         # Load dashboard on app start
         app.load(
             fn=navigate_to_dashboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ] + list(dashboard_components.values())
         )
 
@@ -2289,24 +2641,24 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         dashboard_nav_btn.click(
             fn=navigate_to_dashboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ] + list(dashboard_components.values())
         )
 
         leaderboard_nav_btn.click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ]
         )
 
         compare_nav_btn.click(
             fn=navigate_to_compare,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn,
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn,
                 compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']
             ]
         )
@@ -2314,9 +2666,29 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         chat_nav_btn.click(
             fn=navigate_to_chat,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ]
+        )
+        synthetic_data_nav_btn.click(
+            fn=navigate_to_synthetic_data,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+            ]
+        )
+
+        # Synthetic Data Generator event handlers
+        generate_btn.click(
+            fn=on_generate_synthetic_data,
+            inputs=[domain_input, tools_input, num_tasks_input, difficulty_input, agent_type_input],
+            outputs=[generated_dataset_state, dataset_preview, dataset_stats, generation_status, push_btn, repo_name_input]
+        )
+
+        push_btn.click(
+            fn=on_push_to_hub,
+            inputs=[generated_dataset_state, repo_name_input, hf_token_input, private_checkbox],
+            outputs=[push_status]
         )
 
         # Chat screen event handlers (with streaming)
