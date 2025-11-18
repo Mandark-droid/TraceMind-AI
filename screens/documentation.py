@@ -1556,9 +1556,9 @@ def create_documentation_screen():
     Create the complete documentation screen with tabs
 
     Returns:
-        gr.Blocks: Gradio Blocks interface for documentation
+        gr.Column: Gradio Column component for documentation (can be shown/hidden)
     """
-    with gr.Blocks() as documentation_interface:
+    with gr.Column(visible=False) as documentation_interface:
         gr.Markdown("""
         # 📚 TraceMind Documentation
 
@@ -1602,5 +1602,8 @@ def create_documentation_screen():
 
 if __name__ == "__main__":
     # For standalone testing
-    demo = create_documentation_screen()
+    with gr.Blocks() as demo:
+        doc_screen = create_documentation_screen()
+        # Make it visible for standalone testing
+        doc_screen.visible = True
     demo.launch()
