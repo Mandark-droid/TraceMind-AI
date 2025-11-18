@@ -2222,19 +2222,24 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     eval_hardware = gr.Dropdown(
                         choices=[
                             "auto",
-                            "cpu",
-                            "gpu_t4",
-                            "gpu_l4",
-                            "gpu_a10",
-                            "gpu_l40s",
-                            "gpu_a100",
-                            "gpu_a100_80gb",
-                            "gpu_h100",
-                            "gpu_h200"
+                            "cpu-basic",
+                            "cpu-upgrade",
+                            "t4-small",
+                            "t4-medium",
+                            "l4x1",
+                            "l4x4",
+                            "a10g-small",
+                            "a10g-large",
+                            "a10g-largex2",
+                            "a10g-largex4",
+                            "a100-large",
+                            "v5e-1x1",
+                            "v5e-2x2",
+                            "v5e-2x4"
                         ],
                         value="auto",
                         label="Hardware",
-                        info="Auto: CPU for API models, A10 for local models. Modal pricing applies."
+                        info="Auto: cpu-basic for API models, a10g-small for local models. HF Jobs pricing."
                     )
 
             # Section 2: Model Configuration
@@ -2701,6 +2706,51 @@ No historical data available for **{model}**.
             """
 
             return gr.update(value=success_html, visible=True)
+
+        def on_infra_provider_change(infra_provider):
+            """Update hardware options based on infrastructure provider"""
+            if infra_provider == "Modal":
+                # Modal hardware options (per-second pricing)
+                return gr.update(
+                    choices=[
+                        "auto",
+                        "cpu",
+                        "gpu_t4",
+                        "gpu_l4",
+                        "gpu_a10",
+                        "gpu_l40s",
+                        "gpu_a100",
+                        "gpu_a100_80gb",
+                        "gpu_h100",
+                        "gpu_h200",
+                        "gpu_b200"
+                    ],
+                    value="auto",
+                    info="Auto: CPU for API models, A10 for local models. Modal per-second pricing."
+                )
+            else:  # HuggingFace Jobs
+                # HuggingFace Jobs hardware options
+                return gr.update(
+                    choices=[
+                        "auto",
+                        "cpu-basic",
+                        "cpu-upgrade",
+                        "t4-small",
+                        "t4-medium",
+                        "l4x1",
+                        "l4x4",
+                        "a10g-small",
+                        "a10g-large",
+                        "a10g-largex2",
+                        "a10g-largex4",
+                        "a100-large",
+                        "v5e-1x1",
+                        "v5e-2x2",
+                        "v5e-2x4"
+                    ],
+                    value="auto",
+                    info="Auto: cpu-basic for API models, a10g-small for local models. HF Jobs pricing."
+                )
 
         def on_provider_change(provider):
             """Auto-select hardware based on provider type"""
@@ -3266,6 +3316,13 @@ Result: {result}
             fn=on_hardware_change,
             inputs=[eval_model, eval_hardware],
             outputs=[eval_cost_estimate]
+        )
+
+        # Update hardware options when infrastructure provider changes
+        eval_infra_provider.change(
+            fn=on_infra_provider_change,
+            inputs=[eval_infra_provider],
+            outputs=[eval_hardware]
         )
 
         # Auto-select hardware when provider changes
