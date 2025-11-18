@@ -2220,10 +2220,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     )
 
                     eval_hardware = gr.Radio(
-                        choices=["auto", "cpu", "gpu_a10", "gpu_h200"],
+                        choices=["auto", "cpu", "gpu_a100"],
                         value="auto",
                         label="Hardware",
-                        info="CPU for API models, GPU for local models (H200 for best performance)"
+                        info="Auto-selected based on provider (CPU for API, GPU for local models)"
                     )
 
             # Section 2: Model Configuration
@@ -2239,10 +2239,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     )
 
                     eval_provider = gr.Dropdown(
-                        choices=["litellm", "inference", "transformers", "ollama"],
+                        choices=["litellm", "inference", "transformers"],
                         value="litellm",
                         label="Provider",
-                        info="Model inference provider"
+                        info="Model inference provider (litellm/inference=API, transformers=local)"
                     )
 
                 with gr.Row():
@@ -2677,6 +2677,17 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             """
 
             return gr.update(value=success_html, visible=True)
+
+        def on_provider_change(provider):
+            """Auto-select hardware based on provider type"""
+            # litellm and inference are for API models → CPU
+            # transformers is for local models → GPU
+            if provider in ["litellm", "inference"]:
+                return gr.update(value="cpu")
+            elif provider == "transformers":
+                return gr.update(value="gpu_a100")
+            else:
+                return gr.update(value="auto")
 
         # Navigation handlers (define before use)
         def navigate_to_dashboard():
@@ -3231,6 +3242,13 @@ Result: {result}
             fn=on_hardware_change,
             inputs=[eval_model, eval_hardware],
             outputs=[eval_cost_estimate]
+        )
+
+        # Auto-select hardware when provider changes
+        eval_provider.change(
+            fn=on_provider_change,
+            inputs=[eval_provider],
+            outputs=[eval_hardware]
         )
 
         eval_submit_btn.click(
