@@ -2757,9 +2757,9 @@ No historical data available for **{model}**.
             # litellm and inference are for API models → CPU
             # transformers is for local models → GPU
             if provider in ["litellm", "inference"]:
-                return gr.update(value="cpu")
+                return gr.update(value="cpu-basic")
             elif provider == "transformers":
-                return gr.update(value="gpu_a100")
+                return gr.update(value="a10g-small")
             else:
                 return gr.update(value="auto")
 
