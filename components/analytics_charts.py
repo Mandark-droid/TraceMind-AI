@@ -317,6 +317,14 @@ def create_cost_efficiency_scatter(df: pd.DataFrame) -> go.Figure:
 
     model_stats = df.groupby('model').agg(agg_dict).reset_index()
 
+    # Handle zero costs for log scale visualization
+    # Replace zero costs with a small epsilon value (0.00001)
+    # This allows log scale to work properly while keeping all models visible
+    EPSILON = 0.00001
+    model_stats['total_cost_usd_display'] = model_stats['total_cost_usd'].apply(
+        lambda x: max(x, EPSILON)
+    )
+
     # Calculate efficiency metric: success_rate / cost
     model_stats['efficiency'] = model_stats['success_rate'] / (model_stats['total_cost_usd'] + 0.0001)  # Avoid division by zero
 
@@ -346,7 +354,11 @@ def create_cost_efficiency_scatter(df: pd.DataFrame) -> go.Figure:
             model_name = row['model'].split('/')[-1] if '/' in row['model'] else row['model']
             hover = f"<b>{model_name}</b><br>"
             hover += f"Success Rate: {row['success_rate']:.1f}%<br>"
-            hover += f"Total Cost: ${row['total_cost_usd']:.4f}<br>"
+            # Show actual cost (even if zero) in hover text
+            if row['total_cost_usd'] == 0:
+                hover += f"Total Cost: $0.0000 (No cost data)<br>"
+            else:
+                hover += f"Total Cost: ${row['total_cost_usd']:.4f}<br>"
             hover += f"Efficiency: {row['efficiency']:.0f} (points/$)<br>"
             if 'avg_duration_ms' in row and pd.notna(row['avg_duration_ms']):
                 hover += f"Duration: {row['avg_duration_ms']:.0f}ms"
@@ -361,7 +373,7 @@ def create_cost_efficiency_scatter(df: pd.DataFrame) -> go.Figure:
             sizes = 30  # Default size
 
         fig.add_trace(go.Scatter(
-            x=subset['total_cost_usd'],
+            x=subset['total_cost_usd_display'],  # Use adjusted cost for log scale
             y=subset['success_rate'],
             mode='markers+text',
             name=str(provider).title(),
@@ -413,7 +425,7 @@ def create_cost_efficiency_scatter(df: pd.DataFrame) -> go.Figure:
     top_efficient = model_stats.nlargest(3, 'efficiency')
     for _, row in top_efficient.iterrows():
         fig.add_annotation(
-            x=row['total_cost_usd'],
+            x=row['total_cost_usd_display'],  # Use adjusted cost for positioning
             y=row['success_rate'],
             text="⭐",
             showarrow=False,
