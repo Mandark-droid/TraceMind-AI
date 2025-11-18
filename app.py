@@ -3165,7 +3165,7 @@ Result: {result}
             fn=navigate_to_dashboard,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen,
+                new_evaluation_screen, documentation_screen,
                 dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ] + list(dashboard_components.values())
         )
@@ -3351,7 +3351,7 @@ Result: {result}
         back_to_leaderboard_from_eval_btn.click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen,
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen,
                 dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ]
         )
@@ -3466,8 +3466,8 @@ Result: {result}
         compare_components['back_to_leaderboard_btn'].click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ]
         )
 
