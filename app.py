@@ -2697,9 +2697,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 compare_screen: gr.update(visible=False),
                 chat_screen: gr.update(visible=False),
                 synthetic_data_screen: gr.update(visible=False),
-                synthetic_data_screen: gr.update(visible=False),
+                new_evaluation_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="primary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
+                new_eval_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
@@ -2718,8 +2719,30 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 compare_screen: gr.update(visible=False),
                 chat_screen: gr.update(visible=False),
                 synthetic_data_screen: gr.update(visible=False),
+                new_evaluation_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="primary"),
+                new_eval_nav_btn: gr.update(variant="secondary"),
+                compare_nav_btn: gr.update(variant="secondary"),
+                chat_nav_btn: gr.update(variant="secondary"),
+                synthetic_data_nav_btn: gr.update(variant="secondary"),
+                docs_nav_btn: gr.update(variant="secondary"),
+            }
+
+        def navigate_to_new_evaluation():
+            """Navigate to new evaluation screen"""
+            return {
+                dashboard_screen: gr.update(visible=False),
+                leaderboard_screen: gr.update(visible=False),
+                run_detail_screen: gr.update(visible=False),
+                trace_detail_screen: gr.update(visible=False),
+                compare_screen: gr.update(visible=False),
+                chat_screen: gr.update(visible=False),
+                synthetic_data_screen: gr.update(visible=False),
+                new_evaluation_screen: gr.update(visible=True),
+                dashboard_nav_btn: gr.update(variant="secondary"),
+                leaderboard_nav_btn: gr.update(variant="secondary"),
+                new_eval_nav_btn: gr.update(variant="primary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
@@ -2748,8 +2771,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     compare_screen: gr.update(visible=True),
                     chat_screen: gr.update(visible=False),
                 synthetic_data_screen: gr.update(visible=False),
+                    new_evaluation_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
+                    new_eval_nav_btn: gr.update(variant="secondary"),
                     compare_nav_btn: gr.update(variant="primary"),
                     chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
@@ -2767,8 +2792,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     compare_screen: gr.update(visible=True),
                     chat_screen: gr.update(visible=False),
                 synthetic_data_screen: gr.update(visible=False),
+                    new_evaluation_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
+                    new_eval_nav_btn: gr.update(variant="secondary"),
                     compare_nav_btn: gr.update(variant="primary"),
                     chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
@@ -2785,8 +2812,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 compare_screen: gr.update(visible=False),
                 chat_screen: gr.update(visible=True),
                 synthetic_data_screen: gr.update(visible=False),
+                new_evaluation_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
+                new_eval_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="primary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
@@ -2803,8 +2832,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                 compare_screen: gr.update(visible=False),
                 chat_screen: gr.update(visible=False),
                 synthetic_data_screen: gr.update(visible=True),
+                new_evaluation_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
+                new_eval_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="primary"),
@@ -3126,15 +3157,24 @@ Result: {result}
             fn=navigate_to_dashboard,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                new_evaluation_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ] + list(dashboard_components.values())
         )
 
         leaderboard_nav_btn.click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+            ]
+        )
+
+        new_eval_nav_btn.click(
+            fn=navigate_to_new_evaluation,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ]
         )
 
@@ -3142,7 +3182,8 @@ Result: {result}
             fn=navigate_to_compare,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn,
+                new_evaluation_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn,
                 compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']
             ]
         )
@@ -3151,14 +3192,16 @@ Result: {result}
             fn=navigate_to_chat,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                new_evaluation_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ]
         )
         synthetic_data_nav_btn.click(
             fn=navigate_to_synthetic_data,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                new_evaluation_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
             ]
         )
 
@@ -3173,6 +3216,38 @@ Result: {result}
             fn=on_push_to_hub,
             inputs=[generated_dataset_state, repo_name_input, hf_token_input, private_checkbox],
             outputs=[push_status]
+        )
+
+        # New Evaluation screen event handlers
+        back_to_leaderboard_from_eval_btn.click(
+            fn=navigate_to_leaderboard,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+            ]
+        )
+
+        eval_estimate_btn.click(
+            fn=on_hardware_change,
+            inputs=[eval_model, eval_hardware],
+            outputs=[eval_cost_estimate]
+        )
+
+        eval_submit_btn.click(
+            fn=on_submit_evaluation_comprehensive,
+            inputs=[
+                # Infrastructure
+                eval_infra_provider, eval_hardware,
+                # Model Configuration
+                eval_model, eval_provider, eval_hf_inference_provider, eval_hf_token,
+                # Agent Configuration
+                eval_agent_type, eval_search_provider, eval_enable_tools, eval_prompt_yml, eval_mcp_server_url, eval_additional_imports,
+                # Test Configuration
+                eval_dataset_name, eval_split, eval_difficulty, eval_parallel_workers, eval_working_directory,
+                # Output & Monitoring
+                eval_output_format, eval_output_dir, eval_enable_otel, eval_enable_gpu_metrics, eval_private, eval_debug, eval_quiet, eval_run_id
+            ],
+            outputs=[eval_success_message]
         )
 
         # Chat screen event handlers (with streaming)
