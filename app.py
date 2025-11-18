@@ -2219,11 +2219,22 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         info="Select the platform to run the evaluation"
                     )
 
-                    eval_hardware = gr.Radio(
-                        choices=["auto", "cpu", "gpu_a100"],
+                    eval_hardware = gr.Dropdown(
+                        choices=[
+                            "auto",
+                            "cpu",
+                            "gpu_t4",
+                            "gpu_l4",
+                            "gpu_a10",
+                            "gpu_l40s",
+                            "gpu_a100",
+                            "gpu_a100_80gb",
+                            "gpu_h100",
+                            "gpu_h200"
+                        ],
                         value="auto",
                         label="Hardware",
-                        info="Auto-selected based on provider (CPU for API, GPU for local models)"
+                        info="Auto: CPU for API models, A10 for local models. Modal pricing applies."
                     )
 
             # Section 2: Model Configuration
