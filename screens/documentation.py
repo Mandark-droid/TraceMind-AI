@@ -19,7 +19,12 @@ def create_about_tab():
 
 **The Complete AI Agent Evaluation Platform**
 
-[![MCP's 1st Birthday Hackathon](https://img.shields.io/badge/MCP%27s%201st%20Birthday-Hackathon-blue)](https://github.com/modelcontextprotocol) [![Track 2](https://img.shields.io/badge/Track-MCP%20in%20Action%20(Enterprise)-purple)](https://github.com/modelcontextprotocol/hackathon) [![HF Space](https://img.shields.io/badge/HuggingFace-TraceMind-yellow?logo=huggingface)](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind) [![Powered by Gradio](https://img.shields.io/badge/Powered%20by-Gradio-orange)](https://gradio.app/)
+<div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+  <a href="https://github.com/modelcontextprotocol"><img src="https://img.shields.io/badge/MCP%27s%201st%20Birthday-Hackathon-blue" alt="MCP's 1st Birthday Hackathon"></a>
+  <a href="https://github.com/modelcontextprotocol/hackathon"><img src="https://img.shields.io/badge/Track-MCP%20in%20Action%20(Enterprise)-purple" alt="Track 2"></a>
+  <a href="https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind"><img src="https://img.shields.io/badge/HuggingFace-TraceMind-yellow?logo=huggingface" alt="HF Space"></a>
+  <a href="https://gradio.app/"><img src="https://img.shields.io/badge/Powered%20by-Gradio-orange" alt="Powered by Gradio"></a>
+</div>
 
 > **🎯 Track 2 Submission**: MCP in Action (Enterprise)
 > **📅 MCP's 1st Birthday Hackathon**: November 14-30, 2025
@@ -247,11 +252,25 @@ def create_traceverde_tab():
 
 <br/>
 
-[![PyPI version](https://badge.fury.io/py/genai-otel-instrument.svg)](https://badge.fury.io/py/genai-otel-instrument) [![Python Versions](https://img.shields.io/pypi/pyversions/genai-otel-instrument.svg)](https://pypi.org/project/genai-otel-instrument/) [![License](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0) [![Downloads](https://static.pepy.tech/badge/genai-otel-instrument)](https://pepy.tech/project/genai-otel-instrument) [![Downloads/Month](https://static.pepy.tech/badge/genai-otel-instrument/month)](https://pepy.tech/project/genai-otel-instrument)
+<div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+  <a href="https://badge.fury.io/py/genai-otel-instrument"><img src="https://badge.fury.io/py/genai-otel-instrument.svg" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/genai-otel-instrument/"><img src="https://img.shields.io/pypi/pyversions/genai-otel-instrument.svg" alt="Python Versions"></a>
+  <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL%203.0-blue.svg" alt="License"></a>
+  <a href="https://pepy.tech/project/genai-otel-instrument"><img src="https://static.pepy.tech/badge/genai-otel-instrument" alt="Downloads"></a>
+  <a href="https://pepy.tech/project/genai-otel-instrument"><img src="https://static.pepy.tech/badge/genai-otel-instrument/month" alt="Downloads/Month"></a>
+</div>
 
-[![GitHub Stars](https://img.shields.io/github/stars/Mandark-droid/genai_otel_instrument?style=social)](https://github.com/Mandark-droid/genai_otel_instrument) [![GitHub Forks](https://img.shields.io/github/forks/Mandark-droid/genai_otel_instrument?style=social)](https://github.com/Mandark-droid/genai_otel_instrument) [![GitHub Issues](https://img.shields.io/github/issues/Mandark-droid/genai_otel_instrument)](https://github.com/Mandark-droid/genai_otel_instrument/issues)
+<div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+  <a href="https://github.com/Mandark-droid/genai_otel_instrument"><img src="https://img.shields.io/github/stars/Mandark-droid/genai_otel_instrument?style=social" alt="GitHub Stars"></a>
+  <a href="https://github.com/Mandark-droid/genai_otel_instrument"><img src="https://img.shields.io/github/forks/Mandark-droid/genai_otel_instrument?style=social" alt="GitHub Forks"></a>
+  <a href="https://github.com/Mandark-droid/genai_otel_instrument/issues"><img src="https://img.shields.io/github/issues/Mandark-droid/genai_otel_instrument" alt="GitHub Issues"></a>
+</div>
 
-[![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-1.20%2B-blueviolet)](https://opentelemetry.io/) [![Semantic Conventions](https://img.shields.io/badge/OTel%20Semconv-GenAI%20v1.28-orange)](https://opentelemetry.io/docs/specs/semconv/gen-ai/) [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+<div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+  <a href="https://opentelemetry.io/"><img src="https://img.shields.io/badge/OpenTelemetry-1.20%2B-blueviolet" alt="OpenTelemetry"></a>
+  <a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/"><img src="https://img.shields.io/badge/OTel%20Semconv-GenAI%20v1.28-orange" alt="Semantic Conventions"></a>
+  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code Style: Black"></a>
+</div>
 
 **Automatic OpenTelemetry Instrumentation for LLM Applications**
 
@@ -651,9 +670,20 @@ def create_smoltrace_tab():
 
 **Lightweight Agent Evaluation Engine with Built-in OpenTelemetry Tracing**
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/downloads/) [![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://github.com/Mandark-droid/SMOLTRACE/blob/main/LICENSE) [![PyPI version](https://badge.fury.io/py/smoltrace.svg)](https://badge.fury.io/py/smoltrace) [![Downloads](https://static.pepy.tech/badge/smoltrace)](https://pepy.tech/project/smoltrace) [![Downloads/Month](https://static.pepy.tech/badge/smoltrace/month)](https://pepy.tech/project/smoltrace)
+<div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.10%2B-blue" alt="Python"></a>
+  <a href="https://github.com/Mandark-droid/SMOLTRACE/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License"></a>
+  <a href="https://badge.fury.io/py/smoltrace"><img src="https://badge.fury.io/py/smoltrace.svg" alt="PyPI version"></a>
+  <a href="https://pepy.tech/project/smoltrace"><img src="https://static.pepy.tech/badge/smoltrace" alt="Downloads"></a>
+  <a href="https://pepy.tech/project/smoltrace"><img src="https://static.pepy.tech/badge/smoltrace/month" alt="Downloads/Month"></a>
+</div>
 
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/) [![Tests](https://img.shields.io/github/actions/workflow/status/Mandark-droid/SMOLTRACE/test.yml?branch=main&label=tests)](https://github.com/Mandark-droid/SMOLTRACE/actions?query=workflow%3Atest) [![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://huggingface.co/docs/smoltrace/en/index)
+<div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
+  <a href="https://pycqa.github.io/isort/"><img src="https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336" alt="Imports: isort"></a>
+  <a href="https://github.com/Mandark-droid/SMOLTRACE/actions?query=workflow%3Atest"><img src="https://img.shields.io/github/actions/workflow/status/Mandark-droid/SMOLTRACE/test.yml?branch=main&label=tests" alt="Tests"></a>
+  <a href="https://huggingface.co/docs/smoltrace/en/index"><img src="https://img.shields.io/badge/docs-stable-blue.svg" alt="Docs"></a>
+</div>
 
 ---
 
@@ -1182,7 +1212,12 @@ def create_mcp_server_tab():
 
 **Building MCP: Intelligent Analysis Tools for Agent Evaluation**
 
-[![MCP's 1st Birthday Hackathon](https://img.shields.io/badge/MCP%27s%201st%20Birthday-Hackathon-blue)](https://github.com/modelcontextprotocol) [![Track 1](https://img.shields.io/badge/Track-Building%20MCP%20(Enterprise)-blue)](https://github.com/modelcontextprotocol/hackathon) [![HF Space](https://img.shields.io/badge/HuggingFace-TraceMind--MCP--Server-yellow?logo=huggingface)](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server) [![Google Gemini](https://img.shields.io/badge/Powered%20by-Google%20Gemini%202.5%20Pro-orange)](https://ai.google.dev/)
+<div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px;">
+  <a href="https://github.com/modelcontextprotocol"><img src="https://img.shields.io/badge/MCP%27s%201st%20Birthday-Hackathon-blue" alt="MCP's 1st Birthday Hackathon"></a>
+  <a href="https://github.com/modelcontextprotocol/hackathon"><img src="https://img.shields.io/badge/Track-Building%20MCP%20(Enterprise)-blue" alt="Track 1"></a>
+  <a href="https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server"><img src="https://img.shields.io/badge/HuggingFace-TraceMind--MCP--Server-yellow?logo=huggingface" alt="HF Space"></a>
+  <a href="https://ai.google.dev/"><img src="https://img.shields.io/badge/Powered%20by-Google%20Gemini%202.5%20Pro-orange" alt="Google Gemini"></a>
+</div>
 
 > **🎯 Track 1 Submission**: Building MCP (Enterprise)
 > **📅 MCP's 1st Birthday Hackathon**: November 14-30, 2025
