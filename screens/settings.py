@@ -201,14 +201,14 @@ def create_settings_screen():
             api_name=False  # IMPORTANT: Prevents API key exposure via Gradio API
         )
 
-        # Return both the interface and the input components for external access
-        return settings_interface, gemini_api_key, hf_token
+        # Return the interface only (API keys are managed internally via session state)
+        return settings_interface
 
 
 if __name__ == "__main__":
     # For standalone testing
     with gr.Blocks() as demo:
-        settings_screen, _, _ = create_settings_screen()
+        settings_screen = create_settings_screen()
         # Make it visible for standalone testing
         settings_screen.visible = True
     demo.launch()

@@ -2424,7 +2424,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         # ============================================================================
         # Screen 10: Settings
         # ============================================================================
-        settings_screen, gemini_api_key_input, hf_token_input = create_settings_screen()
+        settings_screen = create_settings_screen()
 
         # ============================================================================
         # Evaluation Helper Functions
