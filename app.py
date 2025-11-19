@@ -2888,6 +2888,7 @@ No historical data available for **{model}**.
                     chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                     docs_nav_btn: gr.update(variant="secondary"),
+                    settings_nav_btn: gr.update(variant="secondary"),
                     compare_components['compare_run_a_dropdown']: gr.update(choices=run_choices),
                     compare_components['compare_run_b_dropdown']: gr.update(choices=run_choices),
                 }
@@ -2903,6 +2904,7 @@ No historical data available for **{model}**.
                 synthetic_data_screen: gr.update(visible=False),
                     new_evaluation_screen: gr.update(visible=False),
                     documentation_screen: gr.update(visible=False),
+                    settings_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
                     new_eval_nav_btn: gr.update(variant="secondary"),
@@ -3347,7 +3349,7 @@ Result: {result}
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
                 new_evaluation_screen, documentation_screen, settings_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn,
                 compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']
             ]
         )
