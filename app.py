@@ -2112,8 +2112,9 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
 
             gr.Markdown("---")
 
-            # Store generated dataset in component state
+            # Store generated dataset and prompt template in component state
             generated_dataset_state = gr.State(None)
+            generated_prompt_template_state = gr.State(None)
 
             # Step 1: Generate Dataset
             with gr.Group():
@@ -2161,14 +2162,29 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
 
             # Step 2: Review Dataset
             with gr.Group():
-                gr.Markdown("### 🔍 Step 2: Review Generated Dataset")
+                gr.Markdown("### 🔍 Step 2: Review Generated Dataset & Prompt Template")
 
-                dataset_preview = gr.JSON(
-                    label="Generated Dataset (Preview)",
-                    visible=False
-                )
+                with gr.Tab("📊 Dataset Preview"):
+                    dataset_preview = gr.JSON(
+                        label="Generated Dataset",
+                        visible=False
+                    )
 
-                dataset_stats = gr.Markdown("", visible=False)
+                    dataset_stats = gr.Markdown("", visible=False)
+
+                with gr.Tab("📝 Prompt Template"):
+                    gr.Markdown("""
+                    **AI-Generated Prompt Template**
+
+                    This customized prompt template is based on smolagents templates and adapted for your domain and tools.
+                    It will be automatically included in your dataset card when you push to HuggingFace Hub.
+                    """)
+
+                    prompt_template_preview = gr.Code(
+                        label="Customized Prompt Template (YAML)",
+                        language="yaml",
+                        visible=False
+                    )
 
             # Step 3: Push to Hub
             with gr.Group():
@@ -3010,15 +3026,17 @@ No historical data available for **{model}**.
 
         # Synthetic Data Generator Callbacks
         def on_generate_synthetic_data(domain, tools, num_tasks, difficulty, agent_type):
-            """Generate synthetic dataset using MCP server"""
+            """Generate synthetic dataset AND prompt template using MCP server"""
             try:
                 from gradio_client import Client
+                import json
 
                 # Connect to MCP server
                 client = Client("https://mcp-1st-birthday-tracemind-mcp-server.hf.space/")
 
-                # Call the synthetic data generation endpoint
-                result = client.predict(
+                # ===== STEP 1: Generate Dataset =====
+                print(f"[INFO] Generating synthetic dataset for domain: {domain}")
+                dataset_result = client.predict(
                     domain=domain,
                     tools=tools,
                     num_tasks=int(num_tasks),
@@ -3027,15 +3045,82 @@ No historical data available for **{model}**.
                     api_name="/run_generate_synthetic"
                 )
 
-                # Parse the result
-                import json
-                if isinstance(result, str):
+                # Parse the dataset result
+                if isinstance(dataset_result, str):
                     try:
-                        dataset = json.loads(result)
+                        dataset = json.loads(dataset_result)
                     except:
-                        dataset = {"raw_result": result}
+                        dataset = {"raw_result": dataset_result}
                 else:
-                    dataset = result
+                    dataset = dataset_result
+
+                # ===== STEP 2: Generate Prompt Template(s) =====
+                # When agent_type="both", generate templates for both tool and code agents
+                agent_types_to_generate = ["tool", "code"] if agent_type == "both" else [agent_type]
+                print(f"[INFO] Generating prompt template(s) for: {agent_types_to_generate}")
+
+                prompt_templates = {}
+                try:
+                    for current_agent_type in agent_types_to_generate:
+                        print(f"[INFO] Generating {current_agent_type} agent template for domain: {domain}")
+
+                        template_result = client.predict(
+                            domain=domain,
+                            tools=tools,
+                            agent_type=current_agent_type,
+                            api_name="/run_generate_prompt_template"
+                        )
+
+                        # Parse the template result
+                        if isinstance(template_result, dict):
+                            prompt_template_data = template_result
+                        elif isinstance(template_result, str):
+                            try:
+                                prompt_template_data = json.loads(template_result)
+                            except:
+                                prompt_template_data = {"error": "Failed to parse template response"}
+                        else:
+                            prompt_template_data = {"error": "Unexpected template response format"}
+
+                        # Extract the YAML template
+                        if "prompt_template" in prompt_template_data:
+                            prompt_templates[current_agent_type] = prompt_template_data["prompt_template"]
+                            print(f"[INFO] {current_agent_type} agent template generated successfully")
+                        elif "error" in prompt_template_data:
+                            prompt_templates[current_agent_type] = f"# Error generating template:\n# {prompt_template_data['error']}"
+                            print(f"[WARNING] {current_agent_type} template generation error: {prompt_template_data['error']}")
+                        else:
+                            prompt_templates[current_agent_type] = "# Template format not recognized"
+                            print(f"[WARNING] Unexpected template format for {current_agent_type}")
+
+                    # Combine templates for display
+                    if agent_type == "both":
+                        prompt_template = f"""# ========================================
+# TOOL AGENT TEMPLATE (ToolCallingAgent)
+# ========================================
+
+{prompt_templates.get('tool', '# Failed to generate tool agent template')}
+
+# ========================================
+# CODE AGENT TEMPLATE (CodeAgent)
+# ========================================
+
+{prompt_templates.get('code', '# Failed to generate code agent template')}
+"""
+                    else:
+                        prompt_template = prompt_templates.get(agent_type, "# Template not generated")
+
+                    # Store all templates in data for push_to_hub
+                    prompt_template_data = {
+                        "agent_type": agent_type,
+                        "templates": prompt_templates,
+                        "combined": prompt_template
+                    }
+
+                except Exception as template_error:
+                    print(f"[WARNING] Failed to generate prompt template: {template_error}")
+                    prompt_template = f"# Failed to generate template: {str(template_error)}"
+                    prompt_template_data = {"error": str(template_error)}
 
                 # Generate stats
                 task_count = len(dataset.get('tasks', [])) if isinstance(dataset.get('tasks'), list) else 0
@@ -3046,27 +3131,29 @@ No historical data available for **{model}**.
                 suggested_repo_name = f"{default_username}/smoltrace-{domain_clean}-tasks"
 
                 stats_md = f"""
-                ### ✅ Dataset Generated Successfully!
+                ### ✅ Dataset & Prompt Template Generated Successfully!
 
                 - **Total Tasks**: {task_count}
                 - **Domain**: {dataset.get('domain', domain)}
                 - **Difficulty**: {dataset.get('difficulty', difficulty)}
                 - **Agent Type**: {dataset.get('agent_type', agent_type)}
                 - **Tools Available**: {len(tools.split(','))}
+                - **Prompt Template**: ✅ AI-customized for your domain
 
-                Review the dataset below and push to HuggingFace Hub when ready.
+                Review both the dataset and prompt template in the tabs above, then push to HuggingFace Hub when ready.
 
                 **Suggested repo name**: `{suggested_repo_name}`
 
-                💡 **Tip**: Using environment HF token? Keep the default username.
-                Want to push to your own profile? Update repo name to `your-username/smoltrace-{domain_clean}-tasks` and provide your HF token.
+                💡 **Tip**: The prompt template will be automatically included in your dataset card!
                 """
 
                 return {
                     generated_dataset_state: dataset,
+                    generated_prompt_template_state: prompt_template_data,
                     dataset_preview: gr.update(value=dataset, visible=True),
                     dataset_stats: gr.update(value=stats_md, visible=True),
-                    generation_status: "✅ Dataset generated successfully! Review below.",
+                    prompt_template_preview: gr.update(value=prompt_template, visible=True),
+                    generation_status: "✅ Dataset & prompt template generated! Review in tabs above.",
                     push_btn: gr.update(visible=True),
                     repo_name_input: gr.update(value=suggested_repo_name)
                 }
@@ -3079,15 +3166,17 @@ No historical data available for **{model}**.
 
                 return {
                     generated_dataset_state: None,
+                    generated_prompt_template_state: None,
                     dataset_preview: gr.update(visible=False),
                     dataset_stats: gr.update(visible=False),
+                    prompt_template_preview: gr.update(visible=False),
                     generation_status: error_msg,
                     push_btn: gr.update(visible=False),
                     repo_name_input: gr.update(value="")
                 }
 
-        def on_push_to_hub(dataset, repo_name, hf_token, private):
-            """Push dataset to HuggingFace Hub"""
+        def on_push_to_hub(dataset, prompt_template_data, repo_name, hf_token, private):
+            """Push dataset AND prompt template to HuggingFace Hub"""
             try:
                 from gradio_client import Client
                 import os
@@ -3099,6 +3188,16 @@ No historical data available for **{model}**.
 
                 if not repo_name:
                     return "❌ Please provide a repository name."
+
+                # Extract prompt template for pushing
+                prompt_template_to_push = None
+                if prompt_template_data and isinstance(prompt_template_data, dict):
+                    if "combined" in prompt_template_data:
+                        prompt_template_to_push = prompt_template_data["combined"]
+                    elif "prompt_template" in prompt_template_data:
+                        prompt_template_to_push = prompt_template_data["prompt_template"]
+
+                print(f"[INFO] Prompt template will {'be included' if prompt_template_to_push else 'NOT be included'} in dataset card")
 
                 # Determine which HF token to use (user-provided or environment)
                 if hf_token and hf_token.strip():
@@ -3152,12 +3251,13 @@ No historical data available for **{model}**.
                 print(f"[INFO] Private: {private}")
                 print(f"[INFO] Passing HF token to MCP server (source: {token_source})")
 
-                # Call the push dataset endpoint with the token
+                # Call the push dataset endpoint with the token and prompt template
                 result = client.predict(
                     dataset_json=dataset_json,
                     repo_name=repo_name,
                     hf_token=token_to_use,  # Token from user input OR environment
                     private=private,
+                    prompt_template=prompt_template_to_push if prompt_template_to_push else "",  # Include template if available
                     api_name="/run_push_dataset"
                 )
 
@@ -3394,12 +3494,12 @@ Result: {result}
         generate_btn.click(
             fn=on_generate_synthetic_data,
             inputs=[domain_input, tools_input, num_tasks_input, difficulty_input, agent_type_input],
-            outputs=[generated_dataset_state, dataset_preview, dataset_stats, generation_status, push_btn, repo_name_input]
+            outputs=[generated_dataset_state, generated_prompt_template_state, dataset_preview, dataset_stats, prompt_template_preview, generation_status, push_btn, repo_name_input]
         )
 
         push_btn.click(
             fn=on_push_to_hub,
-            inputs=[generated_dataset_state, repo_name_input, hf_token_input, private_checkbox],
+            inputs=[generated_dataset_state, generated_prompt_template_state, repo_name_input, hf_token_input, private_checkbox],
             outputs=[push_status]
         )
 
