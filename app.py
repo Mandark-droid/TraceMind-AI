@@ -60,6 +60,7 @@ from screens.chat import (
     on_quick_action
 )
 from screens.documentation import create_documentation_screen
+from screens.settings import create_settings_screen
 from screens.mcp_helpers import (
     call_analyze_leaderboard_sync,
     call_debug_trace_sync,
@@ -1593,6 +1594,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             chat_nav_btn = gr.Button("🤖 Agent Chat", variant="secondary", size="lg")
             synthetic_data_nav_btn = gr.Button("🔬 Synthetic Data", variant="secondary", size="lg")
             docs_nav_btn = gr.Button("📚 Documentation", variant="secondary", size="lg")
+            settings_nav_btn = gr.Button("⚙️ Settings", variant="secondary", size="lg")
 
             gr.Markdown("---")
     
@@ -2420,6 +2422,11 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         documentation_screen = create_documentation_screen()
 
         # ============================================================================
+        # Screen 10: Settings
+        # ============================================================================
+        settings_screen, gemini_api_key_input, hf_token_input = create_settings_screen()
+
+        # ============================================================================
         # Evaluation Helper Functions
         # ============================================================================
 
@@ -2790,6 +2797,7 @@ No historical data available for **{model}**.
                 synthetic_data_screen: gr.update(visible=False),
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=False),
+                settings_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="primary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
@@ -2797,6 +2805,7 @@ No historical data available for **{model}**.
                 chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
+                settings_nav_btn: gr.update(variant="secondary"),
             }
             result.update(dashboard_updates)
             return result
@@ -2813,6 +2822,7 @@ No historical data available for **{model}**.
                 synthetic_data_screen: gr.update(visible=False),
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=False),
+                settings_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="primary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
@@ -2820,6 +2830,7 @@ No historical data available for **{model}**.
                 chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
+                settings_nav_btn: gr.update(variant="secondary"),
             }
 
         def navigate_to_new_evaluation():
@@ -2834,6 +2845,7 @@ No historical data available for **{model}**.
                 synthetic_data_screen: gr.update(visible=False),
                 new_evaluation_screen: gr.update(visible=True),
                 documentation_screen: gr.update(visible=False),
+                settings_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="primary"),
@@ -2841,6 +2853,7 @@ No historical data available for **{model}**.
                 chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
+                settings_nav_btn: gr.update(variant="secondary"),
             }
 
         def navigate_to_compare():
@@ -2867,6 +2880,7 @@ No historical data available for **{model}**.
                 synthetic_data_screen: gr.update(visible=False),
                     new_evaluation_screen: gr.update(visible=False),
                     documentation_screen: gr.update(visible=False),
+                settings_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
                     new_eval_nav_btn: gr.update(variant="secondary"),
@@ -2896,6 +2910,7 @@ No historical data available for **{model}**.
                     chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                     docs_nav_btn: gr.update(variant="secondary"),
+                settings_nav_btn: gr.update(variant="secondary"),
                 }
 
         def navigate_to_chat():
@@ -2910,6 +2925,7 @@ No historical data available for **{model}**.
                 synthetic_data_screen: gr.update(visible=False),
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=False),
+                settings_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
@@ -2917,6 +2933,7 @@ No historical data available for **{model}**.
                 chat_nav_btn: gr.update(variant="primary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
+                settings_nav_btn: gr.update(variant="secondary"),
             }
 
         def navigate_to_synthetic_data():
@@ -2931,6 +2948,7 @@ No historical data available for **{model}**.
                 synthetic_data_screen: gr.update(visible=True),
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=False),
+                settings_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
@@ -2938,6 +2956,7 @@ No historical data available for **{model}**.
                 chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="primary"),
                 docs_nav_btn: gr.update(variant="secondary"),
+                settings_nav_btn: gr.update(variant="secondary"),
             }
 
         def navigate_to_documentation():
@@ -2952,6 +2971,7 @@ No historical data available for **{model}**.
                 synthetic_data_screen: gr.update(visible=False),
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=True),
+                settings_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
@@ -2959,6 +2979,30 @@ No historical data available for **{model}**.
                 chat_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="primary"),
+                settings_nav_btn: gr.update(variant="secondary"),
+            }
+
+        def navigate_to_settings():
+            """Navigate to settings screen"""
+            return {
+                dashboard_screen: gr.update(visible=False),
+                leaderboard_screen: gr.update(visible=False),
+                run_detail_screen: gr.update(visible=False),
+                trace_detail_screen: gr.update(visible=False),
+                compare_screen: gr.update(visible=False),
+                chat_screen: gr.update(visible=False),
+                synthetic_data_screen: gr.update(visible=False),
+                new_evaluation_screen: gr.update(visible=False),
+                documentation_screen: gr.update(visible=False),
+                settings_screen: gr.update(visible=True),
+                dashboard_nav_btn: gr.update(variant="secondary"),
+                leaderboard_nav_btn: gr.update(variant="secondary"),
+                new_eval_nav_btn: gr.update(variant="secondary"),
+                compare_nav_btn: gr.update(variant="secondary"),
+                chat_nav_btn: gr.update(variant="secondary"),
+                synthetic_data_nav_btn: gr.update(variant="secondary"),
+                docs_nav_btn: gr.update(variant="secondary"),
+                settings_nav_btn: gr.update(variant="primary"),
             }
 
         # Synthetic Data Generator Callbacks
@@ -3277,24 +3321,24 @@ Result: {result}
             fn=navigate_to_dashboard,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
             ] + list(dashboard_components.values())
         )
 
         leaderboard_nav_btn.click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
         new_eval_nav_btn.click(
             fn=navigate_to_new_evaluation,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
@@ -3302,7 +3346,7 @@ Result: {result}
             fn=navigate_to_compare,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen,
+                new_evaluation_screen, documentation_screen, settings_screen,
                                 dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn,
                 compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']
             ]
@@ -3312,16 +3356,16 @@ Result: {result}
             fn=navigate_to_chat,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
         synthetic_data_nav_btn.click(
             fn=navigate_to_synthetic_data,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
@@ -3329,8 +3373,17 @@ Result: {result}
             fn=navigate_to_documentation,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+            ]
+        )
+
+        settings_nav_btn.click(
+            fn=navigate_to_settings,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
+                new_evaluation_screen, documentation_screen, settings_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
@@ -3352,7 +3405,7 @@ Result: {result}
             fn=navigate_to_leaderboard,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
