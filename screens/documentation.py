@@ -12,9 +12,6 @@ def create_about_tab():
 # 🧠 TraceMind Ecosystem
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/TraceVerse_Logo.png" alt="TraceVerse Ecosystem" width="400"/>
-  <br/>
-  <br/>
   <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/Logo.png" alt="TraceMind Logo" width="300"/>
 </div>
 
@@ -49,6 +46,12 @@ TraceMind is a comprehensive ecosystem for evaluating, monitoring, and optimizin
 
 <details open>
 <summary><h2>🏗️ Architecture Overview</h2></summary>
+
+<div align="center">
+  <img src="https://raw.githubusercontent.com/Mandark-droid/TraceMind-AI/assets/TraceVerse_Logo.png" alt="TraceVerse Ecosystem" width="500"/>
+</div>
+
+<br/>
 
 The TraceMind ecosystem consists of four integrated components:
 
@@ -152,12 +155,21 @@ TraceMind demonstrates the complete MCP ecosystem:
 
 ## 🔗 Quick Links
 
+### 📦 Component Links
+
 | Component | Description | Links |
 |-----------|-------------|-------|
 | **TraceVerde** | OTEL Instrumentation | [GitHub](https://github.com/Mandark-droid/genai_otel_instrument) • [PyPI](https://pypi.org/project/genai-otel-instrument) |
 | **SMOLTRACE** | Evaluation Engine | [GitHub](https://github.com/Mandark-droid/SMOLTRACE) • [PyPI](https://pypi.org/project/smoltrace/) |
 | **MCP Server** | Building MCP (Track 1) | [HF Space](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server) |
 | **TraceMind-AI** | MCP in Action (Track 2) | [HF Space](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind) |
+
+### 📢 Community Posts
+
+- 🎉 [**TraceMind Teaser**](https://www.linkedin.com/posts/kshitij-thakkar-2061b924_mcpsfirstbirthdayhackathon-mcpsfirstbirthdayhackathon-activity-7395686529270013952-g_id) - MCP's 1st Birthday Hackathon announcement
+- 📊 [**SMOLTRACE Launch**](https://www.linkedin.com/posts/kshitij-thakkar-2061b924_ai-machinelearning-llm-activity-7394350375908126720-im_T) - Lightweight agent evaluation engine
+- 🔭 [**TraceVerde Launch**](https://www.linkedin.com/posts/kshitij-thakkar-2061b924_genai-opentelemetry-observability-activity-7390339855135813632-wqEg) - Zero-code OTEL instrumentation for LLMs
+- 🙏 [**TraceVerde 3K Downloads**](https://www.linkedin.com/posts/kshitij-thakkar-2061b924_thank-you-open-source-community-a-week-activity-7392205780592132096-nu6U) - Thank you to the community!
 
 ---
 
