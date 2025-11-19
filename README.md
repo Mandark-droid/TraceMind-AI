@@ -111,6 +111,67 @@ python app.py
 
 Visit http://localhost:7860
 
+## 🎯 For Hackathon Judges & Visitors
+
+### Using Your Own API Keys (Recommended)
+
+TraceMind-AI integrates with the TraceMind MCP Server to provide AI-powered analysis. To **prevent credit issues during evaluation**, we recommend configuring your own API keys:
+
+#### Step-by-Step Configuration
+
+**Step 1: Configure MCP Server** (Required for MCP tool features)
+
+1. **Open MCP Server**: https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server
+2. Go to **⚙️ Settings** tab
+3. Enter your **Gemini API Key** and **HuggingFace Token**
+4. Click **"Save & Override Keys"**
+
+**Step 2: Configure TraceMind-AI** (Optional, for additional features)
+
+1. **Open TraceMind-AI**: https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind
+2. Go to **⚙️ Settings** tab
+3. Enter your **Gemini API Key** and **HuggingFace Token**
+4. Click **"Save API Keys"**
+
+### Why Configure Both?
+
+- **MCP Server**: Provides AI-powered tools (leaderboard analysis, trace debugging, cost estimation)
+- **TraceMind-AI**: Main UI that calls the MCP server for intelligent analysis
+- They run in **separate sessions** → need separate configuration
+- Configuring both ensures your keys are used for the complete evaluation flow
+
+### Getting Free API Keys
+
+Both APIs have generous free tiers:
+
+**Google Gemini API Key**:
+- Visit: https://ai.google.dev/
+- Click "Get API Key" → Create project → Generate key
+- **Free tier**: 1,500 requests/day (sufficient for evaluation)
+
+**HuggingFace Token**:
+- Visit: https://huggingface.co/settings/tokens
+- Click "New token" → Name it (e.g., "TraceMind Access")
+- **Permissions**:
+  - Select "Read" for viewing datasets (sufficient for most features)
+  - Select "Write" if you want to use synthetic dataset generation & push features (via MCP server)
+- **Recommended**: Use "Write" permissions for full functionality
+- **Free tier**: No rate limits for public dataset access
+
+### Default Configuration (Without Your Keys)
+
+If you don't configure your own keys:
+- Apps will use our pre-configured keys from HuggingFace Spaces Secrets
+- Fine for brief testing, but may hit rate limits during high traffic
+- Recommended to configure your keys for full evaluation
+
+### Security Notes
+
+✅ **Session-only storage**: Keys stored only in browser memory
+✅ **No server persistence**: Keys never saved to disk
+✅ **Not exposed via API**: Settings forms use `api_name=False`
+✅ **HTTPS encryption**: All API calls over secure connections
+
 ## Configuration
 
 Create a `.env` file with the following variables:
