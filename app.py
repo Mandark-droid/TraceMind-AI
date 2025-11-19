@@ -304,29 +304,30 @@ def create_performance_charts(results_df):
         fig = make_subplots(
             rows=2, cols=2,
             subplot_titles=(
-                "Response Time Distribution",
+                "Response Time per Test",
                 "Token Usage per Test",
                 "Cost per Test",
                 "Success vs Failure"
             ),
-            specs=[[{"type": "histogram"}, {"type": "bar"}],
+            specs=[[{"type": "bar"}, {"type": "bar"}],
                    [{"type": "bar"}, {"type": "pie"}]]
         )
 
-        # 1. Response Time Distribution (Histogram)
+        # 1. Response Time per Test (Bar)
         if 'execution_time_ms' in results_df.columns:
+            test_indices = list(range(len(results_df)))
             fig.add_trace(
-                go.Histogram(
-                    x=results_df['execution_time_ms'],
-                    nbinsx=20,
+                go.Bar(
+                    x=test_indices,
+                    y=results_df['execution_time_ms'],
                     marker_color='#3498DB',
                     name='Response Time',
                     showlegend=False
                 ),
                 row=1, col=1
             )
-            fig.update_xaxes(title_text="Time (ms)", row=1, col=1)
-            fig.update_yaxes(title_text="Count", row=1, col=1)
+            fig.update_xaxes(title_text="Test Index", row=1, col=1)
+            fig.update_yaxes(title_text="Time (ms)", row=1, col=1)
 
         # 2. Token Usage per Test (Bar)
         if 'total_tokens' in results_df.columns:
