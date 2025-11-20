@@ -245,20 +245,191 @@ def _auto_select_hf_hardware(provider: str, model: str) -> str:
         return "t4-small"
 
 
-def check_job_status(job_id: str, hf_token: Optional[str] = None) -> Dict:
+def check_job_status(hf_job_id: str, hf_token: Optional[str] = None) -> Dict:
     """
-    Check the status of a HuggingFace Job
+    Check the status of a HuggingFace Job using the Jobs API
 
     Args:
-        job_id: Job ID to check
+        hf_job_id: HF Job ID (format: username/job_hash or just job_hash)
         hf_token: HuggingFace token (optional, uses env if not provided)
 
     Returns:
         dict: Job status information
     """
-    # Placeholder for when HF Jobs API becomes available
-    return {
-        "job_id": job_id,
-        "status": "unknown",
-        "message": "HuggingFace Jobs status API not yet available programmatically"
-    }
+    try:
+        from huggingface_hub import HfApi
+    except ImportError:
+        return {
+            "success": False,
+            "error": "huggingface_hub package not installed",
+            "job_id": hf_job_id
+        }
+
+    token = hf_token or os.environ.get("HF_TOKEN")
+    if not token:
+        return {
+            "success": False,
+            "error": "HuggingFace token not configured",
+            "job_id": hf_job_id
+        }
+
+    try:
+        api = HfApi(token=token)
+
+        # Parse job_id and namespace (username)
+        # Format can be "username/job_hash" or just "job_hash"
+        if "/" in hf_job_id:
+            namespace, job_id_only = hf_job_id.split("/", 1)
+            job_info = api.inspect_job(job_id=job_id_only, namespace=namespace)
+        else:
+            job_info = api.inspect_job(job_id=hf_job_id)
+
+        # Extract status stage from JobStatus object
+        if hasattr(job_info, 'status') and hasattr(job_info.status, 'stage'):
+            status = job_info.status.stage
+        else:
+            status = str(job_info.status) if hasattr(job_info, 'status') else "unknown"
+
+        return {
+            "success": True,
+            "job_id": hf_job_id,
+            "status": status,
+            "created_at": str(job_info.created_at) if hasattr(job_info, 'created_at') else None,
+            "flavor": job_info.flavor if hasattr(job_info, 'flavor') else None,
+            "url": job_info.url if hasattr(job_info, 'url') else None,
+            "info": str(job_info)
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to fetch job status: {str(e)}",
+            "job_id": hf_job_id
+        }
+
+
+def get_job_logs(hf_job_id: str, hf_token: Optional[str] = None) -> Dict:
+    """
+    Retrieve logs from a HuggingFace Job
+
+    Args:
+        hf_job_id: HF Job ID (format: username/job_hash or just job_hash)
+        hf_token: HuggingFace token (optional, uses env if not provided)
+
+    Returns:
+        dict: Job logs information
+    """
+    try:
+        from huggingface_hub import HfApi
+    except ImportError:
+        return {
+            "success": False,
+            "error": "huggingface_hub package not installed",
+            "job_id": hf_job_id
+        }
+
+    token = hf_token or os.environ.get("HF_TOKEN")
+    if not token:
+        return {
+            "success": False,
+            "error": "HuggingFace token not configured",
+            "job_id": hf_job_id
+        }
+
+    try:
+        api = HfApi(token=token)
+
+        # Parse job_id and namespace (username)
+        # Format can be "username/job_hash" or just "job_hash"
+        if "/" in hf_job_id:
+            namespace, job_id_only = hf_job_id.split("/", 1)
+            logs_iterable = api.fetch_job_logs(job_id=job_id_only, namespace=namespace)
+        else:
+            logs_iterable = api.fetch_job_logs(job_id=hf_job_id)
+
+        # Convert iterable to string
+        logs = "\n".join(logs_iterable)
+
+        return {
+            "success": True,
+            "job_id": hf_job_id,
+            "logs": logs
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to fetch job logs: {str(e)}",
+            "job_id": hf_job_id,
+            "logs": ""
+        }
+
+
+def list_user_jobs(hf_token: Optional[str] = None, limit: int = 10) -> Dict:
+    """
+    List recent jobs for the authenticated user
+
+    Args:
+        hf_token: HuggingFace token (optional, uses env if not provided)
+        limit: Maximum number of jobs to return (applied after fetching)
+
+    Returns:
+        dict: List of user's jobs
+    """
+    try:
+        from huggingface_hub import HfApi
+    except ImportError:
+        return {
+            "success": False,
+            "error": "huggingface_hub package not installed"
+        }
+
+    token = hf_token or os.environ.get("HF_TOKEN")
+    if not token:
+        return {
+            "success": False,
+            "error": "HuggingFace token not configured"
+        }
+
+    try:
+        api = HfApi(token=token)
+        # List user's jobs (no limit parameter in API, so we fetch all and slice)
+        all_jobs = api.list_jobs()
+
+        # Limit the results
+        jobs_to_display = all_jobs[:limit] if limit > 0 else all_jobs
+
+        job_list = []
+        for job in jobs_to_display:
+            # Extract owner name from JobOwner object
+            owner_name = job.owner.name if hasattr(job, 'owner') and hasattr(job.owner, 'name') else None
+
+            # Build job_id in the format: owner/id
+            if owner_name and hasattr(job, 'id'):
+                job_id = f"{owner_name}/{job.id}"
+            elif hasattr(job, 'id'):
+                job_id = job.id
+            else:
+                job_id = "unknown"
+
+            # Extract status stage from JobStatus object
+            if hasattr(job, 'status') and hasattr(job.status, 'stage'):
+                status = job.status.stage
+            else:
+                status = str(job.status) if hasattr(job, 'status') else "unknown"
+
+            job_list.append({
+                "job_id": job_id,
+                "status": status,
+                "created_at": str(job.created_at) if hasattr(job, 'created_at') else None
+            })
+
+        return {
+            "success": True,
+            "jobs": job_list,
+            "count": len(job_list)
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to list jobs: {str(e)}",
+            "jobs": []
+        }

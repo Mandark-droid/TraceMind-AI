@@ -61,6 +61,7 @@ from screens.chat import (
 )
 from screens.documentation import create_documentation_screen
 from screens.settings import create_settings_screen
+from screens.job_monitoring import create_job_monitoring_screen
 from screens.mcp_helpers import (
     call_analyze_leaderboard_sync,
     call_debug_trace_sync,
@@ -1593,6 +1594,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
             new_eval_nav_btn = gr.Button("▶️ New Evaluation", variant="secondary", size="lg")
             compare_nav_btn = gr.Button("⚖️ Compare", variant="secondary", size="lg")
             chat_nav_btn = gr.Button("🤖 Agent Chat", variant="secondary", size="lg")
+            job_monitoring_nav_btn = gr.Button("🔍 Job Monitoring", variant="secondary", size="lg")
             synthetic_data_nav_btn = gr.Button("🔬 Synthetic Data", variant="secondary", size="lg")
             docs_nav_btn = gr.Button("📚 Documentation", variant="secondary", size="lg")
             settings_nav_btn = gr.Button("⚙️ Settings", variant="secondary", size="lg")
@@ -2452,6 +2454,11 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         settings_screen = create_settings_screen()
 
         # ============================================================================
+        # Screen 11: Job Monitoring
+        # ============================================================================
+        job_monitoring_screen = create_job_monitoring_screen()
+
+        # ============================================================================
         # Evaluation Helper Functions
         # ============================================================================
 
@@ -2689,6 +2696,7 @@ No historical data available for **{model}**.
 
             # Success - build success message
             job_id = result.get('job_id', 'unknown')
+            hf_job_id = result.get('hf_job_id', job_id)  # Get actual HF job ID
             job_platform = result.get('platform', infra_provider)
             job_hardware = result.get('hardware', hardware)
             job_status = result.get('status', 'submitted')
@@ -2760,8 +2768,11 @@ No historical data available for **{model}**.
                 <h2 style="margin-top: 0;">✅ Evaluation Job Configured!</h2>
 
                 <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 5px; margin: 15px 0;">
-                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Job ID</div>
-                    <div style="font-family: monospace; font-size: 1.1em; font-weight: bold;">{job_id}</div>
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Run ID (SMOLTRACE)</div>
+                    <div style="font-family: monospace; font-size: 0.95em; font-weight: bold;">{job_id}</div>
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-top: 10px; margin-bottom: 5px;">HF Job ID</div>
+                    <div style="font-family: monospace; font-size: 0.95em; font-weight: bold;">{hf_job_id}</div>
+                    <div style="font-size: 0.8em; opacity: 0.8; margin-top: 8px;">Use this ID to monitor: <code style="background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 3px;">hf jobs inspect {hf_job_id}</code></div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px;">
@@ -2884,11 +2895,13 @@ No historical data available for **{model}**.
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=False),
                 settings_screen: gr.update(visible=False),
+                job_monitoring_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="primary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
+                job_monitoring_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
                 settings_nav_btn: gr.update(variant="secondary"),
@@ -2909,11 +2922,13 @@ No historical data available for **{model}**.
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=False),
                 settings_screen: gr.update(visible=False),
+                job_monitoring_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="primary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
+                job_monitoring_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
                 settings_nav_btn: gr.update(variant="secondary"),
@@ -2932,11 +2947,13 @@ No historical data available for **{model}**.
                 new_evaluation_screen: gr.update(visible=True),
                 documentation_screen: gr.update(visible=False),
                 settings_screen: gr.update(visible=False),
+                job_monitoring_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="primary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
+                job_monitoring_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
                 settings_nav_btn: gr.update(variant="secondary"),
@@ -2967,11 +2984,13 @@ No historical data available for **{model}**.
                     new_evaluation_screen: gr.update(visible=False),
                     documentation_screen: gr.update(visible=False),
                 settings_screen: gr.update(visible=False),
+                    job_monitoring_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
                     new_eval_nav_btn: gr.update(variant="secondary"),
                     compare_nav_btn: gr.update(variant="primary"),
                     chat_nav_btn: gr.update(variant="secondary"),
+                job_monitoring_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                     docs_nav_btn: gr.update(variant="secondary"),
                     settings_nav_btn: gr.update(variant="secondary"),
@@ -2991,11 +3010,13 @@ No historical data available for **{model}**.
                     new_evaluation_screen: gr.update(visible=False),
                     documentation_screen: gr.update(visible=False),
                     settings_screen: gr.update(visible=False),
+                    job_monitoring_screen: gr.update(visible=False),
                     dashboard_nav_btn: gr.update(variant="secondary"),
                     leaderboard_nav_btn: gr.update(variant="secondary"),
                     new_eval_nav_btn: gr.update(variant="secondary"),
                     compare_nav_btn: gr.update(variant="primary"),
                     chat_nav_btn: gr.update(variant="secondary"),
+                job_monitoring_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                     docs_nav_btn: gr.update(variant="secondary"),
                 settings_nav_btn: gr.update(variant="secondary"),
@@ -3014,11 +3035,13 @@ No historical data available for **{model}**.
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=False),
                 settings_screen: gr.update(visible=False),
+                job_monitoring_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="primary"),
+                job_monitoring_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
                 settings_nav_btn: gr.update(variant="secondary"),
@@ -3037,11 +3060,13 @@ No historical data available for **{model}**.
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=False),
                 settings_screen: gr.update(visible=False),
+                job_monitoring_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
+                job_monitoring_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="primary"),
                 docs_nav_btn: gr.update(variant="secondary"),
                 settings_nav_btn: gr.update(variant="secondary"),
@@ -3060,11 +3085,13 @@ No historical data available for **{model}**.
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=True),
                 settings_screen: gr.update(visible=False),
+                job_monitoring_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
+                job_monitoring_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="primary"),
                 settings_nav_btn: gr.update(variant="secondary"),
@@ -3083,14 +3110,41 @@ No historical data available for **{model}**.
                 new_evaluation_screen: gr.update(visible=False),
                 documentation_screen: gr.update(visible=False),
                 settings_screen: gr.update(visible=True),
+                job_monitoring_screen: gr.update(visible=False),
                 dashboard_nav_btn: gr.update(variant="secondary"),
                 leaderboard_nav_btn: gr.update(variant="secondary"),
                 new_eval_nav_btn: gr.update(variant="secondary"),
                 compare_nav_btn: gr.update(variant="secondary"),
                 chat_nav_btn: gr.update(variant="secondary"),
+                job_monitoring_nav_btn: gr.update(variant="secondary"),
                 synthetic_data_nav_btn: gr.update(variant="secondary"),
                 docs_nav_btn: gr.update(variant="secondary"),
                 settings_nav_btn: gr.update(variant="primary"),
+            }
+
+        def navigate_to_job_monitoring():
+            """Navigate to job monitoring screen"""
+            return {
+                dashboard_screen: gr.update(visible=False),
+                leaderboard_screen: gr.update(visible=False),
+                run_detail_screen: gr.update(visible=False),
+                trace_detail_screen: gr.update(visible=False),
+                compare_screen: gr.update(visible=False),
+                chat_screen: gr.update(visible=False),
+                synthetic_data_screen: gr.update(visible=False),
+                new_evaluation_screen: gr.update(visible=False),
+                documentation_screen: gr.update(visible=False),
+                settings_screen: gr.update(visible=False),
+                job_monitoring_screen: gr.update(visible=True),
+                dashboard_nav_btn: gr.update(variant="secondary"),
+                leaderboard_nav_btn: gr.update(variant="secondary"),
+                new_eval_nav_btn: gr.update(variant="secondary"),
+                compare_nav_btn: gr.update(variant="secondary"),
+                chat_nav_btn: gr.update(variant="secondary"),
+                job_monitoring_nav_btn: gr.update(variant="primary"),
+                synthetic_data_nav_btn: gr.update(variant="secondary"),
+                docs_nav_btn: gr.update(variant="secondary"),
+                settings_nav_btn: gr.update(variant="secondary"),
             }
 
         # Synthetic Data Generator Callbacks
@@ -3381,8 +3435,8 @@ Result: {result}
             fn=navigate_to_dashboard,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen, settings_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ] + list(dashboard_components.values())
         )
 
@@ -3493,24 +3547,24 @@ Result: {result}
             fn=navigate_to_dashboard,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen, settings_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ] + list(dashboard_components.values())
         )
 
         leaderboard_nav_btn.click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
         new_eval_nav_btn.click(
             fn=navigate_to_new_evaluation,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
@@ -3518,8 +3572,8 @@ Result: {result}
             fn=navigate_to_compare,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen, settings_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn,
+                new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn,
                 compare_components['compare_run_a_dropdown'], compare_components['compare_run_b_dropdown']
             ]
         )
@@ -3528,16 +3582,25 @@ Result: {result}
             fn=navigate_to_chat,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen, settings_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
         synthetic_data_nav_btn.click(
             fn=navigate_to_synthetic_data,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen, settings_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
+            ]
+        )
+
+        job_monitoring_nav_btn.click(
+            fn=navigate_to_job_monitoring,
+            outputs=[
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
+                new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
@@ -3545,8 +3608,8 @@ Result: {result}
             fn=navigate_to_documentation,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen, settings_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
@@ -3554,8 +3617,8 @@ Result: {result}
             fn=navigate_to_settings,
             outputs=[
                 dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen,
-                new_evaluation_screen, documentation_screen, settings_screen,
-                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
@@ -3576,8 +3639,8 @@ Result: {result}
         back_to_leaderboard_from_eval_btn.click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
@@ -3691,8 +3754,8 @@ Result: {result}
         compare_components['back_to_leaderboard_btn'].click(
             fn=navigate_to_leaderboard,
             outputs=[
-                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen,
-                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, docs_nav_btn, settings_nav_btn
+                dashboard_screen, leaderboard_screen, run_detail_screen, trace_detail_screen, compare_screen, chat_screen, synthetic_data_screen, new_evaluation_screen, documentation_screen, settings_screen, job_monitoring_screen,
+                dashboard_nav_btn, leaderboard_nav_btn, new_eval_nav_btn, compare_nav_btn, chat_nav_btn, synthetic_data_nav_btn, job_monitoring_nav_btn, docs_nav_btn, settings_nav_btn
             ]
         )
 
