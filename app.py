@@ -2417,6 +2417,14 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     placeholder="UUID will be auto-generated"
                 )
 
+                with gr.Row():
+                    eval_timeout = gr.Textbox(
+                        value="1h",
+                        label="Job Timeout",
+                        info="Maximum job duration (e.g., '30m', '1h', '2h')",
+                        placeholder="1h"
+                    )
+
             gr.Markdown("---")
 
             # Cost Estimate Section
@@ -2609,60 +2617,87 @@ No historical data available for **{model}**.
             # Test Configuration
             dataset_name, split, difficulty, parallel_workers,
             # Output & Monitoring
-            output_format, output_dir, enable_otel, enable_gpu_metrics, private, debug, quiet, run_id
+            output_format, output_dir, enable_otel, enable_gpu_metrics, private, debug, quiet, run_id, timeout
         ):
             """Submit a new evaluation job with comprehensive configuration"""
-            import uuid
-            import datetime
+            from utils.modal_job_submission import submit_modal_job
+            from utils.hf_jobs_submission import submit_hf_job
 
-            # Generate job ID and timestamp
-            job_id = f"job_{uuid.uuid4().hex[:8]}" if not run_id else run_id
-            timestamp = datetime.datetime.now().isoformat()
+            # Submit job based on infrastructure provider
+            if infra_provider == "Modal":
+                result = submit_modal_job(
+                    model=model,
+                    provider=provider,
+                    agent_type=agent_type,
+                    hardware=hardware,
+                    dataset_name=dataset_name,
+                    split=split,
+                    difficulty=difficulty,
+                    parallel_workers=parallel_workers,
+                    hf_token=hf_token,
+                    hf_inference_provider=hf_inference_provider,
+                    search_provider=search_provider,
+                    enable_tools=enable_tools,
+                    output_format=output_format,
+                    output_dir=output_dir,
+                    enable_otel=enable_otel,
+                    enable_gpu_metrics=enable_gpu_metrics,
+                    private=private,
+                    debug=debug,
+                    quiet=quiet,
+                    run_id=run_id
+                )
+            else:  # HuggingFace Jobs
+                result = submit_hf_job(
+                    model=model,
+                    provider=provider,
+                    agent_type=agent_type,
+                    hardware=hardware,
+                    dataset_name=dataset_name,
+                    split=split,
+                    difficulty=difficulty,
+                    parallel_workers=parallel_workers,
+                    hf_token=hf_token,
+                    hf_inference_provider=hf_inference_provider,
+                    search_provider=search_provider,
+                    enable_tools=enable_tools,
+                    output_format=output_format,
+                    output_dir=output_dir,
+                    enable_otel=enable_otel,
+                    enable_gpu_metrics=enable_gpu_metrics,
+                    private=private,
+                    debug=debug,
+                    quiet=quiet,
+                    run_id=run_id,
+                    timeout=timeout or "1h"
+                )
+
+            # Handle submission result
+            if not result.get("success"):
+                # Error occurred
+                error_html = f"""
+                <div style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+                            padding: 25px; border-radius: 10px; color: white; margin: 15px 0;">
+                    <h2 style="margin-top: 0;">❌ Job Submission Failed</h2>
+                    <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 5px; margin: 15px 0;">
+                        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Error</div>
+                        <div style="font-size: 1.0em;">{result.get('error', 'Unknown error')}</div>
+                    </div>
+                </div>
+                """
+                return gr.update(value=error_html, visible=True)
+
+            # Success - build success message
+            job_id = result.get('job_id', 'unknown')
+            job_platform = result.get('platform', infra_provider)
+            job_hardware = result.get('hardware', hardware)
+            job_status = result.get('status', 'submitted')
+            job_message = result.get('message', '')
 
             # Estimate cost
             cost_est = estimate_job_cost_with_mcp_fallback(model, hardware)
             has_cost_estimate = cost_est is not None
 
-            # Build CLI command preview
-            cli_command_parts = ["smoltrace-eval"]
-            cli_command_parts.append(f"--model {model}")
-            cli_command_parts.append(f"--provider {provider}")
-            if hf_inference_provider:
-                cli_command_parts.append(f"--hf-inference-provider {hf_inference_provider}")
-            cli_command_parts.append(f"--search-provider {search_provider}")
-            if enable_tools:
-                cli_command_parts.append(f"--enable-tools {','.join(enable_tools)}")
-            if hf_token:
-                cli_command_parts.append("--hf-token $HF_TOKEN")
-
-            cli_command_parts.append(f"--agent-type {agent_type}")
-
-            cli_command_parts.append(f"--dataset-name {dataset_name}")
-            cli_command_parts.append(f"--split {split}")
-            if difficulty != "all":
-                cli_command_parts.append(f"--difficulty {difficulty}")
-            if parallel_workers > 1:
-                cli_command_parts.append(f"--parallel-workers {parallel_workers}")
-
-            cli_command_parts.append(f"--output-format {output_format}")
-            if output_dir and output_format == "json":
-                cli_command_parts.append(f"--output-dir {output_dir}")
-            if enable_otel:
-                cli_command_parts.append("--enable-otel")
-            if not enable_gpu_metrics:
-                cli_command_parts.append("--disable-gpu-metrics")
-            if private:
-                cli_command_parts.append("--private")
-            if debug:
-                cli_command_parts.append("--debug")
-            if quiet:
-                cli_command_parts.append("--quiet")
-            if run_id:
-                cli_command_parts.append(f"--run-id {run_id}")
-
-            cli_command = " \\\n    ".join(cli_command_parts)
-
-            # Build success message
             cost_info_html = ""
             if has_cost_estimate:
                 source_label = "📊 Historical" if cost_est['source'] == 'historical' else "🤖 MCP Estimate"
@@ -2690,10 +2725,39 @@ No historical data available for **{model}**.
                 """
                 duration_info = "Estimated completion: Will be tracked in leaderboard once job completes"
 
+            # Add job-specific details
+            job_details_html = ""
+            if result.get('job_yaml'):
+                job_details_html += f"""
+                <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.15); border-radius: 5px;">
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">📄 Job Configuration (job.yaml)</div>
+                    <div style="font-family: monospace; font-size: 0.7em; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 3px; overflow-x: auto; max-height: 300px; overflow-y: auto;">
+                        {result['job_yaml']}
+                    </div>
+                </div>
+                """
+
+            if result.get('command'):
+                job_details_html += f"""
+                <div style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.15); border-radius: 5px;">
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">📋 SMOLTRACE Command</div>
+                    <div style="font-family: monospace; font-size: 0.75em; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 3px; overflow-x: auto;">
+                        {result['command']}
+                    </div>
+                </div>
+                """
+
+            if result.get('instructions'):
+                job_details_html += f"""
+                <div style="margin-top: 15px; padding: 15px; background: rgba(255,200,100,0.2); border-radius: 5px; border-left: 4px solid rgba(255,255,255,0.5);">
+                    <div style="font-size: 0.85em; white-space: pre-wrap;">{result['instructions']}</div>
+                </div>
+                """
+
             success_html = f"""
             <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
                         padding: 25px; border-radius: 10px; color: white; margin: 15px 0;">
-                <h2 style="margin-top: 0;">✅ Evaluation Job Submitted!</h2>
+                <h2 style="margin-top: 0;">✅ Evaluation Job Configured!</h2>
 
                 <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 5px; margin: 15px 0;">
                     <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Job ID</div>
@@ -2702,8 +2766,8 @@ No historical data available for **{model}**.
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px;">
                     <div>
-                        <div style="font-size: 0.9em; opacity: 0.9;">Infrastructure</div>
-                        <div style="font-weight: bold;">{infra_provider}</div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Platform</div>
+                        <div style="font-weight: bold;">{job_platform}</div>
                     </div>
                     <div>
                         <div style="font-size: 0.9em; opacity: 0.9;">Model</div>
@@ -2711,21 +2775,26 @@ No historical data available for **{model}**.
                     </div>
                     <div>
                         <div style="font-size: 0.9em; opacity: 0.9;">Hardware</div>
-                        <div style="font-weight: bold;">{hardware.upper()}</div>
+                        <div style="font-weight: bold;">{job_hardware}</div>
                     </div>
                     <div>
                         <div style="font-size: 0.9em; opacity: 0.9;">Agent Type</div>
                         <div style="font-weight: bold;">{agent_type}</div>
                     </div>
+                    <div>
+                        <div style="font-size: 0.9em; opacity: 0.9;">Status</div>
+                        <div style="font-weight: bold;">{job_status.upper()}</div>
+                    </div>
                     {cost_info_html}
                 </div>
 
-                <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.15); border-radius: 5px;">
-                    <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">📋 Command Preview</div>
-                    <div style="font-family: monospace; font-size: 0.8em; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 3px; overflow-x: auto;">
-                        {cli_command}
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.15); border-radius: 5px;">
+                    <div style="font-size: 0.9em;">
+                        ℹ️ {job_message}
                     </div>
                 </div>
+
+                {job_details_html}
 
                 <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.15); border-radius: 5px;">
                     <div style="font-size: 0.9em;">
@@ -3544,7 +3613,7 @@ Result: {result}
                 # Test Configuration
                 eval_dataset_name, eval_split, eval_difficulty, eval_parallel_workers,
                 # Output & Monitoring
-                eval_output_format, eval_output_dir, eval_enable_otel, eval_enable_gpu_metrics, eval_private, eval_debug, eval_quiet, eval_run_id
+                eval_output_format, eval_output_dir, eval_enable_otel, eval_enable_gpu_metrics, eval_private, eval_debug, eval_quiet, eval_run_id, eval_timeout
             ],
             outputs=[eval_success_message]
         )
