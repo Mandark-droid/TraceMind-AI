@@ -579,19 +579,28 @@ def create_gpu_summary_cards(df):
     if df is None or df.empty:
         return "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
 
-    # Get the latest row (assumes df is sorted by timestamp)
-    latest = df.iloc[-1]
+    # Debug: Print DataFrame info
+    print(f"[DEBUG create_gpu_summary_cards] DataFrame shape: {df.shape}")
+    print(f"[DEBUG create_gpu_summary_cards] DataFrame columns: {list(df.columns)}")
+    if not df.empty:
+        print(f"[DEBUG create_gpu_summary_cards] First row sample: {df.iloc[0].to_dict()}")
+        print(f"[DEBUG create_gpu_summary_cards] Last row sample: {df.iloc[-1].to_dict()}")
 
-    # Extract values using direct column access with fallback
-    utilization = latest['gpu_utilization_percent'] if 'gpu_utilization_percent' in df.columns else 0
-    memory_used = latest['gpu_memory_used_mib'] if 'gpu_memory_used_mib' in df.columns else 0
-    temperature = latest['gpu_temperature_celsius'] if 'gpu_temperature_celsius' in df.columns else 0
-    co2_emissions = latest['co2_emissions_gco2e'] if 'co2_emissions_gco2e' in df.columns else 0
-    power = latest['gpu_power_watts'] if 'gpu_power_watts' in df.columns else 0
-    gpu_name = latest['gpu_name'] if 'gpu_name' in df.columns else 'Unknown GPU'
+    # Use aggregate statistics (average/max) instead of just last row
+    # This is more representative of overall GPU performance
+    utilization = df['gpu_utilization_percent'].mean() if 'gpu_utilization_percent' in df.columns else 0
+    memory_used = df['gpu_memory_used_mib'].max() if 'gpu_memory_used_mib' in df.columns else 0
+    temperature = df['gpu_temperature_celsius'].max() if 'gpu_temperature_celsius' in df.columns else 0
+    co2_emissions = df['co2_emissions_gco2e'].sum() if 'co2_emissions_gco2e' in df.columns else 0
+    power = df['gpu_power_watts'].mean() if 'gpu_power_watts' in df.columns else 0
 
-    # Also get memory total if available for percentage
-    memory_total = latest['gpu_memory_total_mib'] if 'gpu_memory_total_mib' in df.columns else 0
+    # Get GPU name from first row (it's constant across all rows)
+    gpu_name = df['gpu_name'].iloc[0] if 'gpu_name' in df.columns and not df.empty else 'Unknown GPU'
+
+    print(f"[DEBUG create_gpu_summary_cards] Aggregated values - util: {utilization:.2f}, mem: {memory_used:.2f}, temp: {temperature:.2f}, gpu_name: {gpu_name}")
+
+    # Get memory total from max value if available
+    memory_total = df['gpu_memory_total_mib'].max() if 'gpu_memory_total_mib' in df.columns else 0
     memory_percent = (memory_used / memory_total * 100) if memory_total > 0 else 0
 
     cards_html = f"""
