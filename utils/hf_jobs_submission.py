@@ -155,8 +155,11 @@ def submit_hf_job(
 
     smoltrace_command = " ".join(cmd_parts)
 
-    # Build full command with pip install
-    full_command = f"pip install {pip_packages} && {smoltrace_command}"
+    # Build full command with pip upgrade + install
+    # IMPORTANT: Upgrade pip first to avoid dependency resolution issues
+    # (older pip in conda struggles with fief-client[cli] backtracking)
+    # Set PYTHONIOENCODING to UTF-8 to handle unicode output properly
+    full_command = f"export PYTHONIOENCODING=utf-8 && pip install --upgrade pip && pip install {pip_packages} && {smoltrace_command}"
 
     # Submit job using HuggingFace Jobs API
     try:

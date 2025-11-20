@@ -579,6 +579,12 @@ def create_gpu_summary_cards(df):
     if df is None or df.empty:
         return "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
 
+    # Extract and prepare the data (same as dashboard function does)
+    df = extract_metrics_data(df)
+
+    if df.empty:
+        return "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
+
     # Get the latest row (assumes df is sorted by timestamp)
     latest = df.iloc[-1]
 
@@ -588,14 +594,19 @@ def create_gpu_summary_cards(df):
     temperature = latest.get('gpu_temperature_celsius', 0)
     co2_emissions = latest.get('co2_emissions_gco2e', 0)
     power = latest.get('gpu_power_watts', 0)
+    gpu_name = latest.get('gpu_name', 'Unknown GPU')
 
     # Also get memory total if available for percentage
     memory_total = latest.get('gpu_memory_total_mib', 0)
     memory_percent = (memory_used / memory_total * 100) if memory_total > 0 else 0
 
     cards_html = f"""
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0;">
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin: 20px 0;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; color: white; text-align: center;">
+            <h3 style="margin: 0 0 10px 0; font-size: 1em;">GPU Name</h3>
+            <h2 style="margin: 0; font-size: 1.2em;">{gpu_name}</h2>
+        </div>
+        <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 20px; border-radius: 10px; color: white; text-align: center;">
             <h3 style="margin: 0 0 10px 0; font-size: 1em;">GPU Utilization</h3>
             <h2 style="margin: 0; font-size: 2em;">{utilization:.1f}%</h2>
         </div>
