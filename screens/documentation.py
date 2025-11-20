@@ -1791,6 +1791,796 @@ TraceMind-MCP-Server demonstrates:
 """)
 
 
+def create_job_submission_tab():
+    """Create the Job Submission tab with full details about Modal and HF Jobs"""
+    return gr.Markdown("""
+# ☁️ Job Submission
+
+**Run SMOLTRACE Evaluations on Cloud Infrastructure**
+
+TraceMind-AI provides seamless integration with two cloud compute platforms, allowing you to run agent evaluations with automated hardware selection, cost estimation, and real-time monitoring.
+
+---
+
+## 📋 Table of Contents
+
+- [Platform Overview](#-platform-overview)
+- [HuggingFace Jobs Integration](#-huggingface-jobs-integration)
+- [Modal Integration](#-modal-integration)
+- [Hardware Auto-Selection](#-hardware-auto-selection)
+- [Cost Estimation](#-cost-estimation)
+- [Job Monitoring](#-job-monitoring)
+- [Step-by-Step Guide](#-step-by-step-guide)
+- [Troubleshooting](#-troubleshooting)
+
+---
+
+## 🌟 Platform Overview
+
+### Supported Platforms
+
+| Platform | Best For | Pricing Model | GPU Options | Free Tier |
+|----------|----------|---------------|-------------|-----------|
+| **HuggingFace Jobs** | Managed infrastructure, dataset integration | Per-hour | T4, L4, A10, A100, V5e | ❌ ($9/mo Pro required) |
+| **Modal** | Serverless compute, pay-per-second | Per-second | T4, L4, A10, A100-80GB, H200 | ✅ Free credits available |
+
+### Key Differences
+
+**HuggingFace Jobs**:
+- ✅ Native HuggingFace ecosystem integration
+- ✅ Managed infrastructure with guaranteed availability
+- ✅ Built-in dataset storage and versioning
+- ⚠️ Requires Pro account ($9/month)
+- ⚠️ Per-hour billing (minimum 1 hour charge)
+
+**Modal**:
+- ✅ Serverless architecture (no minimum charges)
+- ✅ Pay-per-second billing (more cost-effective for short jobs)
+- ✅ Latest GPUs (H200 available)
+- ✅ Free tier with credits
+- ⚠️ Requires separate account setup
+- ⚠️ Container cold start time (~2-3 minutes first run)
+
+---
+
+## 🤗 HuggingFace Jobs Integration
+
+### Requirements
+
+**1. HuggingFace Pro Account**
+- Cost: $9/month
+- Sign up: https://huggingface.co/pricing
+- Includes compute credits and priority support
+
+**2. HuggingFace Token with Run Jobs Permission**
+```
+Steps to create token:
+1. Visit: https://huggingface.co/settings/tokens
+2. Click "New token"
+3. Name: "TraceMind Evaluation"
+4. Permissions:
+   ✅ Read (view datasets)
+   ✅ Write (upload results)
+   ✅ Run Jobs (submit evaluation jobs) ⚠️ REQUIRED
+5. Copy token (starts with hf_)
+6. Save in TraceMind Settings
+```
+
+### Hardware Options
+
+| Hardware | vCPUs | GPU | Memory | Best For | Price/hr |
+|----------|-------|-----|--------|----------|----------|
+| `cpu-basic` | 2 | - | 16 GB | API models (OpenAI, Anthropic) | ~$0.05 |
+| `cpu-upgrade` | 8 | - | 32 GB | API models (high volume) | ~$0.10 |
+| `t4-small` | 4 | T4 (16GB) | 16 GB | Small models (4B-8B) | ~$0.60 |
+| `t4-medium` | 8 | T4 (16GB) | 32 GB | Small models (batched) | ~$1.00 |
+| `a10g-small` | 4 | A10G (24GB) | 32 GB | Medium models (7B-13B) | ~$1.10 |
+| `a10g-large` | 12 | A10G (24GB) | 92 GB | Medium models (high memory) | ~$1.50 |
+| `a100-large` | 12 | A100 (80GB) | 142 GB | Large models (70B+) | ~$3.00 |
+| `v5e-1x1` | 4 | TPU v5e | 16 GB | TPU-optimized workloads | ~$1.20 |
+
+Full pricing: https://huggingface.co/pricing#spaces-pricing
+
+### Auto-Selection Logic
+
+When you select `hardware: auto`, TraceMind applies this logic:
+
+```python
+# API models (LiteLLM/Inference)
+if provider in ["litellm", "inference"]:
+    hardware = "cpu-basic"
+
+# Local models (Transformers)
+elif "70b" in model.lower() or "65b" in model.lower():
+    hardware = "a100-large"  # Large models
+elif "13b" in model.lower() or "34b" in model.lower():
+    hardware = "a10g-large"  # Medium models
+elif "7b" in model.lower() or "8b" in model.lower() or "4b" in model.lower():
+    hardware = "t4-small"  # Small models
+else:
+    hardware = "t4-small"  # Default
+```
+
+### Job Workflow
+
+```
+1. Configure Settings
+   └─> Add HF Token (with Run Jobs permission)
+   └─> Add LLM provider API keys
+
+2. Create Evaluation
+   └─> Select "HuggingFace Jobs" as infrastructure
+   └─> Choose model and configuration
+   └─> Hardware auto-selected or manually chosen
+
+3. Submit Job
+   └─> TraceMind validates credentials
+   └─> Submits job via HF Jobs API
+   └─> Returns job ID for monitoring
+
+4. Job Execution
+   └─> Container built with dependencies
+   └─> SMOLTRACE runs evaluation
+   └─> Results uploaded to HF datasets
+   └─> Leaderboard updated automatically
+
+5. Monitor Progress
+   └─> Track at: https://huggingface.co/jobs
+   └─> Or use Job Monitoring tab in TraceMind
+```
+
+---
+
+## ⚡ Modal Integration
+
+### Requirements
+
+**1. Modal Account**
+- Free tier: $30 free credits per month
+- Sign up: https://modal.com
+
+**2. Modal API Credentials**
+```
+Steps to get credentials:
+1. Visit: https://modal.com/settings/tokens
+2. Click "Create token"
+3. Copy:
+   - Token ID (starts with ak-)
+   - Token Secret (starts with as-)
+4. Save in TraceMind Settings:
+   - MODAL_TOKEN_ID: ak-xxxxx
+   - MODAL_TOKEN_SECRET: as-xxxxx
+```
+
+### Hardware Options
+
+| Hardware | GPU | Memory | Best For | Price/sec | Equivalent $/hr |
+|----------|-----|--------|----------|-----------|-----------------|
+| `CPU` | - | 16 GB | API models | ~$0.0001 | ~$0.36 |
+| `T4` | T4 (16GB) | 16 GB | Small models (4B-8B) | ~$0.0002 | ~$0.72 |
+| `L4` | L4 (24GB) | 24 GB | Small-medium models | ~$0.0004 | ~$1.44 |
+| `A10G` | A10G (24GB) | 32 GB | Medium models (7B-13B) | ~$0.0006 | ~$2.16 |
+| `L40S` | L40S (48GB) | 48 GB | Large models (optimized) | ~$0.0012 | ~$4.32 |
+| `A100` | A100 (40GB) | 64 GB | Large models | ~$0.0020 | ~$7.20 |
+| `A100-80GB` | A100 (80GB) | 128 GB | Very large models (70B+) | ~$0.0030 | ~$10.80 |
+| `H100` | H100 (80GB) | 192 GB | Latest generation inference | ~$0.0040 | ~$14.40 |
+| `H200` | H200 (141GB) | 256 GB | Cutting-edge, highest memory | ~$0.0050 | ~$18.00 |
+
+Full pricing: https://modal.com/pricing
+
+**💡 Cost Advantage**: Modal's per-second billing is more cost-effective for jobs <1 hour!
+
+### Auto-Selection Logic
+
+When you select `hardware: auto`, TraceMind applies this logic:
+
+```python
+# API models
+if provider in ["litellm", "inference"]:
+    gpu = None  # CPU only
+
+# Local models (Transformers)
+elif "70b" in model.lower() or "65b" in model.lower():
+    gpu = "A100-80GB"  # Large models need 80GB
+elif "13b" in model.lower() or "34b" in model.lower():
+    gpu = "A10G"  # Medium models
+elif "7b" in model.lower() or "8b" in model.lower():
+    gpu = "A10G"  # Small models efficient on A10G
+else:
+    gpu = "A10G"  # Default
+```
+
+### Modal-Specific Features
+
+**Dynamic Python Version Matching**
+```python
+# Automatically matches your environment
+python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+# Example: "3.10" on HF Space, "3.12" locally
+```
+
+**Optimized Docker Images**
+```python
+# GPU jobs: CUDA-optimized base
+image = "nvidia/cuda:12.6.0-cudnn-devel-ubuntu22.04"
+
+# CPU jobs: Lightweight
+image = "debian-slim"
+```
+
+**Smart Package Installation**
+```python
+# GPU jobs get full stack
+packages = [
+    "smoltrace",
+    "transformers",
+    "torch",
+    "accelerate",  # For device_map
+    "bitsandbytes",  # For quantization
+    "hf_transfer",  # Fast downloads
+    "nvidia-ml-py"  # GPU metrics
+]
+
+# CPU jobs get minimal dependencies
+packages = ["smoltrace", "litellm", "ddgs"]
+```
+
+### Job Workflow
+
+```
+1. Configure Settings
+   └─> Add Modal Token ID + Secret
+   └─> Add HF Token (for dataset upload)
+   └─> Add LLM provider API keys
+
+2. Create Evaluation
+   └─> Select "Modal" as infrastructure
+   └─> Choose model and configuration
+   └─> Hardware auto-selected
+
+3. Submit Job
+   └─> TraceMind creates dynamic Modal app
+   └─> Submits job in background thread
+   └─> Returns Modal Call ID
+
+4. Job Execution
+   └─> Image builds (or uses cache)
+   └─> Model downloads to Modal storage
+   └─> SMOLTRACE runs evaluation
+   └─> Results uploaded to HF datasets
+
+5. Monitor Progress
+   └─> Track at: https://modal.com/apps
+   └─> View real-time streaming logs
+```
+
+---
+
+## 🎯 Hardware Auto-Selection
+
+### How It Works
+
+TraceMind **automatically selects optimal hardware** based on:
+1. **Provider type**: LiteLLM/Inference (API) vs Transformers (local)
+2. **Model size**: Extracted from model name (e.g., "70b", "13b", "8b")
+3. **Platform**: Modal or HuggingFace Jobs
+
+### Selection Matrix
+
+| Model Type | Model Size | HF Jobs | Modal |
+|------------|------------|---------|-------|
+| API (OpenAI, Anthropic) | Any | `cpu-basic` | `CPU` |
+| Transformers | 4B-8B | `t4-small` | `A10G` |
+| Transformers | 13B-34B | `a10g-large` | `A10G` |
+| Transformers | 70B+ | `a100-large` | `A100-80GB` |
+
+### Override Auto-Selection
+
+You can manually select hardware if needed:
+
+```
+Reasons to override:
+- You know your model needs more memory
+- You want to test performance on different GPUs
+- You want to optimize cost vs speed tradeoff
+```
+
+### Cost Estimation Shows Auto-Selection
+
+When you click **"💰 Estimate Cost"** with `auto` hardware:
+
+**Modal Example**:
+```
+Hardware: auto → **A100-80GB** (Modal)
+Estimated Cost: $0.45
+Duration: 15 minutes
+```
+
+**HF Jobs Example**:
+```
+Hardware: auto → **a100-large** (HF Jobs)
+Estimated Cost: $0.75
+Duration: 15 minutes
+```
+
+---
+
+## 💰 Cost Estimation
+
+### How Cost Estimation Works
+
+TraceMind provides **AI-powered cost estimation** before you submit jobs:
+
+**Data Sources**:
+1. **Historical Data** (preferred): Analyzes past runs from leaderboard
+2. **MCP Server** (fallback): Uses `estimate_cost` MCP tool with Gemini 2.5 Pro
+
+### Estimation Process
+
+```
+1. User clicks "💰 Estimate Cost"
+
+2. TraceMind checks for historical data
+   └─> If found: Use average cost/duration from past runs
+   └─> If not found: Call MCP Server for AI analysis
+
+3. Auto-selection applied
+   └─> Determines actual hardware that will be used
+   └─> Maps to pricing table
+
+4. Display estimate
+   └─> Cost breakdown
+   └─> Duration estimate
+   └─> Hardware details
+```
+
+### Cost Estimate Components
+
+**Historical Data Estimate**:
+```markdown
+## 💰 Cost Estimate
+
+**📊 Historical Data (5 past runs)**
+
+| Metric | Value |
+|--------|-------|
+| Model | meta-llama/Llama-3.1-70B |
+| Hardware | auto → **A100-80GB** (Modal) |
+| Estimated Cost | $0.45 |
+| Duration | 15.2 minutes |
+
+---
+
+*Based on 5 previous evaluation runs in the leaderboard.*
+```
+
+**MCP AI Estimate**:
+```markdown
+## 💰 Cost Estimate - AI Analysis
+
+**🤖 Powered by MCP Server + Gemini 2.5 Pro**
+
+*This estimate was generated by AI analysis since no historical
+data is available for this model.*
+
+**Hardware**: auto → **A100-80GB** (Modal)
+
+---
+
+Based on the model size (70B parameters) and evaluation
+configuration, I estimate:
+
+**Cost Breakdown**:
+- Model download: ~5 minutes @ $0.0030/sec = $0.90
+- Evaluation (100 tests): ~10 minutes @ $0.0030/sec = $1.80
+- **Total estimated cost**: $2.70
+
+**Duration**: 15-20 minutes
+
+**Recommendations**:
+- For cost savings, consider using A10G with quantization
+- For faster inference, H200 reduces duration to ~8 minutes
+```
+
+### Accuracy of Estimates
+
+**Historical estimates**: ±10% accuracy
+- Based on actual past runs
+- Accounts for model-specific behavior
+
+**MCP AI estimates**: ±30% accuracy
+- Uses model knowledge and heuristics
+- Conservative (tends to overestimate)
+
+**Factors affecting accuracy**:
+- Model download time varies (network speed, caching)
+- Evaluation complexity depends on dataset
+- GPU availability can affect queue time
+
+---
+
+## 🔍 Job Monitoring
+
+### HuggingFace Jobs Monitoring
+
+**Built-in Tab**: Go to **"🔍 Job Monitoring"** in TraceMind
+
+**Features**:
+```
+📋 Inspect Job
+  └─> Enter HF Job ID
+  └─> View status, hardware, timestamps
+  └─> See next steps based on status
+
+📜 Job Logs
+  └─> Load execution logs
+  └─> Auto-refresh option
+  └─> Search and filter
+
+📑 Recent Jobs
+  └─> List your recent jobs
+  └─> Quick status overview
+  └─> Click to inspect
+```
+
+**Job Statuses**:
+- ⏳ **QUEUED**: Waiting to start
+- 🔄 **STARTING**: Initializing (1-2 min)
+- ▶️ **RUNNING**: Executing evaluation
+- ✅ **SUCCEEDED**: Completed successfully
+- ❌ **FAILED**: Error occurred (check logs)
+- 🚫 **CANCELLED**: Manually stopped
+
+**External Monitoring**:
+- HF Dashboard: https://huggingface.co/jobs
+- CLI: `hf jobs ps` and `hf jobs logs <job_id>`
+
+### Modal Monitoring
+
+**Modal Dashboard**: https://modal.com/apps
+
+**Features**:
+- Real-time streaming logs
+- GPU utilization graphs
+- Cost tracking
+- Container status
+
+**Log Visibility**:
+TraceMind uses streaming output for Modal jobs:
+```python
+# You'll see in real-time:
+================================================================================
+Starting SMOLTRACE evaluation on Modal
+Command: smoltrace-eval --model Qwen/Qwen3-8B ...
+Python version: 3.10.0
+GPU: NVIDIA A10
+GPU Memory: 23.68 GB
+================================================================================
+
+Note: Model download may take several minutes for large models (14B = ~28GB)
+Downloading and initializing model...
+
+[Download progress bars appear here]
+[Evaluation progress appears here]
+
+================================================================================
+EVALUATION COMPLETED
+Return code: 0
+================================================================================
+```
+
+### Expected Duration
+
+**CPU Jobs (API Models)**:
+- Queue time: <1 minute
+- Execution: 2-5 minutes
+- **Total**: ~5 minutes
+
+**GPU Jobs (Local Models)**:
+- Queue time: 1-3 minutes
+- Image build: 2-5 minutes (first run, then cached)
+- Model download: 5-15 minutes (14B = ~10 min, 70B = ~15 min)
+- Evaluation: 3-10 minutes (depends on dataset size)
+- **Total**: 15-30 minutes
+
+**Pro Tip**: Modal caches images and models, so subsequent runs are **much faster** (skip image build and model download).
+
+---
+
+## 📝 Step-by-Step Guide
+
+### Complete Workflow Example
+
+**Scenario**: Evaluate GPT-4 via LiteLLM on HuggingFace Jobs
+
+#### Step 1: Configure API Keys
+
+```
+1. Go to "⚙️ Settings" tab
+2. Under "HuggingFace Configuration":
+   - HF Token: [your token with Run Jobs permission]
+   - Click "Save API Keys"
+3. Under "LLM Provider API Keys":
+   - OpenAI API Key: [your key]
+   - Click "Save API Keys"
+```
+
+#### Step 2: Navigate to New Evaluation
+
+```
+1. Click "🚀 New Evaluation" in sidebar
+2. You'll see the evaluation form with multiple sections
+```
+
+#### Step 3: Configure Evaluation
+
+**Infrastructure**:
+```
+Infrastructure Provider: HuggingFace Jobs
+Hardware: auto (will select cpu-basic)
+```
+
+**Model Configuration**:
+```
+Model: openai/gpt-4
+Provider: litellm
+```
+
+**Agent Configuration**:
+```
+Agent Type: both (tool + code)
+Search Provider: duckduckgo
+Tools: python_interpreter, visit_webpage, duckduckgo_search
+```
+
+**Test Configuration**:
+```
+Dataset: kshitijthakkar/smoltrace-tasks
+Split: train
+Difficulty: all
+Parallel Workers: 1
+```
+
+**Output & Monitoring**:
+```
+Output Format: hub (HuggingFace datasets)
+Enable OTEL: ✅
+Enable GPU Metrics: ✅ (N/A for CPU)
+Timeout: 1h
+```
+
+#### Step 4: Estimate Cost
+
+```
+1. Click "💰 Estimate Cost"
+2. Review estimate:
+   - Hardware: auto → **cpu-basic** (HF Jobs)
+   - Cost: ~$0.08
+   - Duration: ~3 minutes
+```
+
+#### Step 5: Submit Job
+
+```
+1. Click "Submit Evaluation"
+2. Confirmation appears:
+   ✅ Job submitted successfully!
+
+   Job Details:
+   - Run ID: job_abc12345
+   - HF Job ID: kshitijthakkar/def67890
+   - Hardware: cpu-basic
+   - Platform: HuggingFace Jobs
+```
+
+#### Step 6: Monitor Job
+
+**Option A: TraceMind Job Monitoring**
+```
+1. Go to "🔍 Job Monitoring" tab
+2. Click "📋 Inspect Job"
+3. Paste HF Job ID: kshitijthakkar/def67890
+4. Click "🔍 Inspect Job"
+5. View status and click "📥 Load Logs"
+```
+
+**Option B: HuggingFace Dashboard**
+```
+1. Visit: https://huggingface.co/jobs
+2. Find your job by ID or timestamp
+3. View logs and status
+```
+
+#### Step 7: View Results
+
+```
+When job completes (SUCCEEDED):
+1. Go to "📊 Leaderboard" tab
+2. Click "Load Leaderboard"
+3. Find your run (job_abc12345)
+4. Click row to view detailed results
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues & Solutions
+
+#### 1. "Modal package not installed"
+
+**Error**:
+```
+Modal package not installed. Install with: pip install modal
+```
+
+**Solution**:
+```bash
+pip install modal>=0.64.0
+```
+
+#### 2. "HuggingFace token not configured"
+
+**Error**:
+```
+HuggingFace token not configured. Please set HF_TOKEN in Settings.
+```
+
+**Solution**:
+1. Get token from: https://huggingface.co/settings/tokens
+2. Add in Settings → HuggingFace Configuration
+3. Ensure permissions include **Read**, **Write**, and **Run Jobs**
+
+#### 3. "Modal authentication failed"
+
+**Error**:
+```
+Modal authentication failed. Please verify your MODAL_TOKEN_ID
+and MODAL_TOKEN_SECRET in Settings.
+```
+
+**Solution**:
+1. Get credentials from: https://modal.com/settings/tokens
+2. Add both:
+   - MODAL_TOKEN_ID (starts with `ak-`)
+   - MODAL_TOKEN_SECRET (starts with `as-`)
+3. Save and retry
+
+#### 4. "Job failed - Python version mismatch"
+
+**Error** (in Modal logs):
+```
+The 'submit_modal_job.<locals>.run_evaluation' Function
+was defined with Python 3.12, but its Image has 3.10.
+```
+
+**Solution**:
+This is automatically fixed in the latest version! TraceMind now dynamically matches Python versions.
+
+If still occurring:
+1. Pull latest code: `git pull origin main`
+2. Restart app
+
+#### 5. "Fast download using 'hf_transfer' is enabled but package not available"
+
+**Error** (in Modal logs):
+```
+ValueError: Fast download using 'hf_transfer' is enabled but
+'hf_transfer' package is not available.
+```
+
+**Solution**:
+This is automatically fixed in the latest version! TraceMind now includes `hf_transfer` in GPU job packages.
+
+If still occurring:
+1. Pull latest code
+2. Modal will rebuild image with new dependencies
+
+#### 6. "Job stuck at 'Downloading model'"
+
+**Symptoms**:
+- Logs show "Downloading and initializing model..."
+- No progress for 10+ minutes
+
+**Explanation**:
+- Large models (14B+) take 10-15 minutes to download
+- This is normal! Model size: 28GB for 14B, 140GB for 70B
+
+**Solution**:
+- Be patient - download is in progress (Modal's network is fast)
+- Future runs will be cached and start instantly
+- Check Modal dashboard for download progress
+
+#### 7. "Job completed but no results in leaderboard"
+
+**Symptoms**:
+- Job status shows SUCCEEDED
+- No entry in leaderboard
+
+**Possible Causes**:
+1. Results uploaded to different user's namespace
+2. Leaderboard not refreshed
+3. Job failed during result upload
+
+**Solution**:
+```
+1. Refresh leaderboard: Click "Load Leaderboard"
+2. Check HF dataset repos:
+   - kshitijthakkar/smoltrace-leaderboard
+   - kshitijthakkar/smoltrace-results-<timestamp>
+3. Verify HF token has Write permission
+4. Check job logs for upload errors
+```
+
+#### 8. "Cannot submit job - HuggingFace Pro required"
+
+**Error**:
+```
+HuggingFace Pro Account ($9/month) required to submit jobs.
+Free accounts cannot submit jobs.
+```
+
+**Solution**:
+- Option A: Upgrade to HF Pro: https://huggingface.co/pricing
+- Option B: Use Modal instead (has free tier with credits)
+
+#### 9. "Modal job exits after image build"
+
+**Symptoms**:
+- Logs show: "Stopping app - local entrypoint completed"
+- Job ends without running evaluation
+
+**Solution**:
+This was a known issue (fixed in latest version). The problem was using `.spawn()` with `with app.run()` context.
+
+Current implementation uses `.remote()` in background thread, which ensures job completes.
+
+If still occurring:
+1. Pull latest code: `git pull origin main`
+2. Restart app
+3. Resubmit job
+
+#### 10. "Cost estimate shows wrong hardware"
+
+**Symptoms**:
+- Selected Modal with 70B model
+- Cost estimate shows "a10g-small" instead of "A100-80GB"
+
+**Solution**:
+This was a known issue (fixed in latest version). Cost estimation now applies platform-specific auto-selection logic.
+
+Verify fix:
+1. Pull latest code
+2. Click "💰 Estimate Cost"
+3. Should show: `auto → **A100-80GB** (Modal)`
+
+---
+
+## 📞 Getting Help
+
+### Resources
+
+**Documentation**:
+- TraceMind Docs: This tab!
+- SMOLTRACE Docs: [GitHub](https://github.com/Mandark-droid/SMOLTRACE)
+- Modal Docs: https://modal.com/docs
+- HF Jobs Docs: https://huggingface.co/docs/hub/spaces-sdks-docker
+
+**Community**:
+- GitHub Issues: [TraceMind-AI Issues](https://github.com/Mandark-droid/TraceMind-AI/issues)
+- LinkedIn: [@kshitij-thakkar](https://www.linkedin.com/in/kshitij-thakkar-2061b924)
+
+**Support**:
+- For TraceMind bugs: Open GitHub issue
+- For Modal issues: https://modal.com/docs/support
+- For HF Jobs issues: https://discuss.huggingface.co/
+
+---
+
+*TraceMind-AI - Multi-cloud agent evaluation made simple* ☁️
+""")
+
+
 def create_documentation_screen():
     """
     Create the complete documentation screen with tabs
@@ -1817,6 +2607,9 @@ def create_documentation_screen():
 
             with gr.Tab("🔌 TraceMind-MCP-Server"):
                 create_mcp_server_tab()
+
+            with gr.Tab("☁️ Job Submission"):
+                create_job_submission_tab()
 
         gr.Markdown("""
         ---

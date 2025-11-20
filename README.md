@@ -62,8 +62,9 @@ This platform is part of a complete agent evaluation ecosystem built on two foun
 - **📊 Real-time Leaderboard**: Live evaluation data from HuggingFace datasets
 - **🤖 Autonomous Agent Chat**: Interactive agent powered by smolagents with MCP tools (Track 2)
 - **💬 MCP Integration**: AI-powered analysis using remote MCP servers
-- **💰 Cost Estimation**: Calculate evaluation costs for different models and configurations
-- **🔍 Trace Visualization**: Detailed OpenTelemetry trace analysis
+- **☁️ Multi-Cloud Evaluation**: Submit jobs to HuggingFace Jobs or Modal (H200, A100, A10 GPUs)
+- **💰 Smart Cost Estimation**: Auto-select hardware and predict costs before running evaluations
+- **🔍 Trace Visualization**: Detailed OpenTelemetry trace analysis with GPU metrics
 - **📈 Performance Metrics**: GPU utilization, CO2 emissions, token usage tracking
 - **🧠 Agent Reasoning**: View step-by-step agent planning and tool execution
 
@@ -180,11 +181,13 @@ If you don't configure your own keys:
 
 ## 🚀 Submitting Evaluation Jobs
 
-TraceMind-AI allows you to submit evaluation jobs directly from the UI to HuggingFace Jobs infrastructure.
+TraceMind-AI allows you to submit evaluation jobs to **two cloud platforms**:
+- **HuggingFace Jobs**: Managed compute with H200, A100, A10, T4 GPUs
+- **Modal**: Serverless GPU compute with pay-per-second pricing
 
 ### ⚠️ Requirements for Job Submission
 
-**IMPORTANT**: To submit evaluation jobs, you need:
+**For HuggingFace Jobs:**
 
 1. **HuggingFace Pro Account** ($9/month)
    - Sign up at: https://huggingface.co/pricing
@@ -199,6 +202,19 @@ TraceMind-AI allows you to submit evaluation jobs directly from the UI to Huggin
      - ✅ **Run Jobs** (submit evaluation jobs)
    - ⚠️ Read-only tokens will NOT work
 
+**For Modal (Optional Alternative):**
+
+1. **Modal Account** (Free tier available)
+   - Sign up at: https://modal.com
+   - Generate API token at: https://modal.com/settings/tokens
+   - Pay-per-second billing (no monthly subscription)
+
+2. **Configure Modal Credentials in Settings**
+   - MODAL_TOKEN_ID (starts with `ak-`)
+   - MODAL_TOKEN_SECRET (starts with `as-`)
+
+**Both Platforms Require:**
+
 3. **Model Provider API Keys**
    - OpenAI, Anthropic, Google, etc.
    - Configure in Settings → LLM Provider API Keys
@@ -206,44 +222,58 @@ TraceMind-AI allows you to submit evaluation jobs directly from the UI to Huggin
 
 ### Hardware Options & Pricing
 
-TraceMind auto-selects hardware based on your model:
+TraceMind **auto-selects optimal hardware** based on your model size and provider:
 
+**HuggingFace Jobs:**
 - **cpu-basic**: API models (OpenAI, Anthropic) - ~$0.05/hr
 - **t4-small**: Small models (4B-8B parameters) - ~$0.60/hr
 - **a10g-small**: Medium models (7B-13B) - ~$1.10/hr
 - **a100-large**: Large models (70B+) - ~$3.00/hr
+- Pricing: https://huggingface.co/pricing#spaces-pricing
 
-Full pricing: https://huggingface.co/pricing#spaces-pricing
+**Modal:**
+- **CPU**: API models - ~$0.0001/sec
+- **A10G**: Small-medium models (7B-13B) - ~$0.0006/sec
+- **A100-80GB**: Large models (70B+) - ~$0.0030/sec
+- **H200**: Fastest inference - ~$0.0050/sec
+- Pricing: https://modal.com/pricing
 
 ### How to Submit a Job
 
 1. **Configure API Keys** (Settings tab):
-   - Add HF Token (with Run Jobs permission)
-   - Add Modal API credentials (optional, for Modal execution)
+   - Add HF Token (with Run Jobs permission) - **required for both platforms**
+   - Add Modal credentials (MODAL_TOKEN_ID + MODAL_TOKEN_SECRET) - **for Modal only**
    - Add LLM provider keys (OpenAI, Anthropic, etc.)
 
 2. **Create Evaluation** (New Evaluation tab):
-   - Select infrastructure: HuggingFace Jobs or Modal
+   - **Select infrastructure**: HuggingFace Jobs or Modal
    - Choose model and agent type
-   - Configure hardware (or use "auto")
+   - Configure hardware (or use **"auto"** for smart selection)
    - Set timeout (default: 1h)
+   - Click "💰 Estimate Cost" to preview cost/duration
    - Click "Submit Evaluation"
 
 3. **Monitor Job**:
-   - View job ID and status
-   - Track at: https://huggingface.co/jobs
+   - View job ID and status in confirmation screen
+   - **HF Jobs**: Track at https://huggingface.co/jobs or use Job Monitoring tab
+   - **Modal**: Track at https://modal.com/apps
    - Results automatically appear in leaderboard when complete
 
 ### What Happens During a Job
 
-1. Job starts on HuggingFace infrastructure
-2. SMOLTRACE evaluates your model with OpenTelemetry tracing
-3. Results uploaded to 4 HuggingFace datasets:
+1. Job starts on selected infrastructure (HF Jobs or Modal)
+2. Docker container built with required dependencies
+3. SMOLTRACE evaluates your model with OpenTelemetry tracing
+4. Results uploaded to 4 HuggingFace datasets:
    - Leaderboard entry (summary stats)
    - Results dataset (test case details)
    - Traces dataset (OTEL spans)
    - Metrics dataset (GPU metrics, CO2 emissions)
-4. Results appear in TraceMind leaderboard automatically
+5. Results appear in TraceMind leaderboard automatically
+
+**Expected Duration:**
+- CPU jobs (API models): 2-5 minutes
+- GPU jobs (local models): 15-30 minutes (includes model download)
 
 ## Configuration
 
