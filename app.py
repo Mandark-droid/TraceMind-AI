@@ -3709,7 +3709,7 @@ Result: {result}
 
         eval_estimate_btn.click(
             fn=on_hardware_change,
-            inputs=[eval_model, eval_hardware, eval_provider, eval_infrastructure],
+            inputs=[eval_model, eval_hardware, eval_provider, eval_infra_provider],
             outputs=[eval_cost_estimate]
         )
 
