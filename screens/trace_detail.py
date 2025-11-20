@@ -579,25 +579,19 @@ def create_gpu_summary_cards(df):
     if df is None or df.empty:
         return "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
 
-    # Extract and prepare the data (same as dashboard function does)
-    df = extract_metrics_data(df)
-
-    if df.empty:
-        return "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
-
     # Get the latest row (assumes df is sorted by timestamp)
-    latest = df.iloc[-1].to_dict()  # Convert Series to dict for .get() method
+    latest = df.iloc[-1]
 
-    # Extract values (with safe fallback)
-    utilization = latest.get('gpu_utilization_percent', 0)
-    memory_used = latest.get('gpu_memory_used_mib', 0)
-    temperature = latest.get('gpu_temperature_celsius', 0)
-    co2_emissions = latest.get('co2_emissions_gco2e', 0)
-    power = latest.get('gpu_power_watts', 0)
-    gpu_name = latest.get('gpu_name', 'Unknown GPU')
+    # Extract values using direct column access with fallback
+    utilization = latest['gpu_utilization_percent'] if 'gpu_utilization_percent' in df.columns else 0
+    memory_used = latest['gpu_memory_used_mib'] if 'gpu_memory_used_mib' in df.columns else 0
+    temperature = latest['gpu_temperature_celsius'] if 'gpu_temperature_celsius' in df.columns else 0
+    co2_emissions = latest['co2_emissions_gco2e'] if 'co2_emissions_gco2e' in df.columns else 0
+    power = latest['gpu_power_watts'] if 'gpu_power_watts' in df.columns else 0
+    gpu_name = latest['gpu_name'] if 'gpu_name' in df.columns else 'Unknown GPU'
 
     # Also get memory total if available for percentage
-    memory_total = latest.get('gpu_memory_total_mib', 0)
+    memory_total = latest['gpu_memory_total_mib'] if 'gpu_memory_total_mib' in df.columns else 0
     memory_percent = (memory_used / memory_total * 100) if memory_total > 0 else 0
 
     cards_html = f"""
