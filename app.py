@@ -175,18 +175,31 @@ def on_test_case_select(evt: gr.SelectData, df):
 
     print(f"[DEBUG] on_test_case_select called with index: {evt.index}")
 
+    # Helper function to return empty updates for all 8 outputs
+    def return_error():
+        return (
+            gr.update(),  # run_detail_screen
+            gr.update(),  # trace_detail_screen
+            gr.update(),  # trace_title
+            gr.update(),  # trace_metadata_html
+            gr.update(),  # trace_thought_graph
+            gr.update(),  # span_visualization
+            gr.update(),  # span_details_table
+            gr.update()   # span_details_json
+        )
+
     # Check if we have a selected run
     if current_selected_run is None:
         print("[ERROR] No run selected - current_selected_run is None")
         gr.Warning("Please select a run from the leaderboard first")
-        return {}
+        return return_error()
 
     try:
         # Get selected test case
         selected_idx = evt.index[0]
         if df is None or df.empty or selected_idx >= len(df):
             gr.Warning("Invalid test case selection")
-            return {}
+            return return_error()
 
         test_case = df.iloc[selected_idx].to_dict()
         trace_id = test_case.get('trace_id')
@@ -197,7 +210,7 @@ def on_test_case_select(evt: gr.SelectData, df):
         traces_dataset = current_selected_run.get('traces_dataset')
         if not traces_dataset:
             gr.Warning("No traces dataset found in current run")
-            return {}
+            return return_error()
 
         # Update global trace info for MCP debug_trace tool
         _current_trace_info["trace_id"] = trace_id
@@ -208,7 +221,7 @@ def on_test_case_select(evt: gr.SelectData, df):
 
         if not trace_data:
             gr.Warning(f"Trace not found: {trace_id}")
-            return {}
+            return return_error()
 
         current_selected_trace = trace_data
 
@@ -278,7 +291,7 @@ def on_test_case_select(evt: gr.SelectData, df):
         import traceback
         traceback.print_exc()
         gr.Warning(f"Error loading trace: {e}")
-        return {}
+        return return_error()
 
 
 
