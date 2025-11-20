@@ -984,7 +984,29 @@ SMOLTRACE automatically detects available resources:
 
 ## 🏗️ Integration with HuggingFace Jobs
 
-SMOLTRACE works seamlessly with HuggingFace Jobs:
+SMOLTRACE works seamlessly with HuggingFace Jobs for running evaluations on cloud infrastructure.
+
+### ⚠️ Requirements to Submit Jobs
+
+**IMPORTANT**: To submit jobs via TraceMind UI or HF CLI, you must:
+
+1. **🔑 HuggingFace Pro Account**
+   - You must be a HuggingFace Pro user
+   - **Credit card required** to pay for compute usage
+   - Sign up at: https://huggingface.co/pricing
+
+2. **🎫 HuggingFace Token Permissions**
+   - Your HF token needs **Read + Write** permissions
+   - Token must have **"Run Jobs"** permission enabled
+   - Create/update token at: https://huggingface.co/settings/tokens
+   - ⚠️ Read-only tokens will **NOT** work for job submission
+
+3. **💳 Billing**
+   - You will be charged for compute usage
+   - Pricing: https://huggingface.co/pricing#spaces-pricing
+   - Monitor usage at: https://huggingface.co/settings/billing
+
+### Example Job Configuration
 
 ```yaml
 # job.yaml
@@ -1005,15 +1027,21 @@ command: |
     --leaderboard-repo huggingface/smolagents-leaderboard
 ```
 
-**Hardware Selection:**
-- 🔧 **gpu-a10**: Perfect for 7B-13B models (cost-effective)
-- 🚀 **gpu-h200**: Use for 70B+ models (high performance)
-- 💻 **cpu-basic**: API models (OpenAI, Anthropic via LiteLLM)
+### Hardware Selection
 
-**Benefits:**
+- 🔧 **cpu-basic**: API models (OpenAI, Anthropic via LiteLLM) - ~$0.05/hr
+- 🎮 **t4-small**: Small models (4B-8B) - ~$0.60/hr
+- 🔧 **a10g-small**: Medium models (7B-13B) - ~$1.10/hr
+- 🚀 **a100-large**: Large models (70B+) - ~$3.00/hr
+
+**Pricing**: See https://huggingface.co/pricing#spaces-pricing
+
+### Benefits
+
 - 📊 **Automatic Upload**: Results → HuggingFace datasets
 - 🔄 **Reproducible**: Same environment every time
 - ⚡ **Optimized Compute**: Right hardware for your model size
+- 💰 **Pay-per-use**: Only pay for actual compute time
 
 ---
 

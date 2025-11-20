@@ -81,9 +81,17 @@ TraceMind demonstrates enterprise MCP client usage by connecting to [TraceMind-m
 ## Quick Start
 
 ### Prerequisites
+
+**For Viewing Leaderboard & Analysis:**
 - Python 3.10+
 - HuggingFace account (for authentication)
-- HuggingFace token (optional, for private datasets)
+
+**For Submitting Evaluation Jobs:**
+- ⚠️ **HuggingFace Pro account** ($9/month) with credit card
+- HuggingFace token with **Read + Write + Run Jobs** permissions
+- API keys for model providers (OpenAI, Anthropic, etc.)
+
+> **Note**: Job submission requires a paid HuggingFace Pro account to access compute infrastructure. Viewing existing results is free.
 
 ### Installation
 
@@ -149,13 +157,11 @@ Both APIs have generous free tiers:
 - Click "Get API Key" → Create project → Generate key
 - **Free tier**: 1,500 requests/day (sufficient for evaluation)
 
-**HuggingFace Token**:
+**HuggingFace Token** (for viewing):
 - Visit: https://huggingface.co/settings/tokens
-- Click "New token" → Name it (e.g., "TraceMind Access")
+- Click "New token" → Name it (e.g., "TraceMind Viewer")
 - **Permissions**:
-  - Select "Read" for viewing datasets (sufficient for most features)
-  - Select "Write" if you want to use synthetic dataset generation & push features (via MCP server)
-- **Recommended**: Use "Write" permissions for full functionality
+  - Select "Read" for viewing datasets (sufficient for browsing leaderboard)
 - **Free tier**: No rate limits for public dataset access
 
 ### Default Configuration (Without Your Keys)
@@ -171,6 +177,73 @@ If you don't configure your own keys:
 ✅ **No server persistence**: Keys never saved to disk
 ✅ **Not exposed via API**: Settings forms use `api_name=False`
 ✅ **HTTPS encryption**: All API calls over secure connections
+
+## 🚀 Submitting Evaluation Jobs
+
+TraceMind-AI allows you to submit evaluation jobs directly from the UI to HuggingFace Jobs infrastructure.
+
+### ⚠️ Requirements for Job Submission
+
+**IMPORTANT**: To submit evaluation jobs, you need:
+
+1. **HuggingFace Pro Account** ($9/month)
+   - Sign up at: https://huggingface.co/pricing
+   - **Credit card required** to pay for compute usage
+   - Free accounts cannot submit jobs
+
+2. **HuggingFace Token with Enhanced Permissions**
+   - Visit: https://huggingface.co/settings/tokens
+   - Create token with these permissions:
+     - ✅ **Read** (view datasets)
+     - ✅ **Write** (upload results)
+     - ✅ **Run Jobs** (submit evaluation jobs)
+   - ⚠️ Read-only tokens will NOT work
+
+3. **Model Provider API Keys**
+   - OpenAI, Anthropic, Google, etc.
+   - Configure in Settings → LLM Provider API Keys
+   - Passed securely as job secrets
+
+### Hardware Options & Pricing
+
+TraceMind auto-selects hardware based on your model:
+
+- **cpu-basic**: API models (OpenAI, Anthropic) - ~$0.05/hr
+- **t4-small**: Small models (4B-8B parameters) - ~$0.60/hr
+- **a10g-small**: Medium models (7B-13B) - ~$1.10/hr
+- **a100-large**: Large models (70B+) - ~$3.00/hr
+
+Full pricing: https://huggingface.co/pricing#spaces-pricing
+
+### How to Submit a Job
+
+1. **Configure API Keys** (Settings tab):
+   - Add HF Token (with Run Jobs permission)
+   - Add Modal API credentials (optional, for Modal execution)
+   - Add LLM provider keys (OpenAI, Anthropic, etc.)
+
+2. **Create Evaluation** (New Evaluation tab):
+   - Select infrastructure: HuggingFace Jobs or Modal
+   - Choose model and agent type
+   - Configure hardware (or use "auto")
+   - Set timeout (default: 1h)
+   - Click "Submit Evaluation"
+
+3. **Monitor Job**:
+   - View job ID and status
+   - Track at: https://huggingface.co/jobs
+   - Results automatically appear in leaderboard when complete
+
+### What Happens During a Job
+
+1. Job starts on HuggingFace infrastructure
+2. SMOLTRACE evaluates your model with OpenTelemetry tracing
+3. Results uploaded to 4 HuggingFace datasets:
+   - Leaderboard entry (summary stats)
+   - Results dataset (test case details)
+   - Traces dataset (OTEL spans)
+   - Metrics dataset (GPU metrics, CO2 emissions)
+4. Results appear in TraceMind leaderboard automatically
 
 ## Configuration
 

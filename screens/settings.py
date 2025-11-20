@@ -78,11 +78,11 @@ def create_settings_screen():
             with gr.Row():
                 with gr.Column(scale=4):
                     hf_token = gr.Textbox(
-                        label="HuggingFace Token",
+                        label="HuggingFace Token (Required for Job Submission)",
                         placeholder="Enter your HF token (starts with 'hf_...')",
                         type="password",
                         value=os.environ.get("HF_TOKEN", ""),
-                        info="Get your token at: https://huggingface.co/settings/tokens"
+                        info="⚠️ Token needs: Read + Write + Run Jobs permissions | Pro account required"
                     )
                 with gr.Column(scale=1):
                     hf_status = gr.Markdown("⚪ Not configured")
@@ -167,13 +167,22 @@ LITELLM_API_KEY=...""",
 
             ### HuggingFace Token
 
+            **For Job Submission (Required):**
+
             1. Go to [HuggingFace Settings](https://huggingface.co/settings/tokens)
             2. Click "New token"
-            3. Give it a name (e.g., "TraceMind Access")
-            4. Select "Read" permissions
+            3. Give it a name (e.g., "TraceMind Job Submission")
+            4. Select these permissions:
+               - ✅ **Read** (view datasets)
+               - ✅ **Write** (upload results)
+               - ✅ **Run Jobs** (submit evaluation jobs)
             5. Create and copy the token (starts with `hf_...`)
 
-            **Note**: Read-only access is sufficient for viewing datasets
+            **⚠️ IMPORTANT Requirements:**
+            - You must have a **HuggingFace Pro account** ($9/month)
+            - **Credit card required** to pay for compute usage
+            - Read-only tokens will NOT work for job submission
+            - Sign up for Pro: https://huggingface.co/pricing
 
             ---
 
