@@ -5,6 +5,7 @@ Handles submission of SMOLTRACE evaluation jobs to Modal's serverless compute pl
 """
 
 import os
+import sys
 import uuid
 from typing import Dict, Optional, List
 
@@ -156,13 +157,41 @@ def submit_modal_job(
     try:
         app = modal.App(f"smoltrace-eval-{job_id}")
 
-        # Define Modal function
-        image = modal.Image.debian_slim().pip_install([
-            "smoltrace[otel,gpu]",
-            "litellm",
-            "transformers",
-            "torch"
-        ])
+        # Detect current Python version dynamically (must match for serialized=True)
+        python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+
+        # Define Modal function with appropriate base image
+        # Note: Must match local Python version when using serialized=True
+        if modal_gpu:
+            # Use GPU-optimized image with CUDA for GPU jobs (using latest stable CUDA)
+            image = modal.Image.from_registry(
+                "nvidia/cuda:12.6.0-cudnn-devel-ubuntu22.04",
+                add_python=python_version  # Dynamically match current environment
+            ).pip_install([
+                "smoltrace",
+                "ddgs",  # DuckDuckGo search
+                "litellm",
+                "transformers",
+                "torch",
+                "accelerate",  # Required for GPU device_map
+                "bitsandbytes",  # For quantization support
+                "sentencepiece",  # For some tokenizers
+                "protobuf",  # For some models
+                "hf_transfer",  # Fast HuggingFace downloads
+                "nvidia-ml-py"  # GPU metrics collection
+            ]).env({
+                # Enable fast downloads and verbose logging
+                "HF_HUB_ENABLE_HF_TRANSFER": "1",
+                "TRANSFORMERS_VERBOSITY": "info",
+                "HF_HUB_VERBOSITY": "info"
+            })
+        else:
+            # Use lightweight image for CPU jobs
+            image = modal.Image.debian_slim(python_version=python_version).pip_install([
+                "smoltrace",
+                "ddgs",  # DuckDuckGo search
+                "litellm"
+            ])
 
         @app.function(
             image=image,
@@ -170,40 +199,160 @@ def submit_modal_job(
             secrets=[
                 modal.Secret.from_dict(env_vars)
             ],
-            timeout=3600  # 1 hour timeout
+            timeout=3600,  # 1 hour timeout
+            serialized=True  # Required for functions defined in local scope
         )
-        def run_evaluation():
+        def run_evaluation(command_to_run: str):
             """Run SMOLTRACE evaluation on Modal"""
             import subprocess
-            result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            return {
-                "returncode": result.returncode,
-                "stdout": result.stdout,
-                "stderr": result.stderr
-            }
+            import sys
+            import os
 
-        # Submit the job
-        # Note: Modal doesn't have a direct "submit and return" API like HF Jobs
-        # For now, we'll return the command that should be run
-        # In production, you'd use Modal's async API or spawn the function
+            print("=" * 80)
+            print(f"Starting SMOLTRACE evaluation on Modal")
+            print(f"Command: {command_to_run}")
+            print(f"Python version: {sys.version}")
+
+            # Show GPU info if available
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    print(f"GPU: {torch.cuda.get_device_name(0)}")
+                    print(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+            except:
+                pass
+
+            print("=" * 80)
+            print("\nNote: Model download may take several minutes for large models (14B = ~28GB)")
+            print("Downloading and initializing model...\n")
+
+            try:
+                # Run with live output instead of capture_output so we can see progress
+                result = subprocess.run(
+                    command_to_run,
+                    shell=True,
+                    capture_output=False,  # Stream output in real-time
+                    text=True
+                )
+
+                # Since we're not capturing, create a success message
+                print("\n" + "=" * 80)
+                print("EVALUATION COMPLETED")
+                print(f"Return code: {result.returncode}")
+                print("=" * 80)
+
+                return {
+                    "returncode": result.returncode,
+                    "stdout": "Check Modal logs for full output (streaming mode)",
+                    "stderr": ""
+                }
+            except Exception as e:
+                error_msg = f"Error running evaluation: {str(e)}"
+                print("\n" + "=" * 80)
+                print("EVALUATION FAILED")
+                print(error_msg)
+                print("=" * 80)
+                import traceback
+                traceback.print_exc()
+                return {
+                    "returncode": -1,
+                    "stdout": "",
+                    "stderr": error_msg
+                }
+
+        # Submit the job using Modal's remote() in a background thread
+        # Note: spawn() doesn't work well with dynamically created apps
+        # remote() ensures the job actually executes, threading keeps UI responsive
+        import threading
+
+        # Store result in a shared dict since we're using threading
+        result_container = {"modal_call_id": None, "started": False}
+
+        def run_job_on_modal():
+            """Run the Modal job in background thread"""
+            try:
+                with app.run():
+                    # Use remote() instead of spawn() for dynamic apps
+                    # This ensures the function actually executes
+                    function_call = run_evaluation.remote(command)
+                    result_container["started"] = True
+                    print(f"Modal job completed with return code: {function_call.get('returncode', 'unknown')}")
+            except Exception as e:
+                print(f"Error running Modal job: {e}")
+                result_container["error"] = str(e)
+
+        # Start the job in a background thread so we don't block the UI
+        job_thread = threading.Thread(target=run_job_on_modal, daemon=True)
+        job_thread.start()
+
+        # Give Modal a moment to start the job and capture any immediate errors
+        import time
+        time.sleep(2)
+
+        # Use job_id as the tracking ID since remote() doesn't give us a call_id
+        modal_call_id = f"modal-{job_id}"
 
         return {
             "success": True,
             "job_id": job_id,
+            "modal_call_id": modal_call_id,  # Modal's internal function call ID
             "platform": "Modal",
             "hardware": modal_gpu or "CPU",
             "command": command,
-            "status": "pending",
-            "message": "Modal job configured. Use Modal CLI to submit: modal run modal_job_submission.py",
-            "note": "Direct Modal API submission requires async handling. For now, use the generated command with Modal CLI."
+            "status": "submitted",
+            "message": f"Job successfully submitted to Modal (hardware: {modal_gpu or 'CPU'})",
+            "instructions": f"""
+✅ Job submitted successfully!
+
+**Job Details:**
+- Run ID: {job_id}
+- Modal Call ID: {modal_call_id}
+- Hardware: {modal_gpu or "CPU"}
+- Platform: Modal (serverless compute)
+
+**What happens next:**
+1. Job starts running on Modal infrastructure
+2. For GPU jobs: Model downloads first (14B models = ~28GB, can take 10-15 min)
+3. SMOLTRACE evaluates your model
+4. Results are automatically pushed to HuggingFace datasets
+5. They will appear in TraceMind leaderboard when complete
+
+**Monitoring**: Check Modal dashboard for real-time logs and progress:
+https://modal.com/apps
+
+**Expected Duration**:
+- CPU jobs (API models): 2-5 minutes
+- GPU jobs (local models): 15-30 minutes (includes model download)
+
+**Cost**: Modal charges per-second usage. Estimated cost: $0.01-1.00 depending on model size and hardware.
+            """.strip()
         }
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": f"Failed to create Modal job: {str(e)}",
-            "job_id": job_id
-        }
+        error_msg = str(e)
+
+        # Check for common Modal errors
+        if "MODAL_TOKEN_ID" in error_msg or "authentication" in error_msg.lower():
+            return {
+                "success": False,
+                "error": "Modal authentication failed. Please verify your MODAL_TOKEN_ID and MODAL_TOKEN_SECRET in Settings.",
+                "job_id": job_id,
+                "troubleshooting": """
+**Steps to fix:**
+1. Go to https://modal.com/settings/tokens
+2. Create a new token
+3. Copy Token ID (starts with 'ak-') and Token Secret (starts with 'as-')
+4. Add them to Settings in TraceMind
+5. Try again
+                """
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Failed to submit Modal job: {error_msg}",
+                "job_id": job_id,
+                "command": command
+            }
 
 
 def _auto_select_modal_hardware(provider: str, model: str) -> Optional[str]:

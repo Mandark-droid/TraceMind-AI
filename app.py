@@ -2270,10 +2270,10 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
 
                 with gr.Row():
                     eval_model = gr.Textbox(
-                        value="openai/gpt-4",
+                        value="openai/gpt-4.1-nano",
                         label="Model",
-                        info="Model ID (e.g., openai/gpt-4, meta-llama/Llama-3.1-8B-Instruct)",
-                        placeholder="openai/gpt-4"
+                        info="Model ID (e.g., openai/gpt-4.1-nano, meta-llama/Llama-3.1-8B-Instruct)",
+                        placeholder="openai/gpt-4.1-nano"
                     )
 
                     eval_provider = gr.Dropdown(
@@ -2462,11 +2462,47 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
         # Evaluation Helper Functions
         # ============================================================================
 
-        def estimate_job_cost_with_mcp_fallback(model, hardware):
+        def estimate_job_cost_with_mcp_fallback(model, hardware, provider="litellm", infrastructure="HuggingFace Jobs"):
             """
             Estimate cost using historical leaderboard data first,
             then fall back to MCP server if model not found
+
+            Args:
+                model: Model name
+                hardware: Hardware selection from UI
+                provider: Provider type (litellm, transformers, etc.)
+                infrastructure: Infrastructure provider (Modal, HuggingFace Jobs)
             """
+            # Handle auto-selection for both infrastructure providers
+            selected_hardware_display = None
+
+            if hardware == "auto":
+                if infrastructure == "Modal":
+                    # Modal auto-selection
+                    from utils.modal_job_submission import _auto_select_modal_hardware
+                    modal_gpu = _auto_select_modal_hardware(provider, model)
+                    selected_hardware_display = f"auto → **{modal_gpu or 'CPU'}** (Modal)"
+
+                    # Map Modal GPU names to HF Jobs equivalent for cost estimation
+                    modal_to_hf_map = {
+                        None: "cpu-basic",  # CPU
+                        "T4": "t4-small",
+                        "L4": "l4x1",
+                        "A10G": "a10g-small",
+                        "L40S": "a10g-large",
+                        "A100": "a100-large",
+                        "A100-80GB": "a100-large",  # Use a100-large as proxy for cost
+                        "H100": "a100-large",  # Use a100 as proxy
+                        "H200": "a100-large",  # Use a100 as proxy
+                    }
+                    hardware = modal_to_hf_map.get(modal_gpu, "a10g-small")
+                else:
+                    # HuggingFace Jobs auto-selection
+                    from utils.hf_jobs_submission import _auto_select_hf_hardware
+                    hf_hardware = _auto_select_hf_hardware(provider, model)
+                    selected_hardware_display = f"auto → **{hf_hardware}** (HF Jobs)"
+                    hardware = hf_hardware
+
             try:
                 # Try to get historical data from leaderboard
                 df = data_loader.load_leaderboard()
@@ -2480,13 +2516,16 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     avg_duration = model_runs['avg_duration_ms'].mean()
                     has_cost_data = model_runs['total_cost_usd'].sum() > 0
 
-                    return {
+                    result = {
                         'source': 'historical',
                         'total_cost_usd': f"{avg_cost:.4f}",
                         'estimated_duration_minutes': f"{(avg_duration / 1000 / 60):.1f}",
                         'historical_runs': len(model_runs),
                         'has_cost_data': has_cost_data
                     }
+                    if selected_hardware_display:
+                        result['hardware_display'] = selected_hardware_display
+                    return result
                 else:
                     # No historical data - use MCP tool
                     print(f"[INFO] No historical data for {model}, using MCP cost estimator")
@@ -2517,7 +2556,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                             extracted_duration = duration_match.group(0) if duration_match else 'See details below'
 
                             # Return with markdown content
-                            return {
+                            result_dict = {
                                 'source': 'mcp',
                                 'total_cost_usd': extracted_cost,
                                 'estimated_duration_minutes': extracted_duration,
@@ -2525,9 +2564,12 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                                 'has_cost_data': True,
                                 'markdown_details': result  # Include full markdown response
                             }
+                            if selected_hardware_display:
+                                result_dict['hardware_display'] = selected_hardware_display
+                            return result_dict
                         else:
                             # Unexpected response type
-                            return {
+                            result_dict = {
                                 'source': 'mcp',
                                 'total_cost_usd': 'N/A',
                                 'estimated_duration_minutes': 'N/A',
@@ -2535,12 +2577,15 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                                 'has_cost_data': False,
                                 'error': f'MCP returned unexpected type: {type(result)}'
                             }
+                            if selected_hardware_display:
+                                result_dict['hardware_display'] = selected_hardware_display
+                            return result_dict
                     except Exception as mcp_error:
                         print(f"[ERROR] MCP cost estimation failed: {mcp_error}")
                         import traceback
                         traceback.print_exc()
                         # Return a result indicating MCP is unavailable
-                        return {
+                        result_dict = {
                             'source': 'mcp',
                             'total_cost_usd': 'N/A',
                             'estimated_duration_minutes': 'N/A',
@@ -2548,14 +2593,17 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                             'has_cost_data': False,
                             'error': str(mcp_error)
                         }
+                        if selected_hardware_display:
+                            result_dict['hardware_display'] = selected_hardware_display
+                        return result_dict
 
             except Exception as e:
                 print(f"[ERROR] Cost estimation failed (leaderboard load): {e}")
                 return None
 
-        def on_hardware_change(model, hardware):
+        def on_hardware_change(model, hardware, provider, infrastructure):
             """Update cost estimate when hardware selection changes"""
-            cost_est = estimate_job_cost_with_mcp_fallback(model, hardware)
+            cost_est = estimate_job_cost_with_mcp_fallback(model, hardware, provider, infrastructure)
 
             if cost_est is None:
                 # Error occurred
@@ -2583,6 +2631,9 @@ No historical data available for **{model}**.
                 cost_display = f"${cost_est['total_cost_usd']}" if cost_est['has_cost_data'] else "N/A (cost tracking not enabled)"
                 duration = cost_est['estimated_duration_minutes']
 
+                # Use custom hardware display if available, otherwise show hardware as-is
+                hardware_display = cost_est.get('hardware_display', hardware.upper())
+
                 return f"""## 💰 Cost Estimate
 
 **{source_label}**
@@ -2590,7 +2641,7 @@ No historical data available for **{model}**.
 | Metric | Value |
 |--------|-------|
 | **Model** | {model} |
-| **Hardware** | {hardware.upper()} |
+| **Hardware** | {hardware_display} |
 | **Estimated Cost** | {cost_display} |
 | **Duration** | {duration} minutes |
 
@@ -2602,13 +2653,18 @@ No historical data available for **{model}**.
                 # MCP Cost Estimator - return the full markdown from MCP
                 markdown_details = cost_est.get('markdown_details', '')
 
+                # Add hardware selection note if applicable
+                hardware_note = ""
+                if cost_est.get('hardware_display'):
+                    hardware_note = f"\n\n**Hardware**: {cost_est['hardware_display']}\n\n"
+
                 # Add header to identify the source
                 header = f"""## 💰 Cost Estimate - AI Analysis
 
 **🤖 Powered by MCP Server + Gemini 2.5 Pro**
 
 *This estimate was generated by AI analysis since no historical data is available for this model.*
-
+{hardware_note}
 ---
 
 """
@@ -2697,13 +2753,14 @@ No historical data available for **{model}**.
             # Success - build success message
             job_id = result.get('job_id', 'unknown')
             hf_job_id = result.get('hf_job_id', job_id)  # Get actual HF job ID
+            modal_call_id = result.get('modal_call_id', None)  # Get Modal call ID if available
             job_platform = result.get('platform', infra_provider)
             job_hardware = result.get('hardware', hardware)
             job_status = result.get('status', 'submitted')
             job_message = result.get('message', '')
 
             # Estimate cost
-            cost_est = estimate_job_cost_with_mcp_fallback(model, hardware)
+            cost_est = estimate_job_cost_with_mcp_fallback(model, hardware, provider, infra_provider)
             has_cost_estimate = cost_est is not None
 
             cost_info_html = ""
@@ -2770,9 +2827,15 @@ No historical data available for **{model}**.
                 <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 5px; margin: 15px 0;">
                     <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Run ID (SMOLTRACE)</div>
                     <div style="font-family: monospace; font-size: 0.95em; font-weight: bold;">{job_id}</div>
+                    {f'''
+                    <div style="font-size: 0.9em; opacity: 0.9; margin-top: 10px; margin-bottom: 5px;">Modal Call ID</div>
+                    <div style="font-family: monospace; font-size: 0.95em; font-weight: bold;">{modal_call_id}</div>
+                    <div style="font-size: 0.8em; opacity: 0.8; margin-top: 8px;">View on Modal Dashboard: <a href="https://modal.com/apps" target="_blank" style="color: rgba(255,255,255,0.9);">https://modal.com/apps</a></div>
+                    ''' if modal_call_id else f'''
                     <div style="font-size: 0.9em; opacity: 0.9; margin-top: 10px; margin-bottom: 5px;">HF Job ID</div>
                     <div style="font-family: monospace; font-size: 0.95em; font-weight: bold;">{hf_job_id}</div>
                     <div style="font-size: 0.8em; opacity: 0.8; margin-top: 8px;">Use this ID to monitor: <code style="background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 3px;">hf jobs inspect {hf_job_id}</code></div>
+                    '''}
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px;">
@@ -3646,7 +3709,7 @@ Result: {result}
 
         eval_estimate_btn.click(
             fn=on_hardware_change,
-            inputs=[eval_model, eval_hardware],
+            inputs=[eval_model, eval_hardware, eval_provider, eval_infrastructure],
             outputs=[eval_cost_estimate]
         )
 
