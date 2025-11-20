@@ -586,7 +586,7 @@ def create_gpu_summary_cards(df):
         return "<div style='padding: 20px; text-align: center;'>⚠️ No GPU metrics available (expected for API models)</div>"
 
     # Get the latest row (assumes df is sorted by timestamp)
-    latest = df.iloc[-1]
+    latest = df.iloc[-1].to_dict()  # Convert Series to dict for .get() method
 
     # Extract values (with safe fallback)
     utilization = latest.get('gpu_utilization_percent', 0)
