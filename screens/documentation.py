@@ -966,16 +966,11 @@ GPU metrics and performance data:
 
 ### Hardware Selection
 
-```bash
-# Automatic (default)
-# API models → CPU
-# Local models → GPU if available
+Hardware is selected in HuggingFace Jobs configuration (`hardware:` field in job.yaml), not via CLI flags.
 
-# Manual override
---hardware cpu
---hardware gpu_a10
---hardware gpu_h200
-```
+SMOLTRACE automatically detects available resources:
+- API models (via litellm) → Uses CPU
+- Local models (via transformers) → Uses available GPU if present
 
 ### OpenTelemetry Options
 
@@ -994,7 +989,7 @@ SMOLTRACE works seamlessly with HuggingFace Jobs:
 ```yaml
 # job.yaml
 name: SMOLTRACE Evaluation
-hardware: gpu-h200
+hardware: gpu-a10  # Use gpu-h200 for 70B+ models
 environment:
   MODEL: meta-llama/Llama-3.1-8B
   HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -1010,10 +1005,15 @@ command: |
     --leaderboard-repo huggingface/smolagents-leaderboard
 ```
 
+**Hardware Selection:**
+- 🔧 **gpu-a10**: Perfect for 7B-13B models (cost-effective)
+- 🚀 **gpu-h200**: Use for 70B+ models (high performance)
+- 💻 **cpu-basic**: API models (OpenAI, Anthropic via LiteLLM)
+
 **Benefits:**
-- 💰 **H200 GPUs**: 2x faster evaluation
 - 📊 **Automatic Upload**: Results → HuggingFace datasets
 - 🔄 **Reproducible**: Same environment every time
+- ⚡ **Optimized Compute**: Right hardware for your model size
 
 ---
 
@@ -1053,13 +1053,18 @@ smoltrace-eval --model gpt-4 --num-tests 10
 smoltrace-eval --model gpt-4 --num-tests 1000
 ```
 
-### 2. Use Appropriate Hardware
-```bash
-# API models → CPU (no GPU needed)
-smoltrace-eval --model openai/gpt-4 --hardware cpu
+### 2. Choose Appropriate Hardware in HF Jobs
+Hardware selection happens in your HuggingFace Jobs configuration:
 
-# Local models → GPU (faster)
-smoltrace-eval --model meta-llama/Llama-3.1-8B --hardware gpu_h200
+```yaml
+# For API models (OpenAI, Anthropic, etc.)
+hardware: cpu-basic
+
+# For 7B-13B local models
+hardware: gpu-a10
+
+# For 70B+ local models
+hardware: gpu-h200
 ```
 
 ### 3. Enable Full Observability
