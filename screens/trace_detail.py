@@ -550,7 +550,7 @@ def extract_metrics_data(metrics_df):
                                    gpu_temperature_celsius, gpu_power_watts, co2_emissions_gco2e
 
     Returns:
-        DataFrame ready for visualization with delta values for cumulative counters
+        DataFrame ready for visualization
     """
     if metrics_df is None or metrics_df.empty:
         return pd.DataFrame()
@@ -565,27 +565,6 @@ def extract_metrics_data(metrics_df):
 
     # Sort by timestamp
     df = df.sort_values('timestamp').reset_index(drop=True)
-
-    # Calculate deltas for cumulative counters (CO2 and Power Cost)
-    # These are cumulative metrics, so we need to show the incremental change
-    cumulative_metrics = ['co2_emissions_gco2e', 'power_cost_usd']
-
-    for metric in cumulative_metrics:
-        if metric in df.columns:
-            # Calculate delta (difference from previous value)
-            # First value gets 0 (since we don't know the previous state)
-            df[f'{metric}_delta'] = df[metric].diff().fillna(0)
-
-            # Handle negative deltas (can happen if counter resets)
-            # If delta is negative, use the absolute value of current value
-            df.loc[df[f'{metric}_delta'] < 0, f'{metric}_delta'] = df.loc[df[f'{metric}_delta'] < 0, metric]
-
-    # Replace the original cumulative columns with delta values for visualization
-    if 'co2_emissions_gco2e' in df.columns and 'co2_emissions_gco2e_delta' in df.columns:
-        df['co2_emissions_gco2e'] = df['co2_emissions_gco2e_delta']
-
-    if 'power_cost_usd' in df.columns and 'power_cost_usd_delta' in df.columns:
-        df['power_cost_usd'] = df['power_cost_usd_delta']
 
     return df
 
@@ -692,7 +671,7 @@ def create_gpu_metrics_dashboard(metrics_df):
         return None
 
     # Create subplots for GPU metrics
-    # We'll show: Utilization, Memory, Temperature, Power, CO2 (delta), Power Cost (delta)
+    # We'll show: Utilization, Memory, Temperature, Power, CO2, Power Cost
     fig = make_subplots(
         rows=3, cols=2,
         subplot_titles=[
@@ -700,8 +679,8 @@ def create_gpu_metrics_dashboard(metrics_df):
             'GPU Memory (MiB)',
             'GPU Temperature (°C)',
             'GPU Power (W)',
-            'CO2 Emissions - Incremental (g)',
-            'Power Cost - Incremental (USD)'
+            'CO2 Emissions (g)',
+            'Power Cost (USD)'
         ],
         vertical_spacing=0.10,
         horizontal_spacing=0.12,
@@ -711,14 +690,13 @@ def create_gpu_metrics_dashboard(metrics_df):
     colors = ['#667eea', '#f093fb', '#4facfe', '#FFE66D', '#43e97b', '#FF6B6B']
 
     # Define metrics to plot
-    # Note: CO2 and Power Cost are shown as delta/incremental values (calculated in extract_metrics_data)
     metrics_config = [
         ('gpu_utilization_percent', 'GPU Utilization (%)', 1, 1, colors[0]),
         ('gpu_memory_used_mib', 'GPU Memory (MiB)', 1, 2, colors[1]),
         ('gpu_temperature_celsius', 'GPU Temperature (°C)', 2, 1, colors[2]),
         ('gpu_power_watts', 'GPU Power (W)', 2, 2, colors[3]),
-        ('co2_emissions_gco2e', 'CO2 Emissions - Incremental (g)', 3, 1, colors[4]),
-        ('power_cost_usd', 'Power Cost - Incremental (USD)', 3, 2, colors[5]),
+        ('co2_emissions_gco2e', 'CO2 Emissions (g)', 3, 1, colors[4]),
+        ('power_cost_usd', 'Power Cost (USD)', 3, 2, colors[5]),
     ]
 
     for col_name, title, row, col, color in metrics_config:
