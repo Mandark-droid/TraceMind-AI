@@ -478,6 +478,7 @@ Contributions are welcome! Please open an issue or submit a pull request.
 - **Gradio Team** - For Gradio 6 with MCP integration
 - **HuggingFace** - For Spaces hosting and dataset infrastructure
 - **Google** - For Gemini API access
+- **[Eliseu Silva](https://huggingface.co/elismasilva)** - For the [gradio_htmlplus](https://huggingface.co/spaces/elismasilva/gradio_htmlplus) custom component that powers our interactive leaderboard table. Eliseu's timely help and collaboration during the hackathon was invaluable!
 
 ## Links
 
