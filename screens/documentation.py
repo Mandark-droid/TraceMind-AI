@@ -388,7 +388,8 @@ response = completion(
 
 ---
 
-## 🎯 Supported Frameworks
+<details>
+<summary><h2>🎯 Supported Frameworks</h2></summary>
 
 TraceVerde automatically instruments **30+ LLM frameworks and providers**:
 
@@ -443,6 +444,8 @@ TraceVerde automatically instruments **30+ LLM frameworks and providers**:
 | **Ollama** | ✅ Full Support | Local LLM runtime |
 
 **No code changes needed** - just import and use as normal!
+
+</details>
 
 ---
 
