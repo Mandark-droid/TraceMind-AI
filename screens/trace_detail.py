@@ -595,11 +595,8 @@ def create_gpu_summary_cards(df):
     memory_used = df['gpu_memory_used_mib'].max() if 'gpu_memory_used_mib' in df.columns else 0
     temperature = df['gpu_temperature_celsius'].max() if 'gpu_temperature_celsius' in df.columns else 0
 
-    # CO2 emissions is a cumulative counter - calculate delta (final - initial)
-    if 'co2_emissions_gco2e' in df.columns and not df.empty:
-        co2_emissions = df['co2_emissions_gco2e'].iloc[-1] - df['co2_emissions_gco2e'].iloc[0]
-    else:
-        co2_emissions = 0
+    # CO2 emissions - use max value (cumulative total)
+    co2_emissions = df['co2_emissions_gco2e'].max() if 'co2_emissions_gco2e' in df.columns else 0
 
     power = df['gpu_power_watts'].mean() if 'gpu_power_watts' in df.columns else 0
 
