@@ -124,7 +124,7 @@ smoltrace-eval \\
 
 ### For Developers
 - ✅ **Zero-code Instrumentation**: Just import and go
-- ✅ **Framework Agnostic**: Works with LiteLLM, Transformers, LangChain, CrewAI, etc.
+- ✅ **Framework Agnostic**: Works with LiteLLM, Transformers, HF Inference, Ollama, etc.
 - ✅ **Production Ready**: Lightweight, minimal overhead
 - ✅ **Standards Compliant**: Uses OpenTelemetry conventions
 
@@ -390,16 +390,57 @@ response = completion(
 
 ## 🎯 Supported Frameworks
 
-TraceVerde automatically instruments:
+TraceVerde automatically instruments **30+ LLM frameworks and providers**:
 
-| Framework | Status | Import Required |
-|-----------|--------|-----------------|
-| **LiteLLM** | ✅ Full Support | `from litellm import completion` |
-| **Transformers** | ✅ Full Support | `from transformers import pipeline` |
-| **LangChain** | ✅ Full Support | `from langchain import ...` |
-| **CrewAI** | ✅ Full Support | `from crewai import Agent` |
-| **smolagents** | ✅ Full Support | `from smolagents import ...` |
-| **OpenAI SDK** | ✅ Full Support | `from openai import OpenAI` |
+### 🔥 Popular Frameworks
+| Framework | Status | Description |
+|-----------|--------|-------------|
+| **LiteLLM** | ✅ Full Support | Universal LLM gateway (100+ models) |
+| **Transformers** | ✅ Full Support | HuggingFace models |
+| **LangChain** | ✅ Full Support | LLM application framework |
+| **LangGraph** | ✅ Full Support | LangChain graph-based workflows |
+| **CrewAI** | ✅ Full Support | Multi-agent orchestration |
+| **smolagents** | ✅ Full Support | HuggingFace agent framework |
+| **LlamaIndex** | ✅ Full Support | Data framework for LLMs |
+
+### 🏢 LLM Providers
+| Provider | Status | Description |
+|----------|--------|-------------|
+| **OpenAI** | ✅ Full Support | GPT-4, GPT-3.5, etc. |
+| **Anthropic** | ✅ Full Support | Claude models |
+| **Google AI** | ✅ Full Support | Gemini models |
+| **Cohere** | ✅ Full Support | Command models |
+| **Mistral AI** | ✅ Full Support | Mistral models |
+| **Groq** | ✅ Full Support | Fast LLM inference |
+| **Together AI** | ✅ Full Support | Open source models |
+| **Anyscale** | ✅ Full Support | Ray-based LLM serving |
+| **Replicate** | ✅ Full Support | Open source model API |
+| **SambaNova** | ✅ Full Support | Enterprise AI platform |
+| **Hyperbolic** | ✅ Full Support | Decentralized AI |
+
+### ☁️ Cloud AI Services
+| Service | Status | Description |
+|---------|--------|-------------|
+| **Azure OpenAI** | ✅ Full Support | Azure-hosted OpenAI |
+| **AWS Bedrock** | ✅ Full Support | Amazon LLM service |
+| **Bedrock Agents** | ✅ Full Support | AWS agent framework |
+| **Vertex AI** | ✅ Full Support | Google Cloud AI |
+
+### 🤖 Agent & Workflow Frameworks
+| Framework | Status | Description |
+|-----------|--------|-------------|
+| **AutoGen** | ✅ Full Support | Microsoft agent framework |
+| **OpenAI Agents** | ✅ Full Support | OpenAI assistants API |
+| **Pydantic AI** | ✅ Full Support | Type-safe agent framework |
+| **DSPy** | ✅ Full Support | Programming framework for LMs |
+| **Haystack** | ✅ Full Support | NLP framework |
+| **Guardrails AI** | ✅ Full Support | LLM validation framework |
+| **Instructor** | ✅ Full Support | Structured LLM outputs |
+
+### 🖥️ Local & Self-Hosted
+| Provider | Status | Description |
+|----------|--------|-------------|
+| **Ollama** | ✅ Full Support | Local LLM runtime |
 
 **No code changes needed** - just import and use as normal!
 
