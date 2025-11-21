@@ -201,7 +201,8 @@ def create_thought_graph(spans: List[Dict[str, Any]], trace_id: str = "Unknown")
             completion = int(node_data.get('completion_tokens', 0) or 0)  # Handle None values and convert to int
             hover += f"Tokens: {prompt + completion} (p:{prompt}, c:{completion})<br>"
         if 'cost' in node_data and node_data['cost'] is not None:
-            hover += f"Cost: ${node_data['cost']:.6f}<br>"
+            cost = float(node_data['cost'])  # Handle string values
+            hover += f"Cost: ${cost:.6f}<br>"
 
         hover_text.append(hover)
 
