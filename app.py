@@ -2239,7 +2239,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                     info="Get your token from https://huggingface.co/settings/tokens"
                 )
 
-                push_btn = gr.Button("📤 Push to HuggingFace Hub", variant="secondary", size="lg", visible=False)
+                push_btn = gr.Button("📤 Push to HuggingFace Hub", variant="primary", size="lg", visible=False)
                 push_status = gr.Markdown("")
 
         # ============================================================================
@@ -2315,11 +2315,15 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
                         placeholder="Leave empty for default"
                     )
 
+                    # Check if HF token is already configured in Settings
+                    hf_token_configured = bool(os.environ.get("HF_TOKEN"))
+                    hf_token_info = "✅ Already configured in Settings - leave empty to use saved token" if hf_token_configured else "Your HF token for private models (optional)"
+
                     eval_hf_token = gr.Textbox(
                         label="HuggingFace Token",
                         type="password",
-                        info="Your HF token for private models (optional)",
-                        placeholder="hf_..."
+                        info=hf_token_info,
+                        placeholder="hf_... (leave empty if already set in Settings)"
                     )
 
             # Section 3: Agent Configuration
