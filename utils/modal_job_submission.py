@@ -357,7 +357,13 @@ https://modal.com/apps
 
 def _auto_select_modal_hardware(provider: str, model: str) -> Optional[str]:
     """
-    Automatically select Modal hardware based on model and provider
+    Automatically select Modal hardware based on model and provider.
+
+    Memory estimation for agentic workloads:
+    - Model weights (FP16): ~2GB per 1B params
+    - KV cache for long contexts: ~1.5-2x model size for agentic tasks
+    - Inference overhead: ~20-30% additional
+    - Total: ~4-5GB per 1B params for safe agentic execution
 
     Args:
         provider: Provider type
@@ -371,13 +377,31 @@ def _auto_select_modal_hardware(provider: str, model: str) -> Optional[str]:
         return None
 
     # Local models need GPU - select based on model size
+    # Conservative allocation for agentic tasks (model weights + KV cache + inference overhead)
     model_lower = model.lower()
 
-    if "70b" in model_lower or "65b" in model_lower:
-        return "A100-80GB"  # Large models need A100 80GB
-    elif "13b" in model_lower or "34b" in model_lower:
-        return "A10G"  # Medium models work well on A10G
-    elif "7b" in model_lower or "8b" in model_lower:
-        return "A10G"  # Small models efficient on A10G
+    # Extract model size in billions
+    if "70b" in model_lower or "72b" in model_lower or "65b" in model_lower:
+        # 70B+ models: ~280-350GB needed -> H200 (140GB VRAM, faster throughput)
+        return "H200"
+    elif "30b" in model_lower or "32b" in model_lower or "33b" in model_lower or "34b" in model_lower:
+        # 30-34B models: ~120-170GB needed -> A100 80GB required
+        return "A100-80GB"
+    elif "14b" in model_lower or "13b" in model_lower or "15b" in model_lower:
+        # 13-15B models: ~52-75GB needed -> A100 40GB or A100 80GB
+        return "A100-80GB"
+    elif "8b" in model_lower or "9b" in model_lower:
+        # 8-9B models: ~32-45GB needed -> A10G 24GB may OOM, use A100
+        return "A100-40GB"
+    elif "7b" in model_lower:
+        # 7B models: ~28-35GB needed -> A10G can work with quantization
+        return "A10G"
+    elif "3b" in model_lower or "4b" in model_lower:
+        # 3-4B models: ~12-20GB needed -> A10G safe
+        return "A10G"
+    elif "1b" in model_lower or "2b" in model_lower or "0.5b" in model_lower:
+        # Small models < 3B: ~4-10GB needed -> T4 sufficient
+        return "T4"
     else:
-        return "A10G"  # Default to A10G for unknown sizes
+        # Default to A10G for unknown sizes (safer than T4)
+        return "A10G"
