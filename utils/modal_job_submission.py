@@ -378,30 +378,35 @@ def _auto_select_modal_hardware(provider: str, model: str) -> Optional[str]:
 
     # Local models need GPU - select based on model size
     # Conservative allocation for agentic tasks (model weights + KV cache + inference overhead)
+    # Memory estimation: ~4-5GB per 1B params for safe agentic execution
     model_lower = model.lower()
 
-    # Extract model size in billions
-    if "70b" in model_lower or "72b" in model_lower or "65b" in model_lower:
-        # 70B+ models: ~280-350GB needed -> H200 (140GB VRAM, faster throughput)
-        return "H200"
-    elif "30b" in model_lower or "32b" in model_lower or "33b" in model_lower or "34b" in model_lower:
-        # 30-34B models: ~120-170GB needed -> A100 80GB required
-        return "A100-80GB"
-    elif "14b" in model_lower or "13b" in model_lower or "15b" in model_lower:
-        # 13-15B models: ~52-75GB needed -> A100 40GB or A100 80GB
-        return "A100-80GB"
-    elif "8b" in model_lower or "9b" in model_lower:
-        # 8-9B models: ~32-45GB needed -> L40S (48GB VRAM)
-        return "L40S"
-    elif "7b" in model_lower:
-        # 7B models: ~28-35GB needed -> A10G can work with quantization
-        return "A10G"
-    elif "3b" in model_lower or "4b" in model_lower:
-        # 3-4B models: ~12-20GB needed -> A10G safe
-        return "A10G"
-    elif "1b" in model_lower or "2b" in model_lower or "0.5b" in model_lower:
-        # Small models < 3B: ~4-10GB needed -> T4 sufficient
-        return "T4"
+    # Extract model size using regex to capture the number before 'b'
+    import re
+    size_match = re.search(r'(\d+\.?\d*)b', model_lower)
+
+    if size_match:
+        model_size = float(size_match.group(1))
+
+        # Complete coverage from 0.5B to 100B+ with no gaps
+        if model_size >= 49:
+            # 49B-100B+: H200 (140GB VRAM)
+            return "H200"
+        elif model_size >= 25:
+            # 25B-48B: A100-80GB (e.g., Gemma-27B, Kimi-48B, 30B, 34B)
+            return "A100-80GB"
+        elif model_size >= 13:
+            # 13B-24B: A100-80GB (e.g., 13B, 14B, 15B, 20B, 22B)
+            return "A100-80GB"
+        elif model_size >= 6:
+            # 6B-12B: L40S 48GB (e.g., 6B, 7B, 8B, 9B, 10B, 11B, 12B)
+            return "L40S"
+        elif model_size >= 1:
+            # 1B-5B: T4 16GB (e.g., 1B, 2B, 3B, 4B, 5B)
+            return "T4"
+        else:
+            # < 1B: T4 16GB
+            return "T4"
     else:
-        # Default to A10G for unknown sizes (safer than T4)
-        return "A10G"
+        # No size detected in model name - default to L40S (safe middle ground)
+        return "L40S"

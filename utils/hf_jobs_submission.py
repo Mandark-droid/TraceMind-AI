@@ -239,34 +239,33 @@ def _auto_select_hf_hardware(provider: str, model: str) -> str:
 
     # Local models need GPU - select based on model size
     # Conservative allocation for agentic tasks (model weights + KV cache + inference overhead)
+    # Memory estimation: ~4-5GB per 1B params for safe agentic execution
     model_lower = model.lower()
 
-    # Extract model size in billions
-    # Check for explicit size markers
-    if "70b" in model_lower or "72b" in model_lower or "65b" in model_lower:
-        # 70B+ models: ~280-350GB needed -> A100 80GB (may need quantization)
-        return "a100-large"
-    elif "30b" in model_lower or "32b" in model_lower or "33b" in model_lower or "34b" in model_lower:
-        # 30-34B models: ~120-170GB needed -> A100 80GB required
-        return "a100-large"
-    elif "14b" in model_lower or "13b" in model_lower or "15b" in model_lower:
-        # 13-15B models: ~52-75GB needed -> A100 40GB or A100 80GB
-        return "a100-large"
-    elif "8b" in model_lower or "9b" in model_lower:
-        # 8-9B models: ~32-45GB needed -> A10G 24GB may OOM, use A100
-        return "a100-large"
-    elif "7b" in model_lower:
-        # 7B models: ~28-35GB needed -> A10G can work with quantization
-        return "a10g-large"
-    elif "3b" in model_lower or "4b" in model_lower:
-        # 3-4B models: ~12-20GB needed -> A10G safe
-        return "a10g-large"
-    elif "1b" in model_lower or "2b" in model_lower or "0.5b" in model_lower:
-        # Small models < 3B: ~4-10GB needed -> T4 sufficient
-        return "t4-small"
+    # Extract model size using regex to capture the number before 'b'
+    import re
+    size_match = re.search(r'(\d+\.?\d*)b', model_lower)
+
+    if size_match:
+        model_size = float(size_match.group(1))
+
+        # Complete coverage from 0.5B to 100B+ with no gaps
+        # HF Jobs has limited GPU options: t4-small, a10g-large, a100-large
+        if model_size >= 13:
+            # 13B-100B+: A100 large (e.g., 13B, 14B, 27B, 30B, 48B, 70B)
+            return "a100-large"
+        elif model_size >= 6:
+            # 6B-12B: A10G large (e.g., 6B, 7B, 8B, 9B, 10B, 11B, 12B)
+            return "a10g-large"
+        elif model_size >= 1:
+            # 1B-5B: T4 small (e.g., 1B, 2B, 3B, 4B, 5B)
+            return "t4-small"
+        else:
+            # < 1B: T4 small
+            return "t4-small"
     else:
-        # Default to A10G for unknown sizes (safer than T4)
-        return "a10g-large"
+        # No size detected in model name - default to A100 (safe for agentic workloads)
+        return "a100-large"
 
 
 def check_job_status(hf_job_id: str, hf_token: Optional[str] = None) -> Dict:
