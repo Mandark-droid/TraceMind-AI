@@ -391,8 +391,8 @@ def _auto_select_modal_hardware(provider: str, model: str) -> Optional[str]:
         # 13-15B models: ~52-75GB needed -> A100 40GB or A100 80GB
         return "A100-80GB"
     elif "8b" in model_lower or "9b" in model_lower:
-        # 8-9B models: ~32-45GB needed -> A10G 24GB may OOM, use A100
-        return "A100-40GB"
+        # 8-9B models: ~32-45GB needed -> L40S (48GB VRAM)
+        return "L40S"
     elif "7b" in model_lower:
         # 7B models: ~28-35GB needed -> A10G can work with quantization
         return "A10G"
