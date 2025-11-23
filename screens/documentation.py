@@ -167,6 +167,13 @@ TraceMind demonstrates the complete MCP ecosystem:
 | **MCP Server** | Building MCP (Track 1) | [HF Space](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server) |
 | **TraceMind-AI** | MCP in Action (Track 2) | [HF Space](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind) |
 
+### 🎬 Demo Videos
+
+| Video | Duration | Link |
+|-------|----------|------|
+| **TraceMind-MCP-Server Quick Demo** | 5 mins | [Watch on Loom](https://www.loom.com/share/d4d0003f06fa4327b46ba5c081bdf835) |
+| **TraceMind-MCP-Server Full Demo** | 20 mins | [Watch on Loom](https://www.loom.com/share/de559bb0aef749559c79117b7f951250) |
+
 ### 📢 Community Posts
 
 - 🎉 [**TraceMind Teaser**](https://www.linkedin.com/posts/kshitij-thakkar-2061b924_mcpsfirstbirthdayhackathon-mcpsfirstbirthdayhackathon-activity-7395686529270013952-g_id) - MCP's 1st Birthday Hackathon announcement
@@ -1798,6 +1805,15 @@ curl -H "Authorization: Bearer $GEMINI_API_KEY" \\
 - **Source Code**: [GitHub](https://github.com/Mandark-droid/TraceMind-mcp-server)
 - **Client (This App)**: [TraceMind-AI](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind)
 - **MCP Spec**: [modelcontextprotocol.io](https://modelcontextprotocol.io)
+
+---
+
+## 🎬 Demo Videos
+
+| Video | Duration | Description |
+|-------|----------|-------------|
+| **Quick Demo** | 5 mins | [Watch on Loom](https://www.loom.com/share/d4d0003f06fa4327b46ba5c081bdf835) - Quick overview of TraceMind-MCP-Server features |
+| **Full Demo** | 20 mins | [Watch on Loom](https://www.loom.com/share/de559bb0aef749559c79117b7f951250) - Comprehensive walkthrough with detailed explanations |
 
 ---
 
