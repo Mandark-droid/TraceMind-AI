@@ -517,7 +517,7 @@ def create_cost_comparison_chart(df):
 
 **Purpose**: Connect to TraceMind MCP Server via MCP protocol.
 
-**Implementation**: (See [MCP_INTEGRATION.md](MCP_INTEGRATION_TRACEMIND_AI.md) for full code)
+**Implementation**: (See [MCP_INTEGRATION.md](MCP_INTEGRATION.md) for full code)
 
 **Key Methods**:
 - `connect()`: Establish SSE connection to MCP server
@@ -605,7 +605,7 @@ class DataLoader:
 
 ## MCP Client Architecture
 
-**Full details in**: [MCP_INTEGRATION.md](MCP_INTEGRATION_TRACEMIND_AI.md)
+**Full details in**: [MCP_INTEGRATION.md](MCP_INTEGRATION.md)
 
 **Summary**:
 - **Async Client**: `mcp_client/client.py` - async MCP protocol implementation
@@ -629,7 +629,7 @@ def some_event_handler(mcp_client):
 
 ## Agent Framework Integration
 
-**Full details in**: [MCP_INTEGRATION.md](MCP_INTEGRATION_TRACEMIND_AI.md)
+**Full details in**: [MCP_INTEGRATION.md](MCP_INTEGRATION.md)
 
 **Framework**: smolagents (HuggingFace's agent framework)
 
@@ -1023,10 +1023,10 @@ with gr.Tab("Trace Detail", visible=False) as trace_tab:
 
 ## Related Documentation
 
-- [README.md](PROPOSED_README_TRACEMIND_AI.md) - Overview and quick start
-- [USER_GUIDE.md](USER_GUIDE_TRACEMIND_AI.md) - Complete screen-by-screen guide
-- [MCP_INTEGRATION.md](MCP_INTEGRATION_TRACEMIND_AI.md) - MCP client implementation
-- [TraceMind MCP Server Architecture](ARCHITECTURE_MCP_SERVER.md) - Server-side architecture
+- [README.md](README.md) - Overview and quick start
+- [USER_GUIDE.md](USER_GUIDE.md) - Complete screen-by-screen guide
+- [MCP_INTEGRATION.md](MCP_INTEGRATION.md) - MCP client implementation
+- [TraceMind MCP Server](https://github.com/Mandark-droid/TraceMind-mcp-server/blob/main/ARCHITECTURE.md) - Server-side architecture
 
 ---
 

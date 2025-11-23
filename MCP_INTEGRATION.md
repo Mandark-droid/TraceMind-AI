@@ -696,9 +696,8 @@ async def load_leaderboard_with_insights():
 
 ## Related Documentation
 
-- [USER_GUIDE.md](USER_GUIDE_TRACEMIND_AI.md) - Complete UI walkthrough
-- [JOB_SUBMISSION.md](JOB_SUBMISSION_TRACEMIND_AI.md) - Evaluation job guide
-- [ARCHITECTURE.md](ARCHITECTURE_TRACEMIND_AI.md) - Technical architecture
+- [USER_GUIDE.md](USER_GUIDE.md) - Complete UI walkthrough
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture
 - [TraceMind MCP Server Documentation](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server)
 
 ---
