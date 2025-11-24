@@ -399,40 +399,6 @@ To prevent rate limits during evaluation:
 
 ---
 
-## 🗺️ Future Roadmap
-
-We're committed to making TraceMind the most comprehensive agent evaluation platform. Here's what's coming next:
-
-### 1. 🏗️ Dynamic MCP Server Generator
-Generate domain-specific MCP servers on-the-fly with custom tools via AI code generation.
-**Use case**: Rapidly prototype MCP servers without writing boilerplate code.
-
-### 2. 🎯 Intelligent Model Router
-Automatically select optimal models based on real-time leaderboard data, budget constraints, and accuracy requirements.
-**Use case**: Optimize evaluation costs while maintaining quality for large-scale continuous evaluation.
-
-### 3. 🔬 Automated A/B Testing Framework
-Compare multiple agent configurations with statistical significance testing and automatic winner selection.
-**Use case**: Find optimal agent configuration scientifically before production deployment.
-
-### 4. 👥 Collaborative Evaluation Workspace
-Real-time collaboration with shared runs, team comments, cost budgets, and stakeholder reports.
-**Use case**: Streamline team workflows and coordinate evaluation efforts across distributed teams.
-
-### 5. 🔄 CI/CD Pipeline Integration
-Automated agent evaluation on every PR with GitHub Actions, result comments, and merge blocking on quality drops.
-**Use case**: Catch agent performance regressions before production and maintain quality standards automatically.
-
-### 6. 🧰 Integrated SMOLTRACE CLI Features
-Bring all SMOLTRACE CLI tools into the UI: clean, copy, distill, merge, export, validate, anonymize datasets.
-**Use case**: Manage evaluation datasets efficiently without command-line, with visual preview and undo capabilities.
-
----
-
-**Implementation Timeline**: Q1-Q4 2026 | **Want to contribute?** Join our community and help shape the future of agent evaluation!
-
----
-
 ## Credits
 
 **Built for**: MCP's 1st Birthday Hackathon (Nov 14-30, 2025)
