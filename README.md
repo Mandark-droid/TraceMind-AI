@@ -410,7 +410,7 @@ To prevent rate limits during evaluation:
 **Special Thanks**:
 - **[Eliseu Silva](https://huggingface.co/elismasilva)** - For the [gradio_htmlplus](https://huggingface.co/spaces/elismasilva/gradio_htmlplus) custom component that powers our interactive leaderboard table. Eliseu's timely help and collaboration during the hackathon was invaluable!
 
-**Sponsors**: HuggingFace • Google Gemini • Modal • Anthropic • Gradio • ElevenLabs • SambaNova • Blaxel
+**Sponsors**: HuggingFace • Google Gemini • Modal • Anthropic • Gradio • OpenAI • Nebius • Hyperbolic • ElevenLabs • SambaNova • Blaxel
 
 ---
 
