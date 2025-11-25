@@ -458,7 +458,7 @@ with gr.Blocks() as app:
 | `analyze_leaderboard` | Leaderboard tab | Generate AI insights when user loads leaderboard |
 | `estimate_cost` | New Evaluation tab | Predict costs before submitting evaluation |
 | `debug_trace` | Trace Visualization | Answer questions about execution traces |
-| `compare_runs` | Agent Chat | Compare two evaluation runs side-by-side |
+| `compare_runs` | Compare Runs/Agent Chat | Compare two evaluation runs side-by-side |
 | `analyze_results` | Agent Chat | Analyze detailed test results with optimization recommendations |
 | `get_top_performers` | Agent Chat | Efficiently fetch top N models (90% token reduction) |
 | `get_leaderboard_summary` | Agent Chat | Get high-level statistics (99% token reduction) |
