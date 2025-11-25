@@ -292,7 +292,10 @@ def get_mcp_tools():
 
             # Log available tools
             tool_names = [tool.name for tool in tools]
-            print(f"Connected to TraceMind MCP server. Available tools: {', '.join(tool_names)}")
+            print(f"✅ Connected to TraceMind MCP server")
+            print(f"✅ Received {len(tools)} tools:")
+            for tool in tools:
+                print(f"   - {tool.name}")
 
             return tools
 
@@ -364,6 +367,9 @@ def create_agent():
         )
 
         print("✅ Agent created successfully (session-specific instance)")
+        print(f"✅ Agent has {len(agent.tools)} tools registered:")
+        for tool_name in agent.tools.keys():
+            print(f"   - {tool_name}")
         return agent
 
     except Exception as e:
