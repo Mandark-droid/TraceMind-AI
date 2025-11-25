@@ -600,6 +600,6 @@ def on_quick_action(action_type):
         "costs": "Compare the costs of the top 3 models - which one offers the best value?",
         "recommend": "Based on the leaderboard data, which model would you recommend for a production system that needs both good accuracy and reasonable cost?",
         "multi_tool": "Analyze the leaderboard with focus on cost and accuracy, identify the top 2 models, compare them, and estimate the cost of running 500 evaluations on the cheaper one",
-        "synthetic": "Generate a synthetic test dataset with 100 tasks for the food-delivery domain using these tools: search_restaurants, view_menu, place_order, track_delivery, apply_promo, rate_restaurant, contact_driver with difficulty_distribution='balanced' and agent_type='both'. Then create a prompt template for the same domain and tools, and push the dataset to MCP-1st-Birthday/smoltrace-food-delivery-tasks-v2"
+        "synthetic": "Generate a synthetic test dataset with 100 tasks for the food-delivery domain using these tools: search_restaurants, view_menu, place_order, track_delivery, apply_promo, rate_restaurant, contact_driver with difficulty_distribution='balanced' and agent_type='both'. Then create a prompt template for the same domain and tools using agent_type='tool', and push the dataset to MCP-1st-Birthday/smoltrace-food-delivery-tasks-v2"
     }
     return prompts.get(action_type, "")
