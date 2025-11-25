@@ -190,7 +190,7 @@ system_prompt: |-
   upload_result = run_push_dataset_to_hub(
       dataset_json=tasks_json,
       repo_name="my-org/smoltrace-customer-support-tasks",
-      hf_token="hf_xxxxx",  # User should provide their token
+      hf_token="",  # Empty string - MCP server uses its configured token
       private=False
   )
   print(upload_result)
