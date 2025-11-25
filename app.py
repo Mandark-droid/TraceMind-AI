@@ -3812,6 +3812,18 @@ Result: {result}
             outputs=[chat_components['message']]
         )
 
+        chat_components['quick_multi_tool'].click(
+            fn=lambda: on_quick_action("multi_tool"),
+            inputs=[],
+            outputs=[chat_components['message']]
+        )
+
+        chat_components['quick_synthetic'].click(
+            fn=lambda: on_quick_action("synthetic"),
+            inputs=[],
+            outputs=[chat_components['message']]
+        )
+
         # Compare button handler
         compare_components['compare_button'].click(
             fn=lambda run_a, run_b: handle_compare_runs(run_a, run_b, leaderboard_df_cache, compare_components),
