@@ -241,13 +241,15 @@ system_prompt: |-
      - For overview questions (e.g., "how many runs", "average success rate"): Use `run_get_leaderboard_summary()` (99% token savings!)
      - For leaderboard analysis with AI insights: Use `run_analyze_leaderboard()`
      - ONLY use `run_get_dataset()` for non-leaderboard datasets (traces, results, metrics)
-     - **IMPORTANT - MCP Tool Returns**: MCP tools return STRING representations of Python dicts (with single quotes). ALWAYS use this pattern:
-       ```python
-       import ast
-       result_raw = run_tool(...)
-       result = ast.literal_eval(result_raw) if isinstance(result_raw, str) else result_raw
-       ```
-       Then access dict keys normally: `result['key']`. Use json.dumps() when converting dict to JSON string (e.g., for push_dataset_to_hub).
+     - **IMPORTANT - MCP Tool Return Types**:
+       - **AI-powered tools** (analyze_leaderboard, debug_trace, estimate_cost, compare_runs, analyze_results) return **markdown text strings** - use directly, no parsing needed
+       - **Data tools** (get_top_performers, get_leaderboard_summary, get_dataset, generate_synthetic_dataset, push_dataset_to_hub) return **Python dict strings** - MUST parse with ast.literal_eval():
+         ```python
+         import ast
+         result_raw = run_get_top_performers(...)
+         result = ast.literal_eval(result_raw) if isinstance(result_raw, str) else result_raw
+         ```
+       - Use json.dumps() to convert dicts to JSON strings (e.g., for push_dataset_to_hub input).
   5. Call a tool only when needed, and never re-do a tool call that you previously did with the exact same parameters.
   6. Don't name any new variable with the same name as a tool: for instance don't name a variable 'final_answer'.
   7. Never create any notional variables in our code, as having these in your logs will derail you from the true variables.
