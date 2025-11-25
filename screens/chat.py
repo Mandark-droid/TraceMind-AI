@@ -31,8 +31,8 @@ MODEL_TYPE = os.getenv("AGENT_MODEL_TYPE", "hfapi")  # Options: "hfapi", "infere
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-# Global agent and MCP client (reused across requests)
-_global_agent = None
+# Global MCP client (shared, stateless connection to MCP server)
+# Agent instances are session-specific via gr.State
 _global_mcp_client = None
 
 
@@ -271,45 +271,52 @@ def stream_to_gradio(
             yield intermediate_text
 
 
+def get_mcp_tools():
+    """Get tools from MCP server (shared connection, stateless)"""
+    global _global_mcp_client
+
+    # Reuse MCP client connection if already established
+    if _global_mcp_client is None:
+        try:
+            print(f"Connecting to TraceMind MCP Server at {MCP_SERVER_URL}...")
+            print(f"Using SSE transport for Gradio MCP server...")
+
+            # For Gradio MCP servers, must specify transport: "sse"
+            _global_mcp_client = MCPClient(
+                {"url": MCP_SERVER_URL, "transport": "sse"}
+            )
+
+            print("Fetching tools from MCP server...")
+            tools = _global_mcp_client.get_tools()
+            print(f"Received {len(tools)} tools from MCP server")
+
+            # Log available tools
+            tool_names = [tool.name for tool in tools]
+            print(f"Connected to TraceMind MCP server. Available tools: {', '.join(tool_names)}")
+
+            return tools
+
+        except Exception as e:
+            print(f"[ERROR] Connecting to MCP server: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+    else:
+        # Return tools from existing connection
+        return _global_mcp_client.get_tools()
+
+
 def create_agent():
-    """Create smolagents agent with MCP server tools (singleton pattern)"""
-    global _global_agent, _global_mcp_client
-
-    # Return existing agent if already created
-    if _global_agent is not None:
-        return _global_agent
-
+    """Create smolagents agent with MCP server tools (per-session instance)"""
     if not SMOLAGENTS_AVAILABLE:
         return None
 
     try:
-        # Connect to TraceMind MCP Server using SSE transport
-        print(f"Connecting to TraceMind MCP Server at {MCP_SERVER_URL}...")
-        print(f"Using SSE transport for Gradio MCP server...")
-
-        # For Gradio MCP servers, must specify transport: "sse"
-        # See: https://huggingface.co/learn/mcp-course/unit2/gradio-client
-        _global_mcp_client = MCPClient(
-            {"url": MCP_SERVER_URL, "transport": "sse"}
-        )
-
-        # Get tools from MCP server (MCPClient.get_tools() doesn't support structured_output parameter)
-        print("Fetching tools from MCP server...")
-        tools = _global_mcp_client.get_tools()
-
-        print(f"Received {len(tools)} tools from MCP server")
-
-        # Log available tools
-        tools_array = [{
-            "name": tool.name,
-            "description": tool.description,
-            "inputs": tool.inputs,
-            "output_type": tool.output_type,
-            "is_initialized": tool.is_initialized
-        } for tool in tools]
-
-        tool_names = [tool["name"] for tool in tools_array]
-        print(f"Connected to TraceMind MCP server. Available tools: {', '.join(tool_names)}")
+        # Get tools from shared MCP connection
+        tools = get_mcp_tools()
+        if not tools:
+            print("[ERROR] No tools available from MCP server")
+            return None
 
         # Create model based on configuration
         if MODEL_TYPE == "inference_client":
@@ -342,7 +349,7 @@ def create_agent():
         with open(prompt_template_path, 'r', encoding='utf-8') as stream:
             prompt_templates = yaml.safe_load(stream)
 
-        # Create CodeAgent with MCP server tools and YAML prompt template
+        # Create NEW CodeAgent instance for this session
         agent = CodeAgent(
             tools=[*tools],
             model=model,
@@ -356,10 +363,7 @@ def create_agent():
             ]
         )
 
-        # Store agent globally for reuse
-        _global_agent = agent
-        print("✅ Agent created successfully and cached for reuse")
-
+        print("✅ Agent created successfully (session-specific instance)")
         return agent
 
     except Exception as e:
@@ -370,8 +374,11 @@ def create_agent():
 
 
 def cleanup_agent():
-    """Cleanup MCP client connection"""
-    global _global_agent, _global_mcp_client
+    """
+    Cleanup MCP client connection (global, shared connection)
+    Note: Individual agent instances are garbage collected automatically
+    """
+    global _global_mcp_client
 
     if _global_mcp_client is not None:
         try:
@@ -382,19 +389,19 @@ def cleanup_agent():
             print(f"[WARNING] Error disconnecting MCP client: {e}")
         finally:
             _global_mcp_client = None
-            _global_agent = None
 
 
-def chat_with_agent(message: str, history: list):
+def chat_with_agent(message: str, history: list, agent_state):
     """
     Process user message with agent using streaming
 
     Args:
         message: User's input message
         history: Chat history (list of ChatMessage objects)
+        agent_state: Session-specific agent instance (gr.State)
 
     Yields:
-        Updated history with streaming agent responses
+        Tuple of (updated_history, updated_agent_state)
     """
 
     if not SMOLAGENTS_AVAILABLE:
@@ -405,27 +412,29 @@ def chat_with_agent(message: str, history: list):
             content="🤖 Agent not available (smolagents not installed). Install with: pip install smolagents",
             metadata={"status": "done"}
         ))
-        yield history
+        yield history, agent_state
         return
 
     try:
-        agent = create_agent()
-        if agent is None:
-            history.append(gr.ChatMessage(role="user", content=message, metadata={"status": "done"}))
-            history.append(gr.ChatMessage(
-                role="assistant",
-                content="❌ Failed to initialize agent",
-                metadata={"status": "done"}
-            ))
-            yield history
-            return
+        # Create agent if not exists in session state
+        if agent_state is None:
+            agent_state = create_agent()
+            if agent_state is None:
+                history.append(gr.ChatMessage(role="user", content=message, metadata={"status": "done"}))
+                history.append(gr.ChatMessage(
+                    role="assistant",
+                    content="❌ Failed to initialize agent",
+                    metadata={"status": "done"}
+                ))
+                yield history, agent_state
+                return
 
         # Add user message
         history.append(gr.ChatMessage(role="user", content=message, metadata={"status": "done"}))
-        yield history
+        yield history, agent_state
 
-        # Stream agent responses
-        for msg in stream_to_gradio(agent, task=message, reset_agent_memory=False):
+        # Stream agent responses (agent maintains its own memory across messages in this session)
+        for msg in stream_to_gradio(agent_state, task=message, reset_agent_memory=False):
             if isinstance(msg, gr.ChatMessage):
                 # Mark previous message as done if it was pending
                 if history and history[-1].metadata.get("status") == "pending":
@@ -437,12 +446,12 @@ def chat_with_agent(message: str, history: list):
                     history[-1].content = msg
                 else:
                     history.append(gr.ChatMessage(role="assistant", content=msg, metadata={"status": "pending"}))
-            yield history
+            yield history, agent_state
 
         # Mark final message as done
         if history and history[-1].metadata.get("status") == "pending":
             history[-1].metadata["status"] = "done"
-        yield history
+        yield history, agent_state
 
     except Exception as e:
         import traceback
@@ -452,7 +461,7 @@ def chat_with_agent(message: str, history: list):
             content=error_msg,
             metadata={"title": "🚫 Error", "status": "done"}
         ))
-        yield history
+        yield history, agent_state
 
 
 def create_chat_ui():
@@ -463,6 +472,9 @@ def create_chat_ui():
         Tuple of (screen_column, component_dict)
     """
     components = {}
+
+    # Session-specific agent state (each browser tab gets its own agent instance)
+    components['agent_state'] = gr.State(value=None)
 
     with gr.Column(visible=False) as chat_screen:
         gr.Markdown("# 🤖 Agent Chat")
@@ -549,22 +561,25 @@ def create_chat_ui():
     return chat_screen, components
 
 
-def on_send_message(message, history):
-    """Handle send button click - now uses streaming"""
+def on_send_message(message, history, agent_state):
+    """Handle send button click - now uses streaming with per-session agent"""
     if not message.strip():
-        yield history, ""
+        yield history, "", agent_state
         return
 
-    # Stream agent responses
-    for updated_history in chat_with_agent(message, history):
-        yield updated_history, ""
+    # Stream agent responses with session-specific agent
+    for updated_history, updated_agent in chat_with_agent(message, history, agent_state):
+        yield updated_history, "", updated_agent
 
 
-def on_clear_chat():
-    """Handle clear button click and cleanup agent connection"""
-    # Cleanup agent and MCP client connection
-    cleanup_agent()
-    return []
+def on_clear_chat(agent_state):
+    """
+    Handle clear button click
+    Note: Does NOT cleanup global MCP connection (shared across sessions)
+    Only resets this session's agent instance
+    """
+    # Return empty history and None agent (will create new agent on next message)
+    return [], None
 
 
 def on_quick_action(action_type):

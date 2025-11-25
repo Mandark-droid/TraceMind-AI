@@ -1952,7 +1952,7 @@ with gr.Blocks(title="TraceMind-AI", theme=theme) as app:
 
                         **Powered by:**
                         - 🤖 **MCP Servers**: Model Context Protocol for intelligent data access
-                        - 🧠 **Advanced LLMs**: Google Gemini 1.5 Pro for analysis
+                        - 🧠 **Advanced LLMs**: Google Gemini 2.5 Flash for analysis
                         - 📡 **Real-time Streaming**: Gradio 6 for live response generation
                         - 🔗 **Context Integration**: Understands your full leaderboard context
 
@@ -3775,23 +3775,23 @@ Result: {result}
             outputs=[eval_success_message]
         )
 
-        # Chat screen event handlers (with streaming)
+        # Chat screen event handlers (with streaming and per-session agent state)
         chat_components['send_btn'].click(
             fn=on_send_message,
-            inputs=[chat_components['message'], chat_components['chatbot']],
-            outputs=[chat_components['chatbot'], chat_components['message']]
+            inputs=[chat_components['message'], chat_components['chatbot'], chat_components['agent_state']],
+            outputs=[chat_components['chatbot'], chat_components['message'], chat_components['agent_state']]
         )
 
         chat_components['message'].submit(
             fn=on_send_message,
-            inputs=[chat_components['message'], chat_components['chatbot']],
-            outputs=[chat_components['chatbot'], chat_components['message']]
+            inputs=[chat_components['message'], chat_components['chatbot'], chat_components['agent_state']],
+            outputs=[chat_components['chatbot'], chat_components['message'], chat_components['agent_state']]
         )
 
         chat_components['clear_btn'].click(
             fn=on_clear_chat,
-            inputs=[],
-            outputs=[chat_components['chatbot']]
+            inputs=[chat_components['agent_state']],
+            outputs=[chat_components['chatbot'], chat_components['agent_state']]
         )
 
         chat_components['quick_analyze'].click(
