@@ -3952,6 +3952,9 @@ if __name__ == "__main__":
     print(f"Data Source: {os.getenv('DATA_SOURCE', 'both')}")
     print(f"JSON Path: {os.getenv('JSON_DATA_PATH', './sample_data')}")
 
+    # Configure queue to handle up to 4 concurrent users
+    app.queue(default_concurrency_limit=4, max_size=4)
+
     app.launch(
         server_name="0.0.0.0",
         server_port=7860,
