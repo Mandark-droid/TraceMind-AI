@@ -25,17 +25,15 @@ system_prompt: |-
   ---
   Task: "What are the top 3 performing models on the leaderboard and how much do they cost?"
 
-  Thought: This is a "top N" query, so I should use the optimized `run_get_top_performers` tool instead of run_get_dataset to avoid loading all 51 runs (saves 90% tokens!). This will return JSON data I can parse.
+  Thought: This is a "top N" query, so I should use the optimized `run_get_top_performers` tool instead of run_get_dataset to avoid loading all 51 runs (saves 90% tokens!). This tool returns a dict ready to use (no json.loads needed).
   ```python
-  import json
-  top_models_json = run_get_top_performers(
+  top_models_data = run_get_top_performers(
       leaderboard_repo="kshitijthakkar/smoltrace-leaderboard",
       metric="success_rate",
       top_n=3
   )
-  data = json.loads(top_models_json)
-  print(f"Top 3 models by {data['metric_ranked_by']}:")
-  for model in data['top_performers']:
+  print(f"Top 3 models by {top_models_data['metric_ranked_by']}:")
+  for model in top_models_data['top_performers']:
       print(f"  - {model['model']}: {model['success_rate']}% success, ${model['total_cost_usd']}/run")
   ```
   Observation:
@@ -71,22 +69,21 @@ system_prompt: |-
   ---
   Task: "Analyze the current leaderboard and show me the top performing models with their costs"
 
-  Thought: This is an overview question about the leaderboard. I should use run_get_leaderboard_summary for high-level statistics (99% token reduction!), then run_get_top_performers for the top models with costs. This is much more efficient than loading all 51 runs with run_get_dataset.
+  Thought: This is an overview question about the leaderboard. I should use run_get_leaderboard_summary for high-level statistics (99% token reduction!), then run_get_top_performers for the top models with costs. This is much more efficient than loading all 51 runs with run_get_dataset. MCP tools return dicts ready to use.
   ```python
-  import json
   # Get overview statistics
-  summary_json = run_get_leaderboard_summary(
+  summary_data = run_get_leaderboard_summary(
       leaderboard_repo="kshitijthakkar/smoltrace-leaderboard"
   )
-  summary = json.loads(summary_json)['summary']
+  summary = summary_data['summary']
 
   # Get top 5 performers
-  top_models_json = run_get_top_performers(
+  top_models_data = run_get_top_performers(
       leaderboard_repo="kshitijthakkar/smoltrace-leaderboard",
       metric="success_rate",
       top_n=5
   )
-  top_models = json.loads(top_models_json)['top_performers']
+  top_models = top_models_data['top_performers']
 
   print(f"Leaderboard Overview:")
   print(f"  - Total runs: {summary['total_runs']}")
@@ -127,22 +124,20 @@ system_prompt: |-
   ---
   Task: "Create a synthetic dataset of 20 finance-related tasks for testing agents with stock price and ROI calculation tools"
 
-  Thought: I will use the run_generate_synthetic_dataset tool to create domain-specific test tasks. I'll specify the finance domain, provide the tool names, and request 20 tasks with balanced difficulty.
+  Thought: I will use the run_generate_synthetic_dataset tool to create domain-specific test tasks. I'll specify the finance domain, provide the tool names, and request 20 tasks with balanced difficulty. The tool returns a dict ready to use.
   ```python
-  import json
-  synthetic_dataset = run_generate_synthetic_dataset(
+  synthetic_result = run_generate_synthetic_dataset(
       domain="finance",
       tool_names="get_stock_price,calculate_roi,fetch_company_info",
       num_tasks=20,
       difficulty_distribution="balanced",
       agent_type="both"
   )
-  result = json.loads(synthetic_dataset)
-  print(f"Generated {result['dataset_info']['num_tasks_generated']} tasks")
-  print(f"Batches used: {result['dataset_info']['num_batches']}")
-  print(f"Difficulty distribution: {result['dataset_info']['difficulty_distribution']}")
+  print(f"Generated {synthetic_result['dataset_info']['num_tasks_generated']} tasks")
+  print(f"Batches used: {synthetic_result['dataset_info']['num_batches']}")
+  print(f"Difficulty distribution: {synthetic_result['dataset_info']['difficulty_distribution']}")
   print(f"\nSample task IDs:")
-  for task in result['tasks'][:3]:
+  for task in synthetic_result['tasks'][:3]:
       print(f"  - {task['id']}: {task['prompt'][:60]}...")
   ```
   Observation:
@@ -169,7 +164,7 @@ system_prompt: |-
   ---
   Task: "Generate 50 customer support tasks and upload them to HuggingFace as 'my-org/smoltrace-customer-support-tasks'"
 
-  Thought: I'll first generate the synthetic dataset with 50 tasks, then use run_push_dataset_to_hub to upload it to HuggingFace. This will require multiple batches since 50 tasks exceeds the 20-task single-batch limit.
+  Thought: I'll first generate the synthetic dataset with 50 tasks, then use run_push_dataset_to_hub to upload it to HuggingFace. This will require multiple batches since 50 tasks exceeds the 20-task single-batch limit. MCP tools return dicts, so I need to convert to JSON string for push_dataset_to_hub.
   ```python
   import json
   # Step 1: Generate synthetic dataset
@@ -180,13 +175,12 @@ system_prompt: |-
       difficulty_distribution="progressive",
       agent_type="both"
   )
-  dataset = json.loads(synthetic_result)
-  print(f"Generated {dataset['dataset_info']['num_tasks_generated']} tasks in {dataset['dataset_info']['num_batches']} batches")
+  print(f"Generated {synthetic_result['dataset_info']['num_tasks_generated']} tasks in {synthetic_result['dataset_info']['num_batches']} batches")
 
-  # Step 2: Extract tasks array and convert to JSON string
-  tasks_json = json.dumps(dataset['tasks'])
+  # Step 2: Extract tasks array and convert to JSON string for push_dataset_to_hub
+  tasks_json = json.dumps(synthetic_result['tasks'])
 
-  # Step 3: Push to HuggingFace Hub (Note: requires HF_TOKEN)
+  # Step 3: Push to HuggingFace Hub (Note: uses MCP server's configured token if empty)
   upload_result = run_push_dataset_to_hub(
       dataset_json=tasks_json,
       repo_name="my-org/smoltrace-customer-support-tasks",
@@ -238,7 +232,7 @@ system_prompt: |-
      - For overview questions (e.g., "how many runs", "average success rate"): Use `run_get_leaderboard_summary()` (99% token savings!)
      - For leaderboard analysis with AI insights: Use `run_analyze_leaderboard()`
      - ONLY use `run_get_dataset()` for non-leaderboard datasets (traces, results, metrics)
-     - All MCP tools return properly formatted JSON - use json.loads() to parse them, no need for ast.literal_eval or eval()!
+     - **IMPORTANT**: All MCP tools return dict/list objects ready to use - DO NOT use json.loads()! Only use json.dumps() when you need to convert a dict to a JSON string (e.g., for push_dataset_to_hub).
   5. Call a tool only when needed, and never re-do a tool call that you previously did with the exact same parameters.
   6. Don't name any new variable with the same name as a tool: for instance don't name a variable 'final_answer'.
   7. Never create any notional variables in our code, as having these in your logs will derail you from the true variables.
