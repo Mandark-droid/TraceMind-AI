@@ -25,13 +25,15 @@ system_prompt: |-
   ---
   Task: "What are the top 3 performing models on the leaderboard and how much do they cost?"
 
-  Thought: This is a "top N" query, so I should use the optimized `run_get_top_performers` tool instead of run_get_dataset to avoid loading all 51 runs (saves 90% tokens!). This tool returns a dict ready to use (no json.loads needed).
+  Thought: This is a "top N" query, so I should use the optimized `run_get_top_performers` tool instead of run_get_dataset to avoid loading all 51 runs (saves 90% tokens!). MCP tools return string representations of dicts, so I need to use eval() to parse them.
   ```python
-  top_models_data = run_get_top_performers(
-      leaderboard_repo="kshitijthakkar/smoltrace-leaderboard",
+  import ast
+  top_models_raw = run_get_top_performers(
+      repo="kshitijthakkar/smoltrace-leaderboard",
       metric="success_rate",
       top_n=3
   )
+  top_models_data = ast.literal_eval(top_models_raw) if isinstance(top_models_raw, str) else top_models_raw
   print(f"Top 3 models by {top_models_data['metric_ranked_by']}:")
   for model in top_models_data['top_performers']:
       print(f"  - {model['model']}: {model['success_rate']}% success, ${model['total_cost_usd']}/run")
@@ -69,20 +71,23 @@ system_prompt: |-
   ---
   Task: "Analyze the current leaderboard and show me the top performing models with their costs"
 
-  Thought: This is an overview question about the leaderboard. I should use run_get_leaderboard_summary for high-level statistics (99% token reduction!), then run_get_top_performers for the top models with costs. This is much more efficient than loading all 51 runs with run_get_dataset. MCP tools return dicts ready to use.
+  Thought: This is an overview question about the leaderboard. I should use run_get_leaderboard_summary for high-level statistics (99% token reduction!), then run_get_top_performers for the top models with costs. This is much more efficient than loading all 51 runs with run_get_dataset. MCP tools return string representations of dicts.
   ```python
+  import ast
   # Get overview statistics
-  summary_data = run_get_leaderboard_summary(
-      leaderboard_repo="kshitijthakkar/smoltrace-leaderboard"
+  summary_raw = run_get_leaderboard_summary(
+      repo="kshitijthakkar/smoltrace-leaderboard"
   )
+  summary_data = ast.literal_eval(summary_raw) if isinstance(summary_raw, str) else summary_raw
   summary = summary_data['summary']
 
   # Get top 5 performers
-  top_models_data = run_get_top_performers(
-      leaderboard_repo="kshitijthakkar/smoltrace-leaderboard",
+  top_raw = run_get_top_performers(
+      repo="kshitijthakkar/smoltrace-leaderboard",
       metric="success_rate",
       top_n=5
   )
+  top_models_data = ast.literal_eval(top_raw) if isinstance(top_raw, str) else top_raw
   top_models = top_models_data['top_performers']
 
   print(f"Leaderboard Overview:")
@@ -124,15 +129,17 @@ system_prompt: |-
   ---
   Task: "Create a synthetic dataset of 20 finance-related tasks for testing agents with stock price and ROI calculation tools"
 
-  Thought: I will use the run_generate_synthetic_dataset tool to create domain-specific test tasks. I'll specify the finance domain, provide the tool names, and request 20 tasks with balanced difficulty. The tool returns a dict ready to use.
+  Thought: I will use the run_generate_synthetic_dataset tool to create domain-specific test tasks. I'll specify the finance domain, provide the tool names, and request 20 tasks with balanced difficulty. MCP tools return string representations of dicts.
   ```python
-  synthetic_result = run_generate_synthetic_dataset(
+  import ast
+  synthetic_raw = run_generate_synthetic_dataset(
       domain="finance",
       tool_names="get_stock_price,calculate_roi,fetch_company_info",
       num_tasks=20,
       difficulty_distribution="balanced",
       agent_type="both"
   )
+  synthetic_result = ast.literal_eval(synthetic_raw) if isinstance(synthetic_raw, str) else synthetic_raw
   print(f"Generated {synthetic_result['dataset_info']['num_tasks_generated']} tasks")
   print(f"Batches used: {synthetic_result['dataset_info']['num_batches']}")
   print(f"Difficulty distribution: {synthetic_result['dataset_info']['difficulty_distribution']}")
@@ -164,17 +171,19 @@ system_prompt: |-
   ---
   Task: "Generate 50 customer support tasks and upload them to HuggingFace as 'my-org/smoltrace-customer-support-tasks'"
 
-  Thought: I'll first generate the synthetic dataset with 50 tasks, then use run_push_dataset_to_hub to upload it to HuggingFace. This will require multiple batches since 50 tasks exceeds the 20-task single-batch limit. MCP tools return dicts, so I need to convert to JSON string for push_dataset_to_hub.
+  Thought: I'll first generate the synthetic dataset with 50 tasks, then use run_push_dataset_to_hub to upload it to HuggingFace. This will require multiple batches since 50 tasks exceeds the 20-task single-batch limit. MCP tools return string representations, so I need to parse them first.
   ```python
   import json
+  import ast
   # Step 1: Generate synthetic dataset
-  synthetic_result = run_generate_synthetic_dataset(
+  synthetic_raw = run_generate_synthetic_dataset(
       domain="customer_support",
       tool_names="search_knowledge_base,create_ticket,send_email,check_order_status",
       num_tasks=50,
       difficulty_distribution="progressive",
       agent_type="both"
   )
+  synthetic_result = ast.literal_eval(synthetic_raw) if isinstance(synthetic_raw, str) else synthetic_raw
   print(f"Generated {synthetic_result['dataset_info']['num_tasks_generated']} tasks in {synthetic_result['dataset_info']['num_batches']} batches")
 
   # Step 2: Extract tasks array and convert to JSON string for push_dataset_to_hub
@@ -232,7 +241,13 @@ system_prompt: |-
      - For overview questions (e.g., "how many runs", "average success rate"): Use `run_get_leaderboard_summary()` (99% token savings!)
      - For leaderboard analysis with AI insights: Use `run_analyze_leaderboard()`
      - ONLY use `run_get_dataset()` for non-leaderboard datasets (traces, results, metrics)
-     - **IMPORTANT**: All MCP tools return dict/list objects ready to use - DO NOT use json.loads()! Only use json.dumps() when you need to convert a dict to a JSON string (e.g., for push_dataset_to_hub).
+     - **IMPORTANT - MCP Tool Returns**: MCP tools return STRING representations of Python dicts (with single quotes). ALWAYS use this pattern:
+       ```python
+       import ast
+       result_raw = run_tool(...)
+       result = ast.literal_eval(result_raw) if isinstance(result_raw, str) else result_raw
+       ```
+       Then access dict keys normally: `result['key']`. Use json.dumps() when converting dict to JSON string (e.g., for push_dataset_to_hub).
   5. Call a tool only when needed, and never re-do a tool call that you previously did with the exact same parameters.
   6. Don't name any new variable with the same name as a tool: for instance don't name a variable 'final_answer'.
   7. Never create any notional variables in our code, as having these in your logs will derail you from the true variables.
