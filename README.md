@@ -237,6 +237,7 @@ To prevent rate limits during evaluation:
 - **🎬 MCP Server Quick Demo (5 min)**: [Watch on Loom](https://www.loom.com/share/d4d0003f06fa4327b46ba5c081bdf835) - Quick intro to MCP tools
 - **📺 MCP Server Full Demo (20 min)**: [Watch on Loom](https://www.loom.com/share/de559bb0aef749559c79117b7f951250) - Deep dive into MCP server
 - **📝 Blog Post**: [Building TraceMind Ecosystem](https://huggingface.co/blog/kshitijthakkar/tracemind-ecosystem) - Technical deep-dive
+- **🚀 LinkedIn Post**: [TraceMind-AI Hackathon Submission](https://www.linkedin.com/posts/kshitij-thakkar-2061b924_mcp1stbirthdayhackathon-mcp-modelcontextprotocol-activity-7399775530218065920-owgR) - Final submission announcement
 
 ### 🧪 Testing Suggestions
 
@@ -395,6 +396,7 @@ To prevent rate limits during evaluation:
 
 ### 📢 Community Posts
 
+- 🚀 [**TraceMind-AI Hackathon Submission**](https://www.linkedin.com/posts/kshitij-thakkar-2061b924_mcp1stbirthdayhackathon-mcp-modelcontextprotocol-activity-7399775530218065920-owgR) - MCP's 1st Birthday Hackathon final submission
 - 📝 [**Building TraceMind Ecosystem Blog Post**](https://huggingface.co/blog/kshitijthakkar/tracemind-ecosystem) - Complete technical deep-dive into the TraceVerse ecosystem
 - 🎉 [**TraceMind Teaser**](https://www.linkedin.com/posts/kshitij-thakkar-2061b924_mcpsfirstbirthdayhackathon-mcpsfirstbirthdayhackathon-activity-7395686529270013952-g_id) - MCP's 1st Birthday Hackathon announcement
 - 📊 [**SMOLTRACE Launch**](https://www.linkedin.com/posts/kshitij-thakkar-2061b924_ai-machinelearning-llm-activity-7394350375908126720-im_T) - Lightweight agent evaluation engine
