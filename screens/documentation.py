@@ -171,6 +171,7 @@ TraceMind demonstrates the complete MCP ecosystem:
 
 | Video | Duration | Link |
 |-------|----------|------|
+| **TraceMind-AI Full Demo** | 20 mins | [Watch on Loom](https://www.loom.com/share/70b9689b57204da58b8fef0d23c304fe) |
 | **TraceMind-MCP-Server Quick Demo** | 5 mins | [Watch on Loom](https://www.loom.com/share/d4d0003f06fa4327b46ba5c081bdf835) |
 | **TraceMind-MCP-Server Full Demo** | 20 mins | [Watch on Loom](https://www.loom.com/share/de559bb0aef749559c79117b7f951250) |
 
@@ -1813,8 +1814,9 @@ curl -H "Authorization: Bearer $GEMINI_API_KEY" \\
 
 | Video | Duration | Description |
 |-------|----------|-------------|
-| **Quick Demo** | 5 mins | [Watch on Loom](https://www.loom.com/share/d4d0003f06fa4327b46ba5c081bdf835) - Quick overview of TraceMind-MCP-Server features |
-| **Full Demo** | 20 mins | [Watch on Loom](https://www.loom.com/share/de559bb0aef749559c79117b7f951250) - Comprehensive walkthrough with detailed explanations |
+| **TraceMind-AI Full Demo** | 20 mins | [Watch on Loom](https://www.loom.com/share/70b9689b57204da58b8fef0d23c304fe) - Complete walkthrough of TraceMind-AI features and workflows |
+| **MCP Server Quick Demo** | 5 mins | [Watch on Loom](https://www.loom.com/share/d4d0003f06fa4327b46ba5c081bdf835) - Quick overview of TraceMind-MCP-Server features |
+| **MCP Server Full Demo** | 20 mins | [Watch on Loom](https://www.loom.com/share/de559bb0aef749559c79117b7f951250) - Comprehensive walkthrough with detailed explanations |
 
 ---
 

@@ -54,6 +54,7 @@ All powered by the **Model Context Protocol** for AI-driven insights at every st
 - **🌐 Live Demo**: [TraceMind-AI Space](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind)
 - **🛠️ MCP Server**: [TraceMind-mcp-server](https://huggingface.co/spaces/MCP-1st-Birthday/TraceMind-mcp-server) (Track 1)
 - **📖 Full Docs**: See [USER_GUIDE.md](USER_GUIDE.md) for complete walkthrough
+- **🎥 TraceMind-AI Full Demo (20 min)**: [Watch on Loom](https://www.loom.com/share/70b9689b57204da58b8fef0d23c304fe)
 - **🎬 MCP Server Quick Demo (5 min)**: [Watch on Loom](https://www.loom.com/share/d4d0003f06fa4327b46ba5c081bdf835)
 - **📺 MCP Server Full Demo (20 min)**: [Watch on Loom](https://www.loom.com/share/de559bb0aef749559c79117b7f951250)
 
@@ -232,8 +233,10 @@ To prevent rate limits during evaluation:
 
 ### 📹 Demo Materials
 
-- **🎥 Demo Video**: [Coming Soon - Link to walkthrough]
-- **📢 Social Post**: [Coming Soon - Link to announcement]
+- **🎥 TraceMind-AI Full Demo (20 min)**: [Watch on Loom](https://www.loom.com/share/70b9689b57204da58b8fef0d23c304fe) - Complete walkthrough of all features
+- **🎬 MCP Server Quick Demo (5 min)**: [Watch on Loom](https://www.loom.com/share/d4d0003f06fa4327b46ba5c081bdf835) - Quick intro to MCP tools
+- **📺 MCP Server Full Demo (20 min)**: [Watch on Loom](https://www.loom.com/share/de559bb0aef749559c79117b7f951250) - Deep dive into MCP server
+- **📝 Blog Post**: [Building TraceMind Ecosystem](https://huggingface.co/blog/kshitijthakkar/tracemind-ecosystem) - Technical deep-dive
 
 ### 🧪 Testing Suggestions
 
