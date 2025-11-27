@@ -135,7 +135,7 @@ def generate_leaderboard_summary_card(df: pd.DataFrame, top_n: int = 3) -> str:
         </div>
 
         <div class="card-footer">
-            <p style="margin: 0; color: #ffffff !important;">🔗 <a href="https://huggingface.co/tracemind" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; font-weight: 600;">tracemind @ HuggingFace</a></p>
+            <p style="margin: 0; color: #ffffff !important;">🔗 <a href="https://mcp-1st-birthday-tracemind.hf.space/" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; font-weight: 600;">TraceMind @ HuggingFace</a></p>
             <p class="tagline" style="color: rgba(255, 255, 255, 0.7) !important; margin: 10px 0 0 0; font-size: 0.9em;">Built with TraceMind • Powered by SmolTrace & TraceVerde</p>
         </div>
     </div>
@@ -271,7 +271,7 @@ def generate_run_report_card(run_data: dict) -> str:
         </div>
 
         <div class="card-footer">
-            <p style="margin: 0; color: #ffffff !important;">🔗 <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 600;">View detailed traces at tracemind.huggingface.co</span></p>
+            <p style="margin: 0; color: #ffffff !important;">🔗 <a href="https://mcp-1st-birthday-tracemind.hf.space/" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; font-weight: 600;">View detailed traces at TraceMind</a></p>
         </div>
     </div>
     """
@@ -703,7 +703,7 @@ def generate_comparison_report_card(run_a_data: dict, run_b_data: dict) -> str:
         </div>
 
         <div class="card-footer">
-            <p style="margin: 0; color: #ffffff !important;">🔗 <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 600;">View detailed comparison at tracemind.huggingface.co</span></p>
+            <p style="margin: 0; color: #ffffff !important;">🔗 <a href="https://mcp-1st-birthday-tracemind.hf.space/" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; font-weight: 600;">View detailed comparison at TraceMind</a></p>
         </div>
     </div>
 
