@@ -662,6 +662,9 @@ def create_trends_plot(df: pd.DataFrame) -> go.Figure:
     from plotly.subplots import make_subplots
 
     try:
+        # Create a copy to prevent mutating the input dataframe
+        df = df.copy()
+
         # Use evaluation_date or timestamp depending on what's available
         date_col = 'evaluation_date' if 'evaluation_date' in df.columns else 'timestamp'
 

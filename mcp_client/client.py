@@ -28,6 +28,8 @@ class MCPClient:
         )
         self.session: Optional[ClientSession] = None
         self._initialized = False
+        self._sse_context = None
+        self._session_context = None
 
     async def initialize(self):
         """Initialize connection to MCP server"""
@@ -35,23 +37,51 @@ class MCPClient:
             return
 
         try:
-            # Connect to SSE endpoint
-            async with sse_client(self.server_url) as (read, write):
-                async with ClientSession(read, write) as session:
-                    self.session = session
-                    await session.initialize()
-                    self._initialized = True
+            # Connect to SSE endpoint and keep it open
+            self._sse_context = sse_client(self.server_url)
+            read, write = await self._sse_context.__aenter__()
 
-                    # List available tools for verification
-                    tools_result = await session.list_tools()
-                    print(f"✅ Connected to TraceMind MCP Server at {self.server_url}")
-                    print(f"📊 Available tools: {len(tools_result.tools)}")
-                    for tool in tools_result.tools:
-                        print(f"  - {tool.name}: {tool.description}")
+            # Create session and keep it open
+            self._session_context = ClientSession(read, write)
+            self.session = await self._session_context.__aenter__()
+            await self.session.initialize()
+            self._initialized = True
+
+            # List available tools for verification
+            tools_result = await self.session.list_tools()
+            print(f"✅ Connected to TraceMind MCP Server at {self.server_url}")
+            print(f"📊 Available tools: {len(tools_result.tools)}")
+            for tool in tools_result.tools:
+                print(f"  - {tool.name}: {tool.description}")
 
         except Exception as e:
             print(f"❌ Failed to connect to MCP server: {e}")
+            # Clean up on error
+            await self._cleanup_connections()
             raise
+
+    async def _ensure_connected(self):
+        """Ensure the connection is active, reconnect if needed"""
+        if not self._initialized or self.session is None:
+            print("🔄 Reconnecting to MCP server...")
+            await self._cleanup_connections()
+            await self.initialize()
+
+    async def _call_tool_with_retry(self, tool_name: str, arguments: dict, max_retries: int = 2):
+        """Call MCP tool with automatic retry on connection errors"""
+        for attempt in range(max_retries):
+            try:
+                await self._ensure_connected()
+                result = await self.session.call_tool(tool_name, arguments=arguments)
+                return result
+            except Exception as e:
+                error_str = str(e)
+                if "ClosedResourceError" in error_str or "closed" in error_str.lower():
+                    if attempt < max_retries - 1:
+                        print(f"⚠️ Connection lost, retrying... (attempt {attempt + 1}/{max_retries})")
+                        await self._cleanup_connections()
+                        continue
+                raise
 
     async def analyze_leaderboard(
         self,
@@ -76,9 +106,6 @@ class MCPClient:
         Returns:
             AI-generated analysis of the leaderboard
         """
-        if not self._initialized:
-            await self.initialize()
-
         try:
             # Build arguments
             args = {
@@ -94,8 +121,8 @@ class MCPClient:
             if gemini_api_key:
                 args["gemini_api_key"] = gemini_api_key
 
-            # Call MCP tool
-            result = await self.session.call_tool("analyze_leaderboard", arguments=args)
+            # Call MCP tool with retry
+            result = await self._call_tool_with_retry("analyze_leaderboard", args)
 
             # Extract text from result
             if result.content and len(result.content) > 0:
@@ -127,9 +154,6 @@ class MCPClient:
         Returns:
             AI-generated answer to the trace question
         """
-        if not self._initialized:
-            await self.initialize()
-
         try:
             args = {
                 "trace_data": trace_data,
@@ -143,7 +167,7 @@ class MCPClient:
             if gemini_api_key:
                 args["gemini_api_key"] = gemini_api_key
 
-            result = await self.session.call_tool("debug_trace", arguments=args)
+            result = await self._call_tool_with_retry("debug_trace", args)
 
             if result.content and len(result.content) > 0:
                 return result.content[0].text
@@ -176,9 +200,6 @@ class MCPClient:
         Returns:
             Cost estimation with breakdown
         """
-        if not self._initialized:
-            await self.initialize()
-
         try:
             args = {
                 "model": model,
@@ -193,7 +214,7 @@ class MCPClient:
             if gemini_api_key:
                 args["gemini_api_key"] = gemini_api_key
 
-            result = await self.session.call_tool("estimate_cost", arguments=args)
+            result = await self._call_tool_with_retry("estimate_cost", args)
 
             if result.content and len(result.content) > 0:
                 return result.content[0].text
@@ -222,9 +243,6 @@ class MCPClient:
         Returns:
             AI-generated comparison analysis
         """
-        if not self._initialized:
-            await self.initialize()
-
         try:
             args = {
                 "run_data_list": run_data_list
@@ -237,7 +255,7 @@ class MCPClient:
             if gemini_api_key:
                 args["gemini_api_key"] = gemini_api_key
 
-            result = await self.session.call_tool("compare_runs", arguments=args)
+            result = await self._call_tool_with_retry("compare_runs", args)
 
             if result.content and len(result.content) > 0:
                 return result.content[0].text
@@ -266,9 +284,6 @@ class MCPClient:
         Returns:
             AI-generated results analysis with recommendations
         """
-        if not self._initialized:
-            await self.initialize()
-
         try:
             args = {
                 "results_data": results_data,
@@ -280,7 +295,7 @@ class MCPClient:
             if gemini_api_key:
                 args["gemini_api_key"] = gemini_api_key
 
-            result = await self.session.call_tool("analyze_results", arguments=args)
+            result = await self._call_tool_with_retry("analyze_results", args)
 
             if result.content and len(result.content) > 0:
                 return result.content[0].text
@@ -307,9 +322,6 @@ class MCPClient:
         Returns:
             Dataset information and structure
         """
-        if not self._initialized:
-            await self.initialize()
-
         try:
             args = {
                 "dataset_repo": dataset_repo
@@ -320,7 +332,7 @@ class MCPClient:
             if gemini_api_key:
                 args["gemini_api_key"] = gemini_api_key
 
-            result = await self.session.call_tool("get_dataset", arguments=args)
+            result = await self._call_tool_with_retry("get_dataset", args)
 
             if result.content and len(result.content) > 0:
                 return result.content[0].text
@@ -330,13 +342,28 @@ class MCPClient:
         except Exception as e:
             return f"❌ Error calling get_dataset: {str(e)}"
 
+    async def _cleanup_connections(self):
+        """Internal helper to clean up connections"""
+        if self._session_context:
+            try:
+                await self._session_context.__aexit__(None, None, None)
+            except Exception as e:
+                print(f"⚠️ Error closing session context: {e}")
+            self._session_context = None
+            self.session = None
+
+        if self._sse_context:
+            try:
+                await self._sse_context.__aexit__(None, None, None)
+            except Exception as e:
+                print(f"⚠️ Error closing SSE context: {e}")
+            self._sse_context = None
+
+        self._initialized = False
+
     async def close(self):
         """Close the MCP client session"""
-        if self.session:
-            # Note: ClientSession doesn't have an explicit close method
-            # The context manager handles cleanup
-            self.session = None
-            self._initialized = False
+        await self._cleanup_connections()
 
 
 # Singleton instance for use across the app
