@@ -378,6 +378,31 @@ def on_compare_runs(run_a_id: str, run_b_id: str, leaderboard_df, components: Di
         run_a_id_parsed, run_a_timestamp = run_a_parts
         run_b_id_parsed, run_b_timestamp = run_b_parts
 
+        # Debug logging
+        print(f"[COMPARE DEBUG] Looking for Run A:")
+        print(f"  run_id: {run_a_id_parsed} (type: {type(run_a_id_parsed)})")
+        print(f"  timestamp: {run_a_timestamp} (type: {type(run_a_timestamp)})")
+        print(f"[COMPARE DEBUG] Looking for Run B:")
+        print(f"  run_id: {run_b_id_parsed} (type: {type(run_b_id_parsed)})")
+        print(f"  timestamp: {run_b_timestamp} (type: {type(run_b_timestamp)})")
+
+        print(f"[COMPARE DEBUG] Leaderboard dataframe timestamp column type: {leaderboard_df['timestamp'].dtype}")
+        print(f"[COMPARE DEBUG] Sample timestamps from leaderboard:")
+        for idx, ts in enumerate(leaderboard_df['timestamp'].head(3)):
+            print(f"  [{idx}] {ts} (type: {type(ts)})")
+
+        # Check if run_ids exist first
+        run_a_by_id = leaderboard_df[leaderboard_df['run_id'] == run_a_id_parsed]
+        run_b_by_id = leaderboard_df[leaderboard_df['run_id'] == run_b_id_parsed]
+
+        print(f"[COMPARE DEBUG] Runs matching run_id only:")
+        print(f"  Run A matches: {len(run_a_by_id)}")
+        if len(run_a_by_id) > 0:
+            print(f"    Timestamps: {run_a_by_id['timestamp'].tolist()}")
+        print(f"  Run B matches: {len(run_b_by_id)}")
+        if len(run_b_by_id) > 0:
+            print(f"    Timestamps: {run_b_by_id['timestamp'].tolist()}")
+
         # Find the runs in the dataframe using both run_id and timestamp
         run_a_match = leaderboard_df[
             (leaderboard_df['run_id'] == run_a_id_parsed) &
@@ -387,6 +412,8 @@ def on_compare_runs(run_a_id: str, run_b_id: str, leaderboard_df, components: Di
             (leaderboard_df['run_id'] == run_b_id_parsed) &
             (leaderboard_df['timestamp'] == run_b_timestamp)
         ]
+
+        print(f"[COMPARE DEBUG] Final matches: Run A={len(run_a_match)}, Run B={len(run_b_match)}")
 
         if run_a_match.empty or run_b_match.empty:
             gr.Warning("Could not find selected runs in leaderboard data")

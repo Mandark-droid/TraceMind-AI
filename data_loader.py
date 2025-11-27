@@ -50,12 +50,12 @@ class DataLoader:
         Load leaderboard dataset
 
         Returns:
-            DataFrame with leaderboard data
+            DataFrame with leaderboard data (always returns a copy to prevent cache mutation)
         """
         cache_key = "leaderboard"
 
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            return self._cache[cache_key].copy()  # Return copy to prevent cache mutation
 
         # Try HuggingFace first
         if self.data_source in ["huggingface", "both"]:
@@ -133,7 +133,7 @@ class DataLoader:
         cache_key = f"results_{results_dataset}"
 
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            return self._cache[cache_key].copy()  # Return copy to prevent cache mutation
 
         # Try HuggingFace first
         if self.data_source in ["huggingface", "both"]:
@@ -201,7 +201,8 @@ class DataLoader:
         cache_key = f"traces_{traces_dataset}"
 
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            import copy
+            return copy.deepcopy(self._cache[cache_key])  # Return deep copy to prevent cache mutation
 
         # Try HuggingFace first
         if self.data_source in ["huggingface", "both"]:
@@ -266,7 +267,7 @@ class DataLoader:
         cache_key = f"metrics_{metrics_dataset}"
 
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            return self._cache[cache_key].copy()  # Return copy to prevent cache mutation
 
         # Try HuggingFace first
         if self.data_source in ["huggingface", "both"]:
