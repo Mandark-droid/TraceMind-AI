@@ -327,9 +327,9 @@ To prevent rate limits during evaluation:
 - **Agent Framework**: smolagents 1.22.0+
 - **MCP Integration**: MCP Python SDK + smolagents MCPClient
 - **Data Source**: HuggingFace Datasets API
-- **Authentication**: HuggingFace OAuth
+- **Authentication**: HuggingFace OAuth (planned)
 - **AI Models**:
-  - Agent: Qwen/Qwen2.5-Coder-32B-Instruct (HF API)
+  - Agent: Google Gemini 2.5 Flash
   - MCP Server: Google Gemini 2.5 Flash
 - **Cloud Platforms**: HuggingFace Jobs + Modal
 
