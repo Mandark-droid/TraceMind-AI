@@ -110,6 +110,22 @@ Provides AI Tools               Consumes MCP Tools
 
 ---
 
+## Why This Matters for Hugging Face
+
+This ecosystem is built **around** Hugging Face, not just "using it":
+
+- Every SMOLTRACE evaluation creates **4 structured `datasets` on the Hub** (leaderboard, results, traces, metrics)
+- TraceMind MCP Server and TraceMind-AI run as **Hugging Face Spaces**, using **Gradio's MCP integration**
+- The stack is designed for **`smolagents`** – agents are evaluated, traced, and analyzed using HF's own agent framework
+- Evaluations can be executed via **HF Jobs**, turning evaluations into real compute usage, not just local scripts
+
+So TraceMind isn't just another agent demo.
+**It's an opinionated blueprint for:**
+
+> **"How Hugging Face models + Datasets + Spaces + Jobs + smolagents + MCP can work together as a complete agent evaluation and observability platform."**
+
+---
+
 ## Key Features
 
 ### 🎯 MCP Integration (Track 2)
