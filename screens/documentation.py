@@ -1886,8 +1886,8 @@ TraceMind-AI provides seamless integration with two cloud compute platforms, all
 
 | Platform | Best For | Pricing Model | GPU Options | Free Tier |
 |----------|----------|---------------|-------------|-----------|
-| **HuggingFace Jobs** | Managed infrastructure, dataset integration | Per-hour | T4, L4, A10, A100, V5e | ❌ ($9/mo Pro required) |
-| **Modal** | Serverless compute, pay-per-second | Per-second | T4, L4, A10, A100-80GB, H200 | ✅ Free credits available |
+| **HuggingFace Jobs** | Managed infrastructure, dataset integration | Per-second | T4, L4, A10, A100, V5e | ❌ ($9/mo Pro required) |
+| **Modal** | Serverless compute, pay-per-second | Per-second | T4, L4, A10, A100-80GB, H100, H200, B200 | ✅ Free credits available |
 
 ### Key Differences
 
@@ -1895,13 +1895,14 @@ TraceMind-AI provides seamless integration with two cloud compute platforms, all
 - ✅ Native HuggingFace ecosystem integration
 - ✅ Managed infrastructure with guaranteed availability
 - ✅ Built-in dataset storage and versioning
+- ✅ Per-second billing (no minimums)
 - ⚠️ Requires Pro account ($9/month)
-- ⚠️ Per-hour billing (minimum 1 hour charge)
+- ⚠️ Limited GPU options (no H100/H200)
 
 **Modal**:
 - ✅ Serverless architecture (no minimum charges)
-- ✅ Pay-per-second billing (more cost-effective for short jobs)
-- ✅ Latest GPUs (H200 available)
+- ✅ Pay-per-second billing
+- ✅ Latest GPUs (H100, H200, B200 available)
 - ✅ Free tier with credits
 - ⚠️ Requires separate account setup
 - ⚠️ Container cold start time (~2-3 minutes first run)
@@ -1933,18 +1934,19 @@ Steps to create token:
 
 ### Hardware Options
 
-| Hardware | vCPUs | GPU | Memory | Best For | Price/hr |
-|----------|-------|-----|--------|----------|----------|
-| `cpu-basic` | 2 | - | 16 GB | API models (OpenAI, Anthropic) | ~$0.05 |
-| `cpu-upgrade` | 8 | - | 32 GB | API models (high volume) | ~$0.10 |
-| `t4-small` | 4 | T4 (16GB) | 16 GB | Small models (4B-8B) | ~$0.60 |
-| `t4-medium` | 8 | T4 (16GB) | 32 GB | Small models (batched) | ~$1.00 |
-| `a10g-small` | 4 | A10G (24GB) | 32 GB | Medium models (7B-13B) | ~$1.10 |
-| `a10g-large` | 12 | A10G (24GB) | 92 GB | Medium models (high memory) | ~$1.50 |
-| `a100-large` | 12 | A100 (80GB) | 142 GB | Large models (70B+) | ~$3.00 |
-| `v5e-1x1` | 4 | TPU v5e | 16 GB | TPU-optimized workloads | ~$1.20 |
+| Hardware | vCPUs | GPU | Memory | Best For | Price/hr | Per-second |
+|----------|-------|-----|--------|----------|----------|------------|
+| `cpu-basic` | 2 | - | 16 GB | API models (OpenAI, Anthropic) | Free with Pro | - |
+| `cpu-upgrade` | 8 | - | 32 GB | API models (high volume) | Free with Pro | - |
+| `t4-small` | 4 | T4 (16GB) | 15 GB | Small models (4B-8B) | $0.40 | $0.000111 |
+| `t4-medium` | 8 | T4 (16GB) | 30 GB | Small models (batched) | $0.60 | $0.000167 |
+| `l4x1` | 8 | L4 (24GB) | 30 GB | Small-medium models | $0.80 | $0.000222 |
+| `a10g-small` | 4 | A10G (24GB) | 32 GB | Medium models (7B-13B) | $1.00 | $0.000278 |
+| `a10g-large` | 12 | A10G (24GB) | 92 GB | Medium models (high memory) | $1.50 | $0.000417 |
+| `a100-large` | 12 | A100 (80GB) | 142 GB | Large models (70B+) | $2.50 | $0.000694 |
+| `v5e-1x1` | 4 | TPU v5e | 16 GB | TPU-optimized workloads | TBD | TBD |
 
-Full pricing: https://huggingface.co/pricing#spaces-pricing
+*Pricing from [HF Spaces GPU docs](https://huggingface.co/docs/hub/en/spaces-gpus). Billed **per-second** with no minimums.*
 
 ### Auto-Selection Logic
 
@@ -2021,19 +2023,20 @@ Steps to get credentials:
 
 | Hardware | GPU | Memory | Best For | Price/sec | Equivalent $/hr |
 |----------|-----|--------|----------|-----------|-----------------|
-| `CPU` | - | 16 GB | API models | ~$0.0001 | ~$0.36 |
-| `T4` | T4 (16GB) | 16 GB | Small models (4B-8B) | ~$0.0002 | ~$0.72 |
-| `L4` | L4 (24GB) | 24 GB | Small-medium models | ~$0.0004 | ~$1.44 |
-| `A10G` | A10G (24GB) | 32 GB | Medium models (7B-13B) | ~$0.0006 | ~$2.16 |
-| `L40S` | L40S (48GB) | 48 GB | Large models (optimized) | ~$0.0012 | ~$4.32 |
-| `A100` | A100 (40GB) | 64 GB | Large models | ~$0.0020 | ~$7.20 |
-| `A100-80GB` | A100 (80GB) | 128 GB | Very large models (70B+) | ~$0.0030 | ~$10.80 |
-| `H100` | H100 (80GB) | 192 GB | Latest generation inference | ~$0.0040 | ~$14.40 |
-| `H200` | H200 (141GB) | 256 GB | Cutting-edge, highest memory | ~$0.0050 | ~$18.00 |
+| `CPU` | - | 16 GB | API models | $0.0000131/core | ~$0.05 |
+| `T4` | T4 (16GB) | 16 GB | Small models (4B-8B) | $0.000164 | ~$0.59 |
+| `L4` | L4 (24GB) | 24 GB | Small-medium models | $0.000222 | ~$0.80 |
+| `A10G` | A10G (24GB) | 32 GB | Medium models (7B-13B) | $0.000306 | ~$1.10 |
+| `L40S` | L40S (48GB) | 48 GB | Large models (optimized) | $0.000542 | ~$1.95 |
+| `A100` | A100 (40GB) | 64 GB | Large models | $0.000583 | ~$2.10 |
+| `A100-80GB` | A100 (80GB) | 128 GB | Very large models (70B+) | $0.000694 | ~$2.50 |
+| `H100` | H100 (80GB) | 192 GB | Latest generation inference | $0.001097 | ~$3.95 |
+| `H200` | H200 (141GB) | 256 GB | Cutting-edge, highest memory | $0.001261 | ~$4.54 |
+| `B200` | B200 (192GB) | 384 GB | Next-gen, massive memory | $0.001736 | ~$6.25 |
 
 Full pricing: https://modal.com/pricing
 
-**💡 Cost Advantage**: Modal's per-second billing is more cost-effective for jobs <1 hour!
+**💡 Both platforms use per-second billing!** Choose Modal for H100/H200/B200 GPUs or if you don't have HF Pro.
 
 ### Auto-Selection Logic
 
